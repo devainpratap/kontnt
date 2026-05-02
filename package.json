@@ -1,0 +1,24 @@
+{
+  "name": "semantic-seo-content-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "node --input-type=module -e \"import { mkdirSync } from 'node:fs'; ['data','jobs','prompts/system','prompts/steps'].forEach((dir) => mkdirSync(dir, { recursive: true }));\"",
+    "dev:web": "npm run dev --workspace @semantic-seo/web",
+    "dev:server": "npm run dev --workspace @semantic-seo/server",
+    "build:web": "npm run build --workspace @semantic-seo/web",
+    "build:server": "npm run build --workspace @semantic-seo/server",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "node --import tsx --test apps/server/src/*.test.ts",
+    "check": "npm run build && npm run typecheck && npm test",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  }
+}

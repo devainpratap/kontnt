@@ -1,0 +1,59 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    working_dir: /workspace
+    command: npm run dev:server
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3001
+      WORKFLOW_ROOT: /workspace
+      DB_PATH: /workspace/data/workflow.sqlite
+      CODEX_CLI_BIN: codex
+      # Keep the default container path honest: manual fallback works even when Codex auth does not.
+      GENERATION_FALLBACK_MODE: manual
+    volumes:
+      - .:/workspace
+      - ${HOME}/.codex:/root/.codex
+      - workspace_node_modules:/workspace/node_modules
+    ports:
+      - "${SERVER_PORT:-3001}:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/health').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    init: true
+    stdin_open: true
+    tty: true
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    working_dir: /workspace
+    command: npm run dev --workspace @semantic-seo/web -- --host 0.0.0.0 --port 5173
+    environment:
+      VITE_API_PROXY_TARGET: http://server:3001
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - .:/workspace
+      - workspace_node_modules:/workspace/node_modules
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    depends_on:
+      server:
+        condition: service_healthy
+    init: true
+    stdin_open: true
+    tty: true
+
+volumes:
+  workspace_node_modules:

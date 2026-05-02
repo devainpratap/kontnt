@@ -1,0 +1,15 @@
+node_modules
+dist
+.vite
+.turbo
+coverage
+.git
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+data/*
+!data/.gitkeep
+jobs/*
+!jobs/.gitkeep
