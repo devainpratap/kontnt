@@ -40,6 +40,7 @@ export async function renderStepPrompt(stepName: Exclude<WorkflowStep, "approve-
     .replace("{{COMPETITOR_CONTEXT}}", context.COMPETITOR_CONTEXT ?? "")
     .replace("{{ENTITY_CONTEXT}}", context.ENTITY_CONTEXT ?? "")
     .replace("{{SEMANTIC_MAP}}", context.SEMANTIC_MAP ?? "")
+    .replace("{{RECENT_STRUCTURE_PATTERNS}}", context.RECENT_STRUCTURE_PATTERNS ?? "")
     .replace("{{APPROVED_OUTLINE}}", context.APPROVED_OUTLINE ?? "")
     .replace("{{DRAFT}}", context.DRAFT ?? "");
 }

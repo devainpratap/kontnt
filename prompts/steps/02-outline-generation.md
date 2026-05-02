@@ -27,8 +27,11 @@ Additional outline rules:
 - Assign a structure type to each H2: three-paragraph explanation, bullets, H3 subsections, or table.
 - Do not assign the same structure type to too many consecutive H2s.
 - Add H3 layering where needed for core components and benefits. H3s must represent single entities or components.
-- For every H3 planned in the outline, note that the final article should use exactly 2 short paragraphs below it: paragraph 1 defines or clarifies the H3 entity, paragraph 2 explains the data, function, impact, or decision it enables.
+- For every non-FAQ H3 planned in the outline, note that the final article should use exactly 2 short paragraphs below it: paragraph 1 defines or clarifies the H3 entity, paragraph 2 explains the data, function, impact, or decision it enables.
+- For FAQ H3s, plan one concise answer paragraph of 1 to 2 sentences.
 - Add a sentence-start warning to the section structure plan: final prose should not begin sentences with "the", "a", "that", or "those".
+- Build a dynamic outline for this article. Do not mirror the exact H2 sequence, H3 density, bullet-heavy sections, or table placement from recent articles unless the search intent requires it.
+- Vary the rhythm across sections. Avoid repeating the same intro sentence pattern, paragraph count, bullet count, H3 count, or "X means..." definition pattern across the article.
 - Include a buying guide or decision framework with 5 to 6 criteria.
 - Include KPI-driven decision support when the topic involves evaluation, operations, or business impact.
 - Include evidence or verification notes for any stats, benchmarks, ranges, or trend claims.
@@ -70,3 +73,7 @@ Article brief:
 Semantic map:
 
 {{SEMANTIC_MAP}}
+
+Recent structure patterns:
+
+{{RECENT_STRUCTURE_PATTERNS}}

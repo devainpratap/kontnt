@@ -12,6 +12,7 @@
 - Do not start sentences with "the", "a", "that", or "those". During final review, rewrite those openings with a more specific subject, verb-led construction, or context phrase.
 - Avoid overusing filler words and repeated sentence starters such as "this", "it", "these", "they", "when", "although", "by", "for", "while", and "each".
 - Use the primary entity naturally across the article, but vary the context around it instead of repeating the same phrase mechanically.
+- Keep semantic entities present, but do not let the same entity, noun, pronoun, or phrase dominate sentence openings. Place the entity later in the sentence when context, condition, outcome, contrast, or the operational object creates a more natural opening.
 - Keep product mentions useful, specific, and non-promotional unless the brief requests otherwise.
 - Make every section connect to the previous idea and the next idea. Avoid isolated content islands.
 
@@ -19,17 +20,23 @@
 
 For each H2, choose one structure intentionally. Do not reuse the same structure across too many consecutive sections.
 
+Before writing each H2, choose the structure that fits the section intent: explanation, comparison, decision support, component breakdown, or FAQ. Do not copy the same H2 rhythm from the previous section unless the reader genuinely benefits from it.
+
 Use a three-paragraph format for definitions, concepts, processes, and explanations. Use 3 short paragraphs with 2 sentences each when the section needs smooth explanation.
 
 Use one sentence plus structured bullets for benefits, features, reasons, signs, steps, mistakes, or checklist-style sections. Bullet labels should be 2 to 3 words and each bullet must add a specific useful point.
 
 Use one sentence plus H3 subsections when the H2 contains several subtopics that need separate treatment. H3s should be short, natural, and not forced.
 
-When an H3 is used in the article body, write exactly two short paragraphs below it. The first paragraph should define or clarify the H3 entity, component, or idea. The second paragraph should explain the data, function, operational impact, or decision it enables. Do not place a separate transition paragraph after an H3 before the next H2, because that creates a third paragraph under the H3.
+When a non-FAQ H3 is used in the article body, write exactly two short paragraphs below it. The first paragraph should define or clarify the H3 entity, component, or idea. The second paragraph should explain the data, function, operational impact, or decision it enables. Do not place a separate transition paragraph after an H3 before the next H2, because that creates a third paragraph under the H3.
+
+When an FAQ uses H3 questions, answer each one in a single concise paragraph of 1 to 2 sentences. Do not force the two-paragraph H3 structure onto FAQ answers.
 
 Use a table only for comparison, feature mapping, pricing, pros and cons, or side-by-side explanation where the table improves clarity.
 
 Do not use the same number of bullets, H3s, or paragraphs in every section. Vary section shape based on reader need.
+
+Before finalizing, scan each H2 or H3 section and extract the first 1 to 3 words of every sentence. If the same entity, noun, pronoun, or phrase starts more than two nearby sentences, rewrite those openings with decision context, condition, outcome, contrast, or the operational object.
 
 ## Final Article Shape
 

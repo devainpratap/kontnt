@@ -26,9 +26,12 @@ Additional drafting rules:
 - The first key takeaway must fully answer the title query.
 - Use question-based H2s wherever the approved outline allows it.
 - Choose the best structure for each H2 rather than repeating the same pattern.
+- Do not let repeated entities dominate sentence openings. Within each H2 or H3, avoid starting more than two nearby sentences with the same entity, noun, pronoun, or phrase.
+- Vary sentence openings by starting with decision context, condition, outcome, contrast, or the operational object when the topic entity would otherwise repeat.
 - For explanatory H2s, use the three-paragraph logic when natural: direct answer, mechanism, implication or transition.
 - For benefits, features, signs, steps, and mistakes, use one short lead sentence followed by structured bullets.
-- For multi-component sections, use H3s. Each H3 must have exactly 2 short paragraphs below it: paragraph 1 defines or clarifies the entity, component, or idea; paragraph 2 explains its data output, function, operational impact, or decision value.
+- For multi-component sections, use H3s. Each non-FAQ H3 must have exactly 2 short paragraphs below it: paragraph 1 defines or clarifies the entity, component, or idea; paragraph 2 explains its data output, function, operational impact, or decision value.
+- For FAQ H3s, answer directly in one concise paragraph of 1 to 2 sentences.
 - Use tables only when they make comparison or breakdown easier to understand.
 - Add micro-transitions at the end of major H2s, but vary the wording and keep them useful.
 - Include a buying guide with 5 to 6 criteria when the outline calls for decision support.
@@ -37,6 +40,7 @@ Additional drafting rules:
 - Avoid generic claims. Replace broad statements with specific mechanisms.
 - Avoid em dashes and obvious AI phrases.
 - Before returning the draft, audit sentence openings and rewrite every sentence that begins with "the", "a", "that", or "those".
+- Before returning the draft, scan every section for repeated first 1 to 3 words. Rewrite nearby repeats instead of swapping in random synonyms.
 - Do not add standalone transition paragraphs after an H3 before the next H2. Place the transition inside the second H3 paragraph or before the H3 list begins.
 
 Return Markdown only.
