@@ -23,7 +23,7 @@ describe("article style audit", () => {
 
     const audit = auditArticleStyle(markdown);
 
-    assert.ok(audit.issues.some((issue) => issue.code === "repeated-section-opener" && issue.message.includes("freight brokers")));
+    assert.ok(audit.issues.some((issue) => issue.code === "repeated-section-opener" && issue.message.includes("freight broker")));
     assert.ok(audit.issues.some((issue) => issue.code === "forbidden-sentence-start" && issue.message.includes("\"the\"")));
   });
 
@@ -90,6 +90,34 @@ describe("article style audit", () => {
     const audit = auditArticleStyle(markdown);
 
     assert.equal(audit.issues.length, 0);
+  });
+
+  it("flags repeated topical openers even when exact phrases differ", () => {
+    const markdown = [
+      "# Freight Broker vs Dispatcher",
+      "",
+      "## What does a freight broker do?",
+      "",
+      "Freight brokers arrange transportation between shippers and carriers. Broker teams source carrier capacity for lanes. Brokers coordinate updates when a pickup changes. Carrier access depends on timing."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "repeated-topic-opener" && issue.message.includes("\"broker\"")));
+  });
+
+  it("flags repeated opening grammar patterns", () => {
+    const markdown = [
+      "# Broker Guide",
+      "",
+      "## What should shippers know?",
+      "",
+      "Capacity is limited on irregular lanes. Pricing is volatile during seasonal demand. Service is harder to protect without backup options. Route planning depends on available equipment."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "repeated-sentence-pattern" && issue.message.includes("subject-is")));
   });
 
   it("renders a repair prompt with the audit findings", () => {

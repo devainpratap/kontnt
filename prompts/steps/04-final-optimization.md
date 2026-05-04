@@ -25,6 +25,7 @@ Workflow-aligned optimization:
 
 Phase 3, semantic analysis:
 
+- Classify the article type before optimizing. For comparison articles, validate that both entities are independently explained before comparison, legal/compliance clarification, decision guidance, or buying guidance.
 - Convert implicit entity links into cause-effect chains.
 - Apply these chains where relevant: telematics to maintenance to downtime to cost; GPS to dispatch to route efficiency to service reliability; fuel to behavior to cost leakage to optimization; compliance to records to audit readiness to risk reduction.
 - For each major entity, make its operational role clear: what it does, what data it produces, and what decision it enables.
@@ -33,6 +34,8 @@ Phase 3, semantic analysis:
 Phase 4, structure correction:
 
 - Do not rewrite blindly. Improve the draft with targeted edits mapped to the semantic map and approved outline.
+- For comparison articles, enforce this order unless the approved outline has a user-approved reason to differ: define Entity A; define Entity B; explain responsibilities or core features; compare differences; handle legal/compliance after role clarity; provide decision guidance after comparison; place FAQs near the end; end with decision logic.
+- Never open a comparison article with a dense comparison table unless the topic has very high user familiarity and the user clearly expects a quick-answer format.
 - Start the article with the H1, then `## Key Takeaways`.
 - Under `## Key Takeaways`, include one direct intro sentence and 3 to 5 bullets.
 - The first key takeaway must fully answer the main query.
@@ -44,6 +47,8 @@ Phase 4, structure correction:
 Phase 5, structural variation:
 
 - For every H2, choose the best structure for the search intent behind that section.
+- Assign one dominant purpose to every H2: definition, responsibilities, process, comparison, legal/compliance clarification, decision guidance, red flags, metrics/KPIs, FAQs, or conclusion.
+- Split sections that mix definition, responsibilities, legal concerns, feature comparison, and user decision guidance prematurely.
 - Use a three-paragraph format for explanations: 3 short paragraphs, 2 sentences each, direct answer first.
 - Use one sentence plus structured bullets for benefits, features, criteria, signs, steps, or risks. Bullet labels must be 2 to 3 words and each bullet must carry meaningful information.
 - Use one sentence plus H3s only when multiple subtopics genuinely need separate treatment. H3s should be 3 to 4 words and must justify their existence.
@@ -53,6 +58,7 @@ Phase 5, structural variation:
 - Eliminate repeated numbers of bullets, repeated numbers of H3s, repeated paragraph rhythm, and predictable formatting.
 - Component H3s, where used, should follow the two-paragraph H3 rule without padding.
 - Prevent repeated entity-first openings. No H2 or H3 section should have more than two nearby sentences starting with the same entity, noun, pronoun, or phrase.
+- Prevent repeated H2 keyword starts, role-name starts, comparison-term starts, and repeated subject-plus-verb patterns such as "X is", "X helps", "X should", or "X can".
 - Use sentence-opening variety intentionally: decision context, condition, outcome, contrast, operational object, then entity-first only when definition or disambiguation requires it.
 
 Phase 6, content execution:
@@ -62,7 +68,7 @@ Phase 6, content execution:
 - Remove or rewrite common AI phrases, especially vague claims such as "helps improve", "can support", "designed for", "built for", "clear understanding", "effective", and "efficient".
 - Replace vague claims with direct cause-effect statements.
 - Audit sentence starters across the full article. Rewrite every sentence that begins with "the", "a", "that", or "those".
-- Extract the first 1 to 3 words of sentences in each section. Rewrite repeated nearby starts instead of using random synonyms.
+- Extract the first 1 to 3 words of sentences in each section. Also check same entity match, same role match, same H2 keyword match, same comparison-term match, and same syntactic pattern. Rewrite repeated nearby starts instead of using random synonyms.
 - Check remaining sentence starter clusters. Rewrite repeated openings such as "this", "it", "these", "they", "when", "although", "by", "for", "while", or "each".
 - Remove filler, vague modifiers, and generic claims. Every sentence must carry information.
 
@@ -80,6 +86,7 @@ Final quality filter:
 - No repeated structure patterns.
 - No visible pattern of sentences starting with "the", "a", "that", or "those".
 - No H2 or H3 section has more than two nearby sentences starting with the same entity or phrase.
+- No H2 or H3 section has more than two nearby sentences starting with the same H2 keyword, role, comparison term, or opening grammar pattern.
 - Bullet lists do not repeat the same grammar pattern across several consecutive bullets.
 - Every non-FAQ H3 has exactly two short paragraphs below it, and every FAQ H3 has one concise answer paragraph.
 - No repeated sentence starter clusters.

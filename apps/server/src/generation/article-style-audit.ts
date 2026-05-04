@@ -1,5 +1,11 @@
 export type ArticleStyleIssue = {
-  code: "forbidden-sentence-start" | "repeated-section-opener" | "h3-paragraph-count" | "repeated-bullet-opener";
+  code:
+    | "forbidden-sentence-start"
+    | "repeated-section-opener"
+    | "repeated-topic-opener"
+    | "repeated-sentence-pattern"
+    | "h3-paragraph-count"
+    | "repeated-bullet-opener";
   section: string;
   message: string;
   evidence: string[];
@@ -18,6 +24,100 @@ type Section = {
 };
 
 const forbiddenSentenceStarts = new Set(["the", "a", "that", "those", "this", "it"]);
+const topicRoleTerms = new Set([
+  "broker",
+  "dispatcher",
+  "shipper",
+  "carrier",
+  "driver",
+  "fleet",
+  "manager",
+  "customer",
+  "buyer",
+  "seller",
+  "vendor",
+  "provider",
+  "platform",
+  "software",
+  "system",
+  "tool",
+  "role",
+  "responsibility",
+  "feature",
+  "direct",
+  "indirect",
+  "entity",
+  "service",
+  "company",
+  "team",
+  "user"
+]);
+const stopWords = new Set([
+  "about",
+  "after",
+  "again",
+  "against",
+  "and",
+  "are",
+  "before",
+  "between",
+  "but",
+  "can",
+  "does",
+  "for",
+  "from",
+  "has",
+  "have",
+  "how",
+  "into",
+  "is",
+  "its",
+  "one",
+  "should",
+  "than",
+  "that",
+  "the",
+  "their",
+  "them",
+  "these",
+  "they",
+  "this",
+  "those",
+  "to",
+  "versus",
+  "vs",
+  "what",
+  "when",
+  "where",
+  "which",
+  "who",
+  "why",
+  "with",
+  "you",
+  "your"
+]);
+const patternVerbs = new Set([
+  "are",
+  "can",
+  "do",
+  "does",
+  "has",
+  "have",
+  "helps",
+  "include",
+  "includes",
+  "is",
+  "means",
+  "need",
+  "needs",
+  "provide",
+  "provides",
+  "should",
+  "use",
+  "uses",
+  "work",
+  "works"
+]);
 const ignoredOpeners = new Set([
   "and",
   "but",
@@ -43,15 +143,57 @@ function normalizeText(value: string) {
     .trim();
 }
 
-function normalizeOpener(value: string, wordCount: number) {
+function singularize(value: string) {
+  if (value.length > 4 && value.endsWith("ies")) {
+    return `${value.slice(0, -3)}y`;
+  }
+
+  if (value.length > 3 && value.endsWith("s") && !value.endsWith("ss")) {
+    return value.slice(0, -1);
+  }
+
+  return value;
+}
+
+function tokenize(value: string) {
   return normalizeText(value)
     .toLowerCase()
     .replace(/^[^a-z0-9]+/i, "")
     .split(/\s+/)
+    .map((word) => singularize(word.replace(/[^a-z0-9-]/g, "")))
+    .filter(Boolean);
+}
+
+function normalizeOpener(value: string, wordCount: number) {
+  return tokenize(value)
     .slice(0, wordCount)
     .join(" ")
-    .replace(/[^a-z0-9\s-]/g, "")
     .trim();
+}
+
+function getSectionTopicTerms(heading: string) {
+  return new Set(tokenize(heading).filter((word) => word.length > 2 && !stopWords.has(word)));
+}
+
+function getOpeningTopic(sentence: string, heading: string) {
+  const sectionTerms = getSectionTopicTerms(heading);
+  const openingTokens = tokenize(sentence).slice(0, 4);
+  const topicToken =
+    openingTokens.find((token) => topicRoleTerms.has(token)) ??
+    openingTokens.find((token) => sectionTerms.has(token) && token.length > 3);
+
+  return topicToken ?? "";
+}
+
+function getOpeningPattern(sentence: string) {
+  const openingTokens = tokenize(sentence).slice(0, 4);
+  const verbIndex = openingTokens.findIndex((token, index) => index > 0 && index <= 2 && patternVerbs.has(token));
+
+  if (verbIndex === -1) {
+    return "";
+  }
+
+  return `subject-${openingTokens[verbIndex]}`;
 }
 
 function splitIntoSentences(markdown: string) {
@@ -170,7 +312,9 @@ function addRepeatedOpenerIssues(sections: Section[], issues: ArticleStyleIssue[
       sentence,
       firstWord: normalizeOpener(sentence, 1),
       firstTwoWords: normalizeOpener(sentence, 2),
-      firstThreeWords: normalizeOpener(sentence, 3)
+      firstThreeWords: normalizeOpener(sentence, 3),
+      topic: getOpeningTopic(sentence, section.heading),
+      pattern: getOpeningPattern(sentence)
     }));
 
     openers.forEach((opener) => {
@@ -209,6 +353,44 @@ function addRepeatedOpenerIssues(sections: Section[], issues: ArticleStyleIssue[
             });
           }
         });
+      });
+    }
+
+    for (let index = 0; index < openers.length; index += 1) {
+      const window = openers.slice(index, index + 5);
+      const topicGroups = new Map<string, string[]>();
+      const patternGroups = new Map<string, string[]>();
+
+      window.forEach((opener) => {
+        if (opener.topic && !ignoredOpeners.has(opener.topic)) {
+          topicGroups.set(opener.topic, [...(topicGroups.get(opener.topic) ?? []), opener.sentence]);
+        }
+
+        if (opener.pattern) {
+          patternGroups.set(opener.pattern, [...(patternGroups.get(opener.pattern) ?? []), opener.sentence]);
+        }
+      });
+
+      topicGroups.forEach((evidence, value) => {
+        if (evidence.length > 2 && !issues.some((issue) => issue.code === "repeated-topic-opener" && issue.section === section.heading && issue.message.includes(`"${value}"`))) {
+          issues.push({
+            code: "repeated-topic-opener",
+            section: section.heading,
+            message: `More than two nearby sentences start with the same topic or role concept "${value}".`,
+            evidence: evidence.slice(0, 4)
+          });
+        }
+      });
+
+      patternGroups.forEach((evidence, value) => {
+        if (evidence.length > 2 && !issues.some((issue) => issue.code === "repeated-sentence-pattern" && issue.section === section.heading && issue.message.includes(`"${value}"`))) {
+          issues.push({
+            code: "repeated-sentence-pattern",
+            section: section.heading,
+            message: `More than two nearby sentences use the same opening grammar pattern "${value}".`,
+            evidence: evidence.slice(0, 4)
+          });
+        }
       });
     }
   });
@@ -317,7 +499,7 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "",
     "Repair only the issues listed in the audit:",
     "- Rewrite sentence openings that begin with the, a, that, those, this, or it.",
-    "- Break repeated nearby sentence-openers by starting with context, condition, outcome, contrast, or the operational object.",
+    "- Break repeated nearby sentence-openers, repeated topic-first openings, and repeated opening grammar patterns by starting with context, condition, outcome, contrast, or the operational object.",
     "- Keep important entities present, but move them inside sentences instead of always starting with them.",
     "- Make every non-FAQ H3 body exactly two short paragraphs: definition or clarification first, then data, function, impact, or decision value.",
     "- Keep FAQ H3 answers to one concise paragraph, usually 1 to 2 sentences.",

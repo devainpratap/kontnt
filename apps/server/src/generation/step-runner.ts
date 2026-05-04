@@ -3,6 +3,7 @@ import type { ArticleIntake, CompetitorResearch, JobStatus, StepExecutionResult,
 import { readTextFile, writeMarkdownFile } from "../jobs/files";
 import { JobRepository } from "../jobs/repository";
 import { ApiError } from "../lib/api-error";
+import { auditArticleStructure, renderArticleStructureAuditReport, renderArticleStructureRepairPrompt } from "./article-structure-audit";
 import { auditArticleStyle, renderArticleStyleAuditReport, renderArticleStyleRepairPrompt } from "./article-style-audit";
 import { getCodexStatus, isTransientCodexFailure, runCodexStep } from "./codex-provider";
 import { renderManualHandoff } from "./manual-handoff";
@@ -104,7 +105,7 @@ export class StepRunner {
     const generatedOutput = await readTextFile(outputPath);
     if (generatedOutput) {
       await writeMarkdownFile(outputPath, sanitizeGeneratedMarkdown(generatedOutput));
-      successMessage = await this.repairStyleIssuesIfNeeded(stepName, paths.root, outputPath, paths.outputDir, paths.promptDir);
+      successMessage = await this.repairPostGenerationIssuesIfNeeded(stepName, detail.files.intake, paths.root, outputPath, paths.outputDir, paths.promptDir);
     }
 
     this.jobs.completeStep(jobId, stepName, "completed");
@@ -244,6 +245,70 @@ export class StepRunner {
     return finalAudit.issues.length === 0
       ? "Step completed successfully after style audit repair."
       : `Step completed, but style audit still found ${finalAudit.issues.length} issue(s). Review the saved style audit.`;
+  }
+
+  private async repairPostGenerationIssuesIfNeeded(
+    stepName: Exclude<WorkflowStep, "approve-outline">,
+    intake: ArticleIntake | null,
+    cwd: string,
+    outputPath: string,
+    outputDir: string,
+    promptDir: string
+  ) {
+    if (stepName === "outline" && intake) {
+      return this.repairStructureIssuesIfNeeded(intake, cwd, outputPath, outputDir, promptDir);
+    }
+
+    return this.repairStyleIssuesIfNeeded(stepName, cwd, outputPath, outputDir, promptDir);
+  }
+
+  private async repairStructureIssuesIfNeeded(
+    intake: ArticleIntake,
+    cwd: string,
+    outputPath: string,
+    outputDir: string,
+    promptDir: string
+  ) {
+    const generated = await readTextFile(outputPath);
+    if (!generated) {
+      return "Step completed successfully.";
+    }
+
+    const auditPath = `${outputDir}/outline-structure-audit.md`;
+    const repairPromptPath = `${promptDir}/outline-structure-repair.md`;
+    const audit = auditArticleStructure(intake, generated);
+    await writeMarkdownFile(auditPath, renderArticleStructureAuditReport(audit));
+
+    if (audit.issues.length === 0) {
+      return "Step completed successfully.";
+    }
+
+    const repairPrompt = renderArticleStructureRepairPrompt(intake, generated, audit);
+    await writeMarkdownFile(repairPromptPath, repairPrompt);
+    const repairResult = await runCodexStep({
+      cwd,
+      outputPath,
+      prompt: repairPrompt
+    });
+
+    if (repairResult.exitCode !== 0) {
+      return `Step completed, but the outline structure repair pass could not run: ${summarizeCodexFailure(repairResult.stdout, repairResult.stderr)}`;
+    }
+
+    const repaired = await readTextFile(outputPath);
+    if (!repaired) {
+      return "Step completed, but the outline structure repair output was not saved.";
+    }
+
+    const sanitized = sanitizeGeneratedMarkdown(repaired);
+    await writeMarkdownFile(outputPath, sanitized);
+
+    const finalAudit = auditArticleStructure(intake, sanitized);
+    await writeMarkdownFile(auditPath, renderArticleStructureAuditReport(finalAudit));
+
+    return finalAudit.issues.length === 0
+      ? "Step completed successfully after outline structure audit repair."
+      : `Step completed, but outline structure audit still found ${finalAudit.issues.length} issue(s). Review the saved structure audit.`;
   }
 
   private async buildRecentStructurePatterns(currentJobId: string) {

@@ -13,12 +13,16 @@
 - Avoid overusing filler words and repeated sentence starters such as "this", "it", "these", "they", "when", "although", "by", "for", "while", and "each".
 - Use the primary entity naturally across the article, but vary the context around it instead of repeating the same phrase mechanically.
 - Keep semantic entities present, but do not let the same entity, noun, pronoun, or phrase dominate sentence openings. Place the entity later in the sentence when context, condition, outcome, contrast, or the operational object creates a more natural opening.
+- Do not treat sentence-opening quality as a banned-word list only. Repeated starts with the main entity, H2 keyword, role name, comparison term, or the same grammatical pattern also create AI rhythm.
+- Avoid clusters of "X is", "X helps", "X should", "X can", and other repeated subject-plus-verb openings. Rewrite with context-first, outcome-first, condition-first, contrast-first, or object-first sentence structure.
 - Keep product mentions useful, specific, and non-promotional unless the brief requests otherwise.
 - Make every section connect to the previous idea and the next idea. Avoid isolated content islands.
 
 ## Section Structure Rules
 
 For each H2, choose one structure intentionally. Do not reuse the same structure across too many consecutive sections.
+
+Assign one dominant purpose to each H2 before writing: definition, responsibilities, process, comparison, legal/compliance clarification, decision guidance, red flags, metrics/KPIs, FAQs, or conclusion. Do not blend definition, responsibilities, legal concerns, comparison, and decision guidance inside one H2 unless the heading clearly asks for that combined answer.
 
 Before writing each H2, choose the structure that fits the section intent: explanation, comparison, decision support, component breakdown, or FAQ. Do not copy the same H2 rhythm from the previous section unless the reader genuinely benefits from it.
 
@@ -37,6 +41,8 @@ Use a table only for comparison, feature mapping, pricing, pros and cons, or sid
 Do not use the same number of bullets, H3s, or paragraphs in every section. Vary section shape based on reader need.
 
 Before finalizing, scan each H2 or H3 section and extract the first 1 to 3 words of every sentence. If the same entity, noun, pronoun, or phrase starts more than two nearby sentences, rewrite those openings with decision context, condition, outcome, contrast, or the operational object.
+
+For comparison articles, define both entities independently before comparison tables, legal/compliance sections, decision guidance, or buying guidance. Responsibilities or core features should appear before differences. "Which one should you choose?" belongs after the comparison, and FAQs belong near the end.
 
 ## Final Article Shape
 
