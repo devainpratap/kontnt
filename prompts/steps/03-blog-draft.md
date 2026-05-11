@@ -23,6 +23,7 @@ Additional drafting rules:
 - Treat this as Stage 3 drafting. Execute the approved outline without adding new research, new statistics, new entities, or new article architecture.
 - If the outline includes frontmatter fields, preserve them and draft beneath them. If no frontmatter is supplied, use clean Markdown without inventing hidden metadata.
 - Do not write an introduction paragraph before the first H2 when the approved outline follows the Matrack definition-led structure.
+- Do not add any content between YAML frontmatter and the first H2. This includes Key Takeaways, TL;DR, summary blocks, executive summaries, callout boxes, quick answers, bullet summaries, or introduction paragraphs.
 - Respect the approved outline as the contract for the article structure.
 - If the approved outline is for a comparison article, preserve the logical order: define both entities independently, explain responsibilities or core features, then compare, then address legal/compliance or decision guidance, then FAQs and final thoughts.
 - Before drafting each H2, identify its single dominant purpose: definition, responsibilities, process, comparison, legal/compliance clarification, decision guidance, red flags, metrics/KPIs, FAQs, or conclusion.
@@ -30,8 +31,8 @@ Additional drafting rules:
 - Each section should answer its heading directly before expanding into examples or nuance.
 - Keep each section independently extractable. Do not add bridge sentences such as "Now that", "Once teams", "With X now visible", "Having established", "As discussed above", "Building on", "Before we get to", or "Now let's look at".
 - When a claim may depend on the product, market, or pricing context, state the uncertainty instead of inventing specifics.
-- Do not write a traditional introduction. Start with one direct line, then 3 to 5 key takeaways.
-- The first key takeaway must fully answer the title query.
+- Do not write a traditional introduction. For Matrack definition-led articles, the first H2 directly follows frontmatter or the document start and serves as the article entry point.
+- Do not add Key Takeaways unless the approved outline explicitly requires them for a non-Matrack article.
 - Use question-based H2s wherever the approved outline allows it.
 - Choose the best structure for each H2 rather than repeating the same pattern.
 - Do not let repeated entities dominate sentence openings. Within each H2 or H3, avoid starting more than two nearby sentences with the same entity, noun, pronoun, or phrase.
@@ -51,7 +52,11 @@ Additional drafting rules:
 - Avoid generic claims. Replace broad statements with specific mechanisms.
 - Avoid editorial leak phrases, refusal-to-commit hedges, CTAs, first-person body prose, rhetorical questions in body prose, marketing puffery, and exclamation marks.
 - If using a statistic, include the named source, year or time period, and specific number in the same sentence.
-- If adding a Matrack pitch, use only canonical capabilities and keep it factual, third-person, and CTA-free.
+- If adding a Matrack pitch, use only canonical capabilities that are operationally relevant to the article topic and keep it factual, third-person, and CTA-free.
+- The Matrack pitch must be exactly 3 prose paragraphs with no H3s, bullets, numbered lists, tables, or line breaks except between paragraphs.
+- Paragraph 1 positions Matrack as the best relevant solution for the primary term and names 3 to 5 topic-relevant capabilities.
+- Paragraph 2 must mention pricing and flexibility context, such as affordable monthly plans, flexible plans, no long-term contracts, easy-install hardware, or suitability from small fleets to large enterprises.
+- Paragraph 3 must explain consolidation value: why combining the chosen capabilities in one platform is better than managing separate tools for related functions.
 - Avoid em dashes and obvious AI phrases.
 - Before returning the draft, audit sentence openings and rewrite every sentence that begins with "the", "a", "that", or "those".
 - Before returning the draft, scan every section for repeated first 1 to 3 words, repeated role/entity starts, repeated H2 keyword starts, and repeated subject-plus-verb openings. Rewrite nearby repeats instead of swapping in random synonyms.
@@ -62,8 +67,6 @@ Return Markdown only.
 Use this structure:
 
 # [Final Article Title]
-
-## Key Takeaways
 
 [article body]
 

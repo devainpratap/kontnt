@@ -138,6 +138,40 @@ Run all checks below. For each, record PASS or FAIL with severity if FAIL.
 - Check: Body content starts directly with `## ` (no prose between frontmatter and first H2)
 - Severity if FAIL: **Critical**
 
+### S16. No Pre-H2 Content (Critical)
+
+- Check: After the closing `---` of YAML frontmatter, the very next
+  non-blank line must start with `## ` (the first H2 heading).
+- Specifically scan for these forbidden pre-H2 patterns:
+  - Headings like "Key Takeaways", "TL;DR", "Quick Summary",
+    "What You Will Learn", "Overview", "At a Glance"
+  - Bullet lists appearing before any `## ` heading
+  - Bold paragraphs or callout-style text before any `## ` heading
+  - Any prose paragraph before the first `## ` heading
+
+- Auto-fix: DELETE all content between the closing `---` of frontmatter
+  and the first `## ` heading. This is a safe auto-fix.
+
+- Severity: Critical (but auto-fixable)
+
+- After auto-fix: Re-flag if any pre-H2 content remained after the
+  deletion attempt.
+
+### S17. Matrack Pitch Structure Integrity (Critical)
+
+- Locate the Matrack pitch H2 (typically the H2 immediately before
+  "Final Thoughts").
+- Check: Within that section, no `### ` H3 headings exist.
+- Check: Within that section, no bulleted lists (- ) exist.
+- Check: Within that section, no numbered lists (1. 2. 3.) exist.
+- Check: Within that section, no tables (| | |) exist.
+- The section must contain only flowing prose paragraphs.
+
+- Auto-fix: NOT auto-fixable. If H3s, bullets, or lists are found,
+  flag as Critical and recommend re-run of Stage 3.
+
+- Severity: Critical
+
 ### S8. First H2 Is "What Is [Term]?" (or Equivalent)
 - Check: First `## ` heading is a definitional question matching the intent
 - Severity if FAIL: **Critical**
@@ -390,6 +424,21 @@ The first H2's first sentence:
 - Check: Contains 3+ entities in the definitional clause
 - **Auto-fix:** Not auto-fixable (would change meaning). Report as Critical if pattern broken.
 
+### C9. Pitch Pricing & Flexibility Content (Major)
+
+- Locate the Matrack pitch section.
+- Check: The pitch must mention BOTH:
+  (a) Pricing reference — match any of: "affordable monthly plans",
+      "monthly plans", "affordable pricing", "flexible plans"
+  (b) Flexibility reference — match any of: "no long-term contracts",
+      "no-contract", "easy-install hardware", "suitable for small
+      fleets to large enterprises", "scalable device options"
+
+- Auto-fix: NOT auto-fixable. Requires Stage 3 rewrite of the pitch.
+
+- Severity: Major. Recommend re-run of Stage 3 with stronger Protocol G
+  enforcement.
+
 ---
 
 ## PHASE 4 — AUTO-FIX PASS
@@ -408,10 +457,13 @@ After completing Phases 1–3, apply auto-fixes in this order:
 8. **Bullet bolding fix** (C4): add `**` to lead terms missing them
 9. **Comparison Point header rename** (C5): rename leftmost column to "Comparison Point"
 10. **Title Case correction** (S3, S10): fix Title Case in title and H2s
+11. **Pre-H2 content deletion** (S16): delete all content between the closing `---` of frontmatter and the first `## ` heading
 
 ### Auto-Fix NOT Allowed (Report Only)
 
 - Adding missing Matrack pitch (would require generation)
+- Rewriting Matrack pitch structure (requires Stage 3 re-run)
+- Adding missing pitch pricing or flexibility references (requires Stage 3 re-run)
 - Adding missing FAQ (would require generation)
 - Rewriting hedges (requires specific number from article)
 - Rewriting H3 sections that exceed 3 sentences
@@ -586,9 +638,9 @@ Output a single JSON object — no markdown wrapping, no preamble:
 Before outputting, validate:
 
 ### Audit Completeness Bars
-- [ ] All 15 structural checks (S1–S15) executed
+- [ ] All 17 structural checks (S1–S17) executed
 - [ ] All 12 style checks (Y1–Y12) executed
-- [ ] All 8 content checks (C1–C8) executed
+- [ ] All 9 content checks (C1–C9) executed
 - [ ] Auto-fixes applied where allowed
 - [ ] Auto-fixes documented in `auto_fixes_applied`
 - [ ] Remaining violations documented in `violations_requiring_action`

@@ -193,6 +193,26 @@ Replace any sentence that refuses to commit with a sentence that commits to a sp
 - If the input article doesn't have a specific number to commit to, the hedge sentence must be removed entirely (do not invent numbers)
 - The commitment pattern is: `[Specific answer] [appropriate qualifier] [named variation factors]`
 
+### Sub-rule: Repeated Caveat Detection
+
+If the same caveat or hedge appears 3+ times in the article (even if individually acceptable), this is treated as redundant hedging and must be tightened:
+
+Examples of repeated caveats to detect:
+- "based on the manufacturer's definition" appearing in multiple paragraphs
+- "exact wording can differ" / "exact assumptions can vary" appearing in multiple sections
+- "depending on context" appearing 3+ times
+- "varies by" appearing 4+ times in similar constructions
+
+Auto-fix protocol:
+- Keep the FIRST instance of the caveat where it provides genuine value to the reader
+- Remove subsequent repetitions of the same caveat
+- If the subsequent repetition adds new variation factors, keep the factors but remove the caveat preamble
+
+Example:
+BEFORE: "Curb weight includes fluids based on manufacturer definition. Operating fluids include oil, coolant, etc. based on the manufacturer's definition. Exact wording can differ by vehicle type, market, and documentation source."
+
+AFTER:  "Curb weight includes operating fluids, typically engine oil, coolant, brake fluid, transmission fluid, and fuel. Exact inclusions vary by vehicle type, market, and manufacturer."
+
 ### Transformation 6: List Parallelism Enforcement
 
 Every bullet list and numbered list must have parallel grammatical structure across all items.

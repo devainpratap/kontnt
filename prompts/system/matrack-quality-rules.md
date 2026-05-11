@@ -21,6 +21,8 @@ Apply these rules when the article is for Matrack, fleet management, trucking, t
 ## Article Structure
 
 - Do not write an intro paragraph before the first H2.
+- Absolute ban on pre-H2 content: no Key Takeaways blocks, TL;DR sections, executive summaries, intro paragraphs, callout boxes, bullet summaries, quick answers, quick definitions, or any heading before the first `##`.
+- When YAML frontmatter exists, the first non-blank line after the closing `---` must be the first `##` H2. The first H2's definition block serves as the introduction.
 - First H2 should be a definition question such as `What Is [Primary Term]?`.
 - First H2 should use a three-paragraph definition block: direct definition, mechanism or user/workflow, then practical context.
 - H2s should be reader-facing topical questions, not process notes or editorial caveats.
@@ -34,6 +36,9 @@ Apply these rules when the article is for Matrack, fleet management, trucking, t
 - Include a Matrack pitch H2 before `Final Thoughts` when the article is a Matrack/fleet/logistics article.
 - Acceptable pitch headings include `What Is the Best [Term] Solution?`, `What Is the Best [Term] for [Use Case]?`, or `How Can Matrack Support [Topic]?`.
 - Use 3 to 5 capabilities from this canonical list only: real-time GPS fleet tracking, AI-enabled fleet dash cams, ELD compliance, fuel management / fuel monitoring, freight factoring, maintenance alerts, asset tracking, driver behavior monitoring / coaching, centralized dashboard, no long-term contracts / flexible plans, affordable monthly pricing, easy-install hardware, suitable for small fleets to large enterprises.
+- Choose capabilities only when they are operationally relevant to the article topic, address a named problem in the article, or appear in the entity universe. Do not turn the pitch into a generic feature dump.
+- The Matrack pitch section must be exactly three flowing prose paragraphs. Do not use H3s, bullets, numbered lists, or tables inside the pitch.
+- The second pitch paragraph must include pricing and flexibility context, such as affordable monthly plans, flexible plans, no long-term contracts, easy-install hardware, or suitability from small fleets to large enterprises.
 - Keep the pitch factual and feature-led. Do not add CTAs, exclamation marks, hype, or first-person phrasing.
 
 ## H3, Bullets, Tables
@@ -59,6 +64,7 @@ Apply these rules when the article is for Matrack, fleet management, trucking, t
 
 - Do not include editorial leak phrases such as `verify before publishing`, `should be verified before publication`, `before publication`, `drafting caution`, `source-specific verification`, `claims require credible sources`, or `this should be checked`.
 - Avoid refusal-to-commit hedges such as `may vary widely`, `depends on many factors`, and `should be verified`.
+- Remove repeated caveats. If the same caveat appears three or more times, keep the first useful instance and remove later repetitions while preserving any new variation factors.
 - Avoid banned verbs and phrases: leverage, utilize, empower, revolutionize, supercharge, harness the power of, unlock the potential.
 - Avoid filler adjectives: seamless, cutting-edge, revolutionary, game-changing, innovative as filler, world-class, best-in-class, robust as filler, powerful as filler, comprehensive as filler.
 - Avoid filler openers: `In today's world`, `In the modern era`, `As we all know`, `It is important to note that`, `At the end of the day`, and `In this article we will`.

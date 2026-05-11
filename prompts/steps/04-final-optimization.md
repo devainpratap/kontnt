@@ -41,10 +41,9 @@ Phase 4, structure correction:
 - Apply AEO transformations without adding new facts: first-sentence tightening, bridge removal, pronoun-to-noun replacement at section openings, statistic isolation, hedge removal, list parallelism, table parallelism, FAQ direct answers, H3 anchor sentences, concrete Final Thoughts, and definition anchor reinforcement.
 - For comparison articles, enforce this order unless the approved outline has a user-approved reason to differ: define Entity A; define Entity B; explain responsibilities or core features; compare differences; handle legal/compliance after role clarity; provide decision guidance after comparison; place FAQs near the end; end with decision logic.
 - Never open a comparison article with a dense comparison table unless the topic has very high user familiarity and the user clearly expects a quick-answer format.
-- Start the article with the H1, then `## Key Takeaways`.
-- Under `## Key Takeaways`, include one direct intro sentence and 3 to 5 bullets when the approved outline includes a Key Takeaways section. For Matrack-style articles with no intro before H2 #1, follow the approved outline exactly.
-- The first key takeaway must fully answer the main query.
-- Remove any traditional intro paragraph outside the `## Key Takeaways` section.
+- Remove any content between YAML frontmatter and the first H2. This includes Key Takeaways, TL;DR, summary blocks, executive summaries, callout boxes, quick answers, bullet summaries, or introduction paragraphs.
+- For Matrack definition-led articles, the first H2 is the article entry point and its definition block must answer the main query directly.
+- If no YAML frontmatter exists, remove any H1, Key Takeaways, TL;DR, summary block, or prose before the first topical H2 when the article follows the Matrack definition-led structure.
 - Ensure H2s are question-based wherever natural.
 - Ensure every H2 answers the heading immediately.
 - Break structural uniformity. Do not let all sections follow the same pattern.
@@ -80,17 +79,20 @@ Phase 6, content execution:
 - Remove filler, vague modifiers, and generic claims. Every sentence must carry information.
 - Remove editorial leak phrases, CTAs, exclamation marks, rhetorical questions in body prose, first-person body prose, and banned marketing language.
 - Rewrite or remove refusal-to-commit hedges. If a specific number or answer exists in the article, commit to it with named variation factors. If the article lacks support, remove the hedge rather than inventing a number.
+- Detect repeated caveats such as "based on the manufacturer's definition", "exact wording can differ", "depending on context", and repeated "varies by" constructions. Keep the first useful caveat, remove later repetitions, and preserve any new variation factors without repeating the caveat preamble.
 - Keep most sentences between 15 and 22 words, and split sentences over 30 words.
 - Ensure every statistic sentence includes source organization, year or time period, and specific number.
 
 Phase 7, micro section and authority:
 
-- Add a clear Macro to Micro transition before application, buying, KPI, implementation, or software evaluation sections. Example: "Now that the system and its components are clear, the next step is choosing and applying the right solution."
+- Add clear Macro to Micro continuity inside the application, buying, KPI, implementation, or software evaluation section without using a standalone bridge sentence.
 - Add or refine the application layer: buying criteria, implementation logic, or a real-world system flow example.
 - Improve KPI-driven decision support. Each KPI should support a decision, with a one-line explanation where missing.
 - Add light data context only with safe phrasing, such as "Large fleets often track", "Most enterprise systems include", or "Typical benchmarks include".
 - Do not add fake statistics, unsupported percentages, invented examples, or unverified claims.
-- Mark claims that require source confirmation with "(verify before publishing)".
+- Do not mark claims with editorial notes such as "(verify before publishing)". Remove unsupported claims or keep them as verification notes outside the article body.
+- Ensure the Matrack pitch, when present, remains exactly 3 prose paragraphs with no H3s, bullets, numbered lists, or tables.
+- Ensure the Matrack pitch includes both pricing context and flexibility context before final output.
 
 Final quality filter:
 

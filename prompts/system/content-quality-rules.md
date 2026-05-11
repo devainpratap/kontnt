@@ -53,9 +53,9 @@ For comparison articles, define both entities independently before comparison ta
 
 ## Final Article Shape
 
-- Start with the article H1, then add a `## Key Takeaways` heading.
-- Under `## Key Takeaways`, use one direct intro sentence followed by 3 to 5 bullets.
-- The first key takeaway must fully answer the main query.
+- For Matrack definition-led articles, do not add pre-H2 content. No Key Takeaways, TL;DR, executive summary, intro paragraph, callout block, quick answer, or bullet summary may appear before the first H2.
+- When YAML frontmatter exists, the first non-blank line after the closing `---` must be the first `##` H2.
+- For non-Matrack articles only, use Key Takeaways when the approved outline explicitly asks for them.
 - H2 headings should be question-based unless a non-question heading is clearly more natural for FAQs or final thoughts.
 - Dense sections should be broken into H3s, bullets, or a concise table.
 - FAQs should answer questions not already answered by the main H2s.

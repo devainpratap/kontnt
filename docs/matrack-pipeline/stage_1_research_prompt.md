@@ -198,6 +198,61 @@ If a topic has fewer than 3 verifiable statistics, that's acceptable — better 
 
 ---
 
+## MANDATORY STAT-HUNT SECOND PASS
+
+After completing the initial 8-12 searches, count the verified_statistics entries that meet all 5 verification conditions (specific number, year, named source, source URL, Tier 1/2/3 rating).
+
+IF VERIFIED_STATISTICS HAS FEWER THAN 2 TIER 1/2 ENTRIES:
+
+You must conduct an additional mandatory stat-hunt pass with 3-5 targeted searches before outputting the dossier.
+
+Required additional searches for the stat-hunt pass:
+
+1. Federal agency direct search:
+   - `site:fmcsa.dot.gov [primary_keyword]`
+   - `site:bts.gov [primary_keyword]`
+   - `site:nhtsa.gov [primary_keyword]`
+   - `site:bls.gov [primary_keyword]`
+   - `site:eia.gov [primary_keyword]` (for energy-related topics)
+   - `site:dot.gov [primary_keyword]`
+
+2. Industry research body search:
+   - `[primary_keyword] ATRI research`
+   - `[primary_keyword] ATA report`
+   - `[primary_keyword] WIT Index` (if relevant)
+   - `[primary_keyword] industry statistics annual report`
+
+3. Trade publication editorial research:
+   - `[primary_keyword] FleetOwner research`
+   - `[primary_keyword] Transport Topics data`
+   - `[primary_keyword] Commercial Carrier Journal study`
+
+4. Recent regulatory and compliance data:
+   - `[primary_keyword] regulation statistics 2024 2025`
+   - `[primary_keyword] enforcement data`
+   - `[primary_keyword] crash data` (for safety topics)
+   - `[primary_keyword] violation statistics`
+
+5. Insurance and claims data (for risk/safety topics):
+   - `[primary_keyword] insurance claims data`
+   - `[primary_keyword] industry loss data`
+
+DOSSIER OUTPUT RULE:
+
+The dossier may only be output when ONE of the following is true:
+
+(a) verified_statistics contains at least 2 entries from Tier 1 or Tier 2 sources, OR
+
+(b) The research_quality_notes.topics_with_thin_sourcing field explicitly explains why fewer than 2 statistics were found despite completing the mandatory stat-hunt second pass. The explanation must name the specific search categories attempted and why they returned insufficient results.
+
+DO NOT output an empty verified_statistics field without the explanation.
+DO NOT invent statistics to fill the field.
+DO NOT lower the verification standards to include weak sources.
+
+For most fleet management, trucking, telematics, and logistics topics, verifiable statistics from FMCSA, ATRI, ATA, NHTSA, BTS, or DOT exist. If your initial searches did not surface them, the second pass usually will.
+
+---
+
 ## OUTPUT FORMAT
 
 Output a single JSON object with the following schema. Do not output anything else — no preamble, no commentary, no markdown code fences.

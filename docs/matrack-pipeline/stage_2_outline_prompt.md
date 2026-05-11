@@ -287,12 +287,41 @@ Pull entities from the dossier's `entity_universe` and distribute across section
 
 ## STEP 8: MATRACK PITCH CAPABILITY SELECTION
 
-For the closing Matrack pitch H2:
+For the closing Matrack pitch H2, select 3-5 capabilities from the canonical list — but ONLY those that are operationally relevant to the article's specific topic.
 
-- Select **3–5 capabilities** from the dossier's `matrack_capability_mapping.highly_relevant` field
-- If `highly_relevant` has fewer than 3 entries, supplement from `secondary_relevance`
-- Capabilities must be pulled exactly as named in the canonical list — no rewording, no invention
-- Match capability selection to article topic relevance
+The canonical list defines what is ALLOWED. Topic relevance defines what is APPROPRIATE. Including unrelated capabilities creates a feature-dump effect that hurts pitch credibility.
+
+### Relevance Decision Rules
+
+For each capability under consideration, the capability is "relevant" only if at least ONE of the following is true:
+
+(a) The article explicitly discusses the function the capability serves (e.g., GPS tracking is relevant when the article discusses location, routing, dispatch, or vehicle visibility)
+
+(b) The capability addresses an operational problem named in the article (e.g., maintenance alerts are relevant when the article discusses vehicle wear, downtime, or service planning)
+
+(c) The capability is part of the article's core entity universe (entity appears in entity_universe.technologies or related fields from the Stage 1 dossier)
+
+### Capability Relevance Map by Article Topic Type
+
+Use this guide to filter the canonical list:
+
+| Topic Type | Highly Relevant | Likely Relevant | Usually Skip |
+|------------|-----------------|-----------------|--------------|
+| Vehicle tracking topics | GPS tracking, dashboard, asset tracking | Driver behavior, maintenance alerts | ELD, freight factoring |
+| Safety/driver behavior topics | Dash cams, driver monitoring, GPS tracking | Maintenance alerts, dashboard | Freight factoring |
+| Vehicle weight/load topics | GPS tracking, maintenance alerts, driver monitoring | Dashboard, asset tracking | ELD, freight factoring |
+| Compliance/ELD/HOS topics | ELD compliance, dashboard, GPS tracking | Driver monitoring, dash cams | Freight factoring |
+| Fuel/cost topics | Fuel management, GPS tracking, dashboard | Driver monitoring, maintenance alerts | ELD, freight factoring |
+| Industry-specific topics (oil/gas, utility, etc.) | GPS tracking, asset tracking, driver monitoring | Dashboard, maintenance alerts | Freight factoring |
+| Financial/cash flow topics | Freight factoring, dashboard | GPS tracking | Dash cams, ELD |
+| Maintenance/asset health topics | Maintenance alerts, asset tracking, dashboard | GPS tracking | ELD, freight factoring |
+
+### Rules
+
+- Select 3-5 capabilities, never fewer than 3, never more than 5
+- Capabilities must be phrased EXACTLY as they appear in the canonical list — no rewording, no abbreviation
+- If a capability from the canonical list does NOT match the article's topic per the relevance rules above, do NOT include it even if the canonical list includes it
+- The Matrack pitch must NOT read as a feature dump. It must read as a topic-relevant value proposition.
 
 ### Canonical Capability List (the only allowed values)
 
@@ -309,6 +338,10 @@ For the closing Matrack pitch H2:
 - Affordable monthly pricing
 - Easy-install hardware
 - Suitable for small fleets to large enterprises
+
+### Validation
+
+After selecting capabilities, validate each one against the relevance rules. If any capability fails the relevance test, remove it and either reduce the pitch to fewer capabilities (minimum 3) or substitute with a more topic-relevant capability from the canonical list.
 
 ---
 

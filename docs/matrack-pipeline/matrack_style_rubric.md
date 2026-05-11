@@ -79,6 +79,24 @@ H2 #11 (mandatory): Final Thoughts                    ← Closing
 
 **Forbidden:** Do not write an introduction paragraph before H2 #1. The first H2 is the introduction.
 
+ABSOLUTE BAN ON PRE-H2 CONTENT:
+
+No content of any kind is allowed between the YAML frontmatter and the first H2. This includes:
+
+- Key Takeaways blocks
+- TL;DR sections
+- Executive summaries
+- Introduction paragraphs
+- Callout boxes or notice blocks
+- Bullet point summaries
+- "What you'll learn" lists
+- Quick answers / quick definitions
+- Any heading or sub-heading before the first ##
+
+The first H2 is the article's entry point. The first H2's three-paragraph definition block serves as the introduction. This rule has no exceptions even if the model believes a TL;DR would improve scannability or AEO.
+
+Reasoning: Pre-H2 content fragments the chunk structure that Google Featured Snippets and LLM citation engines reward. The first H2 must be the first thing readers and crawlers encounter.
+
 ---
 
 ## Section 3: The First H2 — Definition Block (Critical Section)

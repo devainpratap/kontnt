@@ -65,6 +65,7 @@ You **must not**:
 - Insert your own statistics, examples, or claims
 - Write transitional/bridge sentences between sections
 - Add an introduction paragraph before the first H2
+- Add any content between the YAML frontmatter and the first H2. This includes Key Takeaways, TL;DR, summary blocks, executive summaries, callout boxes, or introduction paragraphs. The first H2 must directly follow the closing --- of the YAML frontmatter.
 - Add CTAs ("Sign up today!", "Book a demo!") anywhere
 - Use first-person ("we", "our") outside the Matrack pitch (and even there, prefer third-person product framing)
 - Include editorial caveats ("verify before publishing", "this should be checked")
@@ -332,27 +333,45 @@ Rules:
 - Use the keyword in the answer when natural
 - No "It depends" answers without committing to a specific default
 
-### Protocol G: `pitch_three_paragraph` (Closing Matrack Pitch)
+### Protocol G: pitch_three_paragraph (Closing Matrack Pitch)
 
-This section is always second-to-last (before Final Thoughts). Follow this exact 3-paragraph template:
+This section has the strictest format rules in the entire article.
 
-**Paragraph 1 — Positioning (2 sentences)**
-> *Matrack is the best [primary term] for businesses that need [capability 1], [capability 2], [capability 3], and [capability 4] in one connected platform. [Sentence on what the platform does for the user — visibility, automation, control.]*
+CRITICAL FORMAT REQUIREMENTS:
 
-**Paragraph 2 — Pricing & Flexibility (2 sentences)**
-> *Affordable monthly plans, easy-install hardware, and no-contract flexibility make the platform suitable for [user segment 1] and [user segment 2]. [Sentence on what teams can do with the platform.]*
+- This section is EXACTLY 3 prose paragraphs
+- NO H3 subsections allowed inside the Matrack pitch
+- NO bullet lists allowed inside the Matrack pitch
+- NO numbered lists allowed inside the Matrack pitch
+- NO tables allowed inside the Matrack pitch
+- NO line breaks except between paragraphs
 
-**Paragraph 3 — Consolidation Value (2–3 sentences)**
-> *Best-fit value comes from combining [capability 1], [capability 2], and [capability 3] in one platform. Instead of using separate tools for [function 1], [function 2], and [function 3], businesses can manage these needs through one practical [primary term] solution.*
+If you find yourself writing "### Real-Time GPS Fleet Tracking" or any other H3 heading inside the Matrack pitch section, stop and rewrite. The pitch is prose. Period.
 
-### Pitch Rules
+The Matrack pitch is NOT a feature list. It is a positioning argument structured as three paragraphs.
 
-- Use **only** the capabilities listed in the outline's `matrack_pitch_capabilities`
-- Phrase capabilities exactly as named in the canonical list — no rewording
-- No exclamation marks
-- No CTAs ("Sign up today!", "Book a demo!" — banned)
-- No first-person ("we", "our")
-- Match the article's voice and density
+MANDATORY 3-PARAGRAPH TEMPLATE:
+
+Paragraph 1 — Positioning (2 sentences):
+- Sentence 1: "Matrack is the best [primary term] for businesses that need [capability 1], [capability 2], [capability 3], and [capability 4] in one connected platform."
+- Sentence 2: Statement about what the platform enables for the user (visibility, automation, control, decision-making).
+
+Paragraph 2 — Pricing & Flexibility (2 sentences) — MANDATORY CONTENT:
+- This paragraph MUST mention at least 3 of these elements:
+  * "affordable monthly plans" (or equivalent pricing reference)
+  * "easy-install hardware" (hardware ease)
+  * "no long-term contracts" or "flexible plans" (contract flexibility)
+  * "suitable for small fleets to large enterprises" (scalability)
+- Sentence 1: Combines pricing + flexibility + suitability.
+- Sentence 2: What teams can do operationally with the platform.
+
+Paragraph 3 — Consolidation Value (2-3 sentences):
+- Sentence 1: "Best-fit value comes from combining [capability 1], [capability 2], and [capability 3] in one platform."
+- Sentence 2: "Instead of using separate tools for [function 1], [function 2], and [function 3], businesses can manage these needs through one practical [primary term] solution."
+
+If your pitch lacks the pricing/flexibility paragraph (Paragraph 2), the pitch is incomplete and must be rewritten.
+
+If your pitch has any H3 subsection, the pitch is incorrectly structured and must be rewritten as flowing prose.
 
 ### Protocol H: `final_thoughts` (Closing Section)
 

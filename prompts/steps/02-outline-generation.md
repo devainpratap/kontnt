@@ -24,6 +24,9 @@ Additional outline rules:
 - Use the preferred title formula for definition-led Matrack/fleet articles when it fits: `What Is [Primary Term]? [Aspect 1], [Aspect 2], and [Aspect 3]`.
 - Meta description should be keyword-first, factual, 22 to 30 words, and no more than 155 characters.
 - For Matrack/fleet/logistics articles, plan a Matrack pitch H2 before Final Thoughts using only canonical capabilities.
+- For the Matrack pitch, select 3 to 5 canonical capabilities only when each capability is operationally relevant to the article topic, addresses a named problem, or appears in the semantic entity universe. Skip unrelated capabilities even if they are available in the canonical list.
+- Filter pitch capabilities by topic fit: tracking topics favor GPS tracking, dashboard, asset tracking, driver behavior, and maintenance; safety topics favor dash cams, driver monitoring, GPS tracking, maintenance, and dashboard; compliance topics favor ELD, dashboard, GPS tracking, driver monitoring, and dash cams; fuel or cost topics favor fuel management, GPS tracking, dashboard, driver monitoring, and maintenance; finance topics favor freight factoring and dashboard. Avoid freight factoring unless the article has financial or cash-flow intent.
+- Plan the pitch as a topic-relevant value proposition, not a generic Matrack feature list.
 - Do not include bridge sentences, process-meta H2s, writer notes, verification columns, drafting caution columns, or article prose in the outline.
 - First classify the article type from the title, target keyword, and SERP evidence. If the article is a comparison article such as "X vs Y", "X versus Y", or "difference between X and Y", use comparison-first search intent logic without opening with the comparison itself.
 - For comparison articles, choose one sequence:
@@ -37,8 +40,8 @@ Additional outline rules:
 - Make the Macro section foundational and the Micro section situational, comparative, or product-aware.
 - Keep FAQ questions distinct from the main H2s.
 - Convert H2s into question format wherever possible.
-- Remove any traditional introduction section. Use only a one-line intro angle and key takeaways.
-- The first key takeaway must fully answer the main query.
+- Remove any traditional introduction section. For Matrack definition-led articles, do not plan Key Takeaways, TL;DR, quick answer, summary blocks, or any content before the first H2.
+- The first H2's definition block is the article entry point and should answer the main query directly.
 - Assign a structure type to each H2: three-paragraph explanation, bullets, H3 subsections, or table.
 - Do not assign the same structure type to too many consecutive H2s.
 - Add H3 layering where needed for core components and benefits. H3s must represent single entities or components.
@@ -61,10 +64,6 @@ Return Markdown only using this structure:
 ## Working Title
 
 ## Suggested Meta Description
-
-## Key Takeaways
-
-## One-Line Introduction
 
 ## Macro Section
 

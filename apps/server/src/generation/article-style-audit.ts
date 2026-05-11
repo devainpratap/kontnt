@@ -10,7 +10,11 @@ export type ArticleStyleIssue = {
     | "banned-phrase"
     | "bridge-sentence"
     | "long-sentence"
-    | "table-editorial-column";
+    | "table-editorial-column"
+    | "pre-h2-content"
+    | "pitch-structure"
+    | "pitch-pricing-flexibility"
+    | "repeated-caveat";
   section: string;
   message: string;
   evidence: string[];
@@ -24,6 +28,11 @@ export type ArticleStyleAudit = {
 
 type Section = {
   level: number;
+  heading: string;
+  body: string;
+};
+
+type H2Section = {
   heading: string;
   body: string;
 };
@@ -64,6 +73,13 @@ const bridgeSentencePatterns = [
   /^moving forward to\b/i
 ];
 const editorialTableHeaders = new Set(["drafting caution", "verification notes", "editorial flag", "notes for writer", "caveat"]);
+const repeatedCaveatPatterns = [
+  { label: "based on the manufacturer's definition", pattern: /based on the manufacturer['’]s definition/gi, threshold: 3 },
+  { label: "exact wording can differ", pattern: /exact wording can differ/gi, threshold: 3 },
+  { label: "exact assumptions can vary", pattern: /exact assumptions can vary/gi, threshold: 3 },
+  { label: "depending on context", pattern: /depending on context/gi, threshold: 3 },
+  { label: "varies by", pattern: /\bvaries by\b/gi, threshold: 4 }
+];
 const topicRoleTerms = new Set([
   "broker",
   "dispatcher",
@@ -288,6 +304,31 @@ function parseLeafSections(markdown: string) {
   return sections;
 }
 
+function parseH2Sections(markdown: string) {
+  const lines = markdown.split("\n");
+  const sections: H2Section[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = /^##\s+(.+)$/.exec(lines[index]);
+    if (!match) {
+      continue;
+    }
+
+    const bodyLines: string[] = [];
+    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
+      if (/^##\s+/.test(lines[cursor])) {
+        break;
+      }
+
+      bodyLines.push(lines[cursor]);
+    }
+
+    sections.push({ heading: match[1].trim(), body: bodyLines.join("\n").trim() });
+  }
+
+  return sections;
+}
+
 function parseH3Blocks(markdown: string) {
   const lines = markdown.split("\n");
   const blocks: Array<{ heading: string; parentHeading: string; sentenceCount: number; sentences: string[] }> = [];
@@ -334,6 +375,122 @@ function parseH3Blocks(markdown: string) {
 
 function isFaqBlock(block: { heading: string; parentHeading: string }) {
   return /\b(faq|faqs|frequently asked|common questions)\b/i.test(`${block.parentHeading} ${block.heading}`);
+}
+
+function addPreH2ContentIssues(markdown: string, issues: ArticleStyleIssue[]) {
+  const lines = markdown.split("\n");
+  let bodyStart = 0;
+
+  if (lines[0]?.trim() === "---") {
+    const closingIndex = lines.findIndex((line, index) => index > 0 && line.trim() === "---");
+    if (closingIndex !== -1) {
+      bodyStart = closingIndex + 1;
+    }
+  }
+
+  const firstH2Index = lines.findIndex((line, index) => index >= bodyStart && /^##\s+/.test(line));
+  if (firstH2Index === -1) {
+    return;
+  }
+
+  const preH2Lines = lines.slice(bodyStart, firstH2Index).filter((line) => line.trim().length > 0);
+  if (preH2Lines.length === 0) {
+    return;
+  }
+
+  issues.push({
+    code: "pre-h2-content",
+    section: "Document Start",
+    message: "Delete all content between YAML frontmatter or document start and the first H2.",
+    evidence: preH2Lines.slice(0, 6)
+  });
+}
+
+function findMatrackPitchSection(h2Sections: H2Section[]) {
+  const finalThoughtsIndex = h2Sections.findIndex((section) => /^final thoughts$/i.test(section.heading));
+  const beforeFinal = finalThoughtsIndex === -1 ? h2Sections : h2Sections.slice(0, finalThoughtsIndex);
+  const namedCandidate = [...beforeFinal].reverse().find((section) =>
+    /\b(matrack|best .*solution|best .*for|support)\b/i.test(section.heading)
+  );
+
+  if (namedCandidate) {
+    return namedCandidate;
+  }
+
+  if (finalThoughtsIndex > 0) {
+    const previous = h2Sections[finalThoughtsIndex - 1];
+    if (/\b(faq|frequently asked questions)\b/i.test(previous.heading) && finalThoughtsIndex > 1) {
+      return h2Sections[finalThoughtsIndex - 2];
+    }
+
+    return previous;
+  }
+
+  return undefined;
+}
+
+function countProseParagraphs(body: string) {
+  return body
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) =>
+      paragraph.length > 0 &&
+      !/^#{1,6}\s+/.test(paragraph) &&
+      !/^[-*]\s+/.test(paragraph) &&
+      !/^\d+\.\s+/.test(paragraph) &&
+      !/^\|.+\|$/.test(paragraph)
+    ).length;
+}
+
+function addPitchIssues(h2Sections: H2Section[], issues: ArticleStyleIssue[]) {
+  const pitch = findMatrackPitchSection(h2Sections);
+  if (!pitch) {
+    return;
+  }
+
+  const structuralEvidence = pitch.body
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^###\s+/.test(line) || /^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line) || /^\|.+\|$/.test(line));
+  const paragraphCount = countProseParagraphs(pitch.body);
+
+  if (structuralEvidence.length > 0 || paragraphCount !== 3) {
+    issues.push({
+      code: "pitch-structure",
+      section: pitch.heading,
+      message: `Matrack pitch must be exactly 3 prose paragraphs with no H3s, bullets, numbered lists, or tables. Found ${paragraphCount} prose paragraphs.`,
+      evidence: structuralEvidence.length ? structuralEvidence.slice(0, 6) : [`Prose paragraphs: ${paragraphCount}`]
+    });
+  }
+
+  const hasPricing = /\b(affordable monthly plans|monthly plans|affordable pricing|flexible plans)\b/i.test(pitch.body);
+  const hasFlexibility = /\b(no long-term contracts|no-contract|easy-install hardware|suitable for small fleets to large enterprises|scalable device options)\b/i.test(pitch.body);
+
+  if (!hasPricing || !hasFlexibility) {
+    issues.push({
+      code: "pitch-pricing-flexibility",
+      section: pitch.heading,
+      message: "Matrack pitch must include both pricing context and flexibility context.",
+      evidence: [
+        hasPricing ? "Pricing context found." : "Missing pricing context.",
+        hasFlexibility ? "Flexibility context found." : "Missing flexibility context."
+      ]
+    });
+  }
+}
+
+function addRepeatedCaveatIssues(markdown: string, issues: ArticleStyleIssue[]) {
+  repeatedCaveatPatterns.forEach(({ label, pattern, threshold }) => {
+    const matches = Array.from(markdown.matchAll(pattern)).map((match) => match[0]);
+    if (matches.length >= threshold) {
+      issues.push({
+        code: "repeated-caveat",
+        section: "Article Body",
+        message: `The caveat "${label}" appears ${matches.length} times. Keep the first useful instance and remove later repetitions.`,
+        evidence: matches.slice(0, 5)
+      });
+    }
+  });
 }
 
 function addBannedPhraseIssues(sections: Section[], issues: ArticleStyleIssue[]) {
@@ -543,6 +700,7 @@ export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   const sections = parseLeafSections(markdown);
   const issues: ArticleStyleIssue[] = [];
   const h3Blocks = parseH3Blocks(markdown);
+  const h2Sections = parseH2Sections(markdown);
 
   h3Blocks.forEach((block) => {
     if (isFaqBlock(block) && (block.sentenceCount < 1 || block.sentenceCount > 3)) {
@@ -570,6 +728,9 @@ export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   addRepeatedOpenerIssues(sections, issues);
   addBulletPatternIssues(sections, issues);
   addTableIssues(sections, issues);
+  addPreH2ContentIssues(markdown, issues);
+  addPitchIssues(h2Sections, issues);
+  addRepeatedCaveatIssues(markdown, issues);
 
   return {
     issues,
@@ -629,6 +790,10 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "- Format bullets as `- **Term:** Explanation` when the audit flags bullet format.",
     "- Remove editorial/process table columns such as Drafting Caution, Verification Notes, Editorial Flag, Notes for Writer, or Caveat.",
     "- Vary bullet grammar if the audit flags repeated bullet openings.",
+    "- Delete all pre-H2 content when the audit flags `pre-h2-content`; the first H2 must be the entry point.",
+    "- If the audit flags `pitch-structure`, rewrite the Matrack pitch as exactly three prose paragraphs with no H3s, bullets, numbered lists, or tables.",
+    "- If the audit flags `pitch-pricing-flexibility`, add both pricing context and flexibility context to the Matrack pitch without adding a CTA.",
+    "- If the audit flags `repeated-caveat`, keep the first useful caveat and remove later repeated caveat phrasing while preserving any new variation factors.",
     "",
     "Return only the repaired article in Markdown.",
     "",

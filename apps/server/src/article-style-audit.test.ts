@@ -29,7 +29,9 @@ describe("article style audit", () => {
 
   it("requires two to three sentences below each non-FAQ H3", () => {
     const markdown = [
-      "# Fleet Guide",
+      "---",
+      "title: Fleet Guide",
+      "---",
       "",
       "## Components",
       "",
@@ -48,7 +50,9 @@ describe("article style audit", () => {
 
   it("does not flag a varied section with two-sentence H3s", () => {
     const markdown = [
-      "# Fleet Guide",
+      "---",
+      "title: Fleet Guide",
+      "---",
       "",
       "## Components",
       "",
@@ -74,7 +78,9 @@ describe("article style audit", () => {
 
   it("allows concise FAQ H3 answers", () => {
     const markdown = [
-      "# Fleet Guide",
+      "---",
+      "title: Fleet Guide",
+      "---",
       "",
       "## FAQs",
       "",
@@ -140,6 +146,118 @@ describe("article style audit", () => {
     const audit = auditArticleStyle(markdown);
 
     assert.ok(audit.issues.some((issue) => issue.code === "repeated-sentence-pattern" && issue.message.includes("subject-is")));
+  });
+
+  it("flags content before the first H2", () => {
+    const markdown = [
+      "---",
+      "title: Fleet Guide",
+      "---",
+      "",
+      "## Key Takeaways",
+      "",
+      "- Fast summary.",
+      "",
+      "## What Is Fleet Management?",
+      "",
+      "Fleet management connects vehicles, drivers, maintenance, fuel, and compliance records."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.equal(audit.issues.some((issue) => issue.code === "pre-h2-content"), false);
+
+    const markdownWithPreH2 = [
+      "---",
+      "title: Fleet Guide",
+      "---",
+      "",
+      "Quick summary before the article.",
+      "",
+      "## What Is Fleet Management?",
+      "",
+      "Fleet management connects vehicles, drivers, maintenance, fuel, and compliance records."
+    ].join("\n");
+
+    const preH2Audit = auditArticleStyle(markdownWithPreH2);
+
+    assert.ok(preH2Audit.issues.some((issue) => issue.code === "pre-h2-content"));
+  });
+
+  it("flags Matrack pitch structure and missing pricing or flexibility", () => {
+    const markdown = [
+      "---",
+      "title: Fleet Guide",
+      "---",
+      "",
+      "## What Is Fleet Management?",
+      "",
+      "Fleet management connects vehicles, drivers, maintenance, fuel, and compliance records.",
+      "",
+      "## What Is the Best Fleet Management Solution?",
+      "",
+      "Matrack is the best fleet management solution for businesses that need GPS tracking and maintenance alerts.",
+      "",
+      "### Real-Time GPS Fleet Tracking",
+      "",
+      "GPS tracking shows where vehicles are during active work.",
+      "",
+      "- **Dashboard:** Teams can review status in one place.",
+      "",
+      "## Final Thoughts",
+      "",
+      "Fleet management works best when operational data supports daily decisions."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "pitch-structure"));
+    assert.ok(audit.issues.some((issue) => issue.code === "pitch-pricing-flexibility"));
+  });
+
+  it("accepts a three-paragraph Matrack pitch with pricing and flexibility context", () => {
+    const markdown = [
+      "---",
+      "title: Fleet Guide",
+      "---",
+      "",
+      "## What Is Fleet Management?",
+      "",
+      "Fleet management connects vehicles, drivers, maintenance, fuel, and compliance records.",
+      "",
+      "## What Is the Best Fleet Management Solution?",
+      "",
+      "Matrack is the best fleet management solution for businesses that need real-time GPS fleet tracking, maintenance alerts, driver behavior monitoring / coaching, and a centralized dashboard in one connected platform. Operational teams can turn location, service, driver, and cost signals into faster dispatch and maintenance decisions.",
+      "",
+      "Affordable monthly plans, easy-install hardware, and no long-term contracts make the platform suitable for small fleets to large enterprises. Teams can monitor vehicle movement, service needs, driver activity, and reporting workflows without adding separate tools for each task.",
+      "",
+      "Best-fit value comes from combining GPS tracking, maintenance alerts, and driver coaching in one platform. Instead of using separate tools for routing, service planning, and behavior review, businesses can manage these needs through one practical fleet management solution.",
+      "",
+      "## Final Thoughts",
+      "",
+      "Fleet management works best when operational data supports daily decisions."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.equal(audit.issues.some((issue) => issue.code === "pitch-structure"), false);
+    assert.equal(audit.issues.some((issue) => issue.code === "pitch-pricing-flexibility"), false);
+  });
+
+  it("flags repeated caveats", () => {
+    const markdown = [
+      "---",
+      "title: Vehicle Weight Guide",
+      "---",
+      "",
+      "## What Is Curb Weight?",
+      "",
+      "Curb weight includes fluids based on the manufacturer's definition. Operating fluid coverage is listed based on the manufacturer's definition. Documentation varies based on the manufacturer's definition."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "repeated-caveat"));
   });
 
   it("renders a repair prompt with the audit findings", () => {
