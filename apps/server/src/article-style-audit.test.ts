@@ -27,7 +27,7 @@ describe("article style audit", () => {
     assert.ok(audit.issues.some((issue) => issue.code === "forbidden-sentence-start" && issue.message.includes("\"the\"")));
   });
 
-  it("requires exactly two paragraphs below each H3", () => {
+  it("requires two to three sentences below each non-FAQ H3", () => {
     const markdown = [
       "# Fleet Guide",
       "",
@@ -35,22 +35,18 @@ describe("article style audit", () => {
       "",
       "### Telematics",
       "",
-      "Telematics captures vehicle diagnostics and location data.",
-      "",
-      "Maintenance teams use those signals for service planning.",
-      "",
-      "Extra transition paragraph creates a third H3 paragraph."
+      "Telematics captures vehicle diagnostics and location data. Maintenance teams use those signals for service planning. Dispatchers use mileage data to schedule service. Finance teams compare repairs against downtime cost."
     ].join("\n");
 
     const audit = auditArticleStyle(markdown);
 
     assert.deepEqual(
-      audit.issues.filter((issue) => issue.code === "h3-paragraph-count").map((issue) => issue.section),
+      audit.issues.filter((issue) => issue.code === "h3-sentence-count").map((issue) => issue.section),
       ["Telematics"]
     );
   });
 
-  it("does not flag a varied section with two-paragraph H3s", () => {
+  it("does not flag a varied section with two-sentence H3s", () => {
     const markdown = [
       "# Fleet Guide",
       "",
@@ -90,6 +86,32 @@ describe("article style audit", () => {
     const audit = auditArticleStyle(markdown);
 
     assert.equal(audit.issues.length, 0);
+  });
+
+  it("flags editorial leaks, bridge sentences, long sentences, bad bullets, and table process columns", () => {
+    const markdown = [
+      "# Fleet Guide",
+      "",
+      "## What Are Fleet Management Risks?",
+      "",
+      "Now that the basics are clear, risk analysis should begin with maintenance, fuel, driver behavior, route planning, compliance records, and cost controls that stretch beyond a single operational dashboard for growing teams.",
+      "",
+      "Claims should be verified before publication.",
+      "",
+      "- Missing bold label: This bullet does not follow the required format.",
+      "",
+      "| Feature | Drafting Caution |",
+      "| --- | --- |",
+      "| Tracking | Writer note |"
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "bridge-sentence"));
+    assert.ok(audit.issues.some((issue) => issue.code === "banned-phrase"));
+    assert.ok(audit.issues.some((issue) => issue.code === "long-sentence"));
+    assert.ok(audit.issues.some((issue) => issue.code === "bullet-format"));
+    assert.ok(audit.issues.some((issue) => issue.code === "table-editorial-column"));
   });
 
   it("flags repeated topical openers even when exact phrases differ", () => {

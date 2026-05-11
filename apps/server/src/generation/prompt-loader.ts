@@ -16,14 +16,16 @@ const stepTemplateMap: Record<Exclude<WorkflowStep, "approve-outline">, string> 
 };
 
 export async function loadSystemRules() {
-  const [contentQuality, semanticSeo] = await Promise.all([
+  const [contentQuality, semanticSeo, matrackQuality] = await Promise.all([
     readFile(join(appConfig.promptsRoot, "system", "content-quality-rules.md"), "utf8"),
-    readFile(join(appConfig.promptsRoot, "system", "semantic-seo-rules.md"), "utf8")
+    readFile(join(appConfig.promptsRoot, "system", "semantic-seo-rules.md"), "utf8"),
+    readFile(join(appConfig.promptsRoot, "system", "matrack-quality-rules.md"), "utf8")
   ]);
 
   return {
     contentQuality,
-    semanticSeo
+    semanticSeo,
+    matrackQuality
   };
 }
 
@@ -36,6 +38,7 @@ export async function renderStepPrompt(stepName: Exclude<WorkflowStep, "approve-
   return template
     .replace("{{CONTENT_QUALITY_RULES}}", rules.contentQuality.trim())
     .replace("{{SEMANTIC_SEO_RULES}}", rules.semanticSeo.trim())
+    .replace("{{MATRACK_QUALITY_RULES}}", rules.matrackQuality.trim())
     .replace("{{ARTICLE_BRIEF}}", context.ARTICLE_BRIEF)
     .replace("{{COMPETITOR_CONTEXT}}", context.COMPETITOR_CONTEXT ?? "")
     .replace("{{ENTITY_CONTEXT}}", context.ENTITY_CONTEXT ?? "")

@@ -21,6 +21,8 @@ Follow these rules:
 
 {{SEMANTIC_SEO_RULES}}
 
+{{MATRACK_QUALITY_RULES}}
+
 Workflow-aligned optimization:
 
 Phase 3, semantic analysis:
@@ -34,10 +36,13 @@ Phase 3, semantic analysis:
 Phase 4, structure correction:
 
 - Do not rewrite blindly. Improve the draft with targeted edits mapped to the semantic map and approved outline.
+- Treat this as a combined Stage 4 AEO pass and Stage 5 QA pass. Preserve factual content and headings unless the approved outline or article structure is invalid.
+- If YAML frontmatter exists, preserve frontmatter values exactly.
+- Apply AEO transformations without adding new facts: first-sentence tightening, bridge removal, pronoun-to-noun replacement at section openings, statistic isolation, hedge removal, list parallelism, table parallelism, FAQ direct answers, H3 anchor sentences, concrete Final Thoughts, and definition anchor reinforcement.
 - For comparison articles, enforce this order unless the approved outline has a user-approved reason to differ: define Entity A; define Entity B; explain responsibilities or core features; compare differences; handle legal/compliance after role clarity; provide decision guidance after comparison; place FAQs near the end; end with decision logic.
 - Never open a comparison article with a dense comparison table unless the topic has very high user familiarity and the user clearly expects a quick-answer format.
 - Start the article with the H1, then `## Key Takeaways`.
-- Under `## Key Takeaways`, include one direct intro sentence and 3 to 5 bullets.
+- Under `## Key Takeaways`, include one direct intro sentence and 3 to 5 bullets when the approved outline includes a Key Takeaways section. For Matrack-style articles with no intro before H2 #1, follow the approved outline exactly.
 - The first key takeaway must fully answer the main query.
 - Remove any traditional intro paragraph outside the `## Key Takeaways` section.
 - Ensure H2s are question-based wherever natural.
@@ -52,8 +57,10 @@ Phase 5, structural variation:
 - Use a three-paragraph format for explanations: 3 short paragraphs, 2 sentences each, direct answer first.
 - Use one sentence plus structured bullets for benefits, features, criteria, signs, steps, or risks. Bullet labels must be 2 to 3 words and each bullet must carry meaningful information.
 - Use one sentence plus H3s only when multiple subtopics genuinely need separate treatment. H3s should be 3 to 4 words and must justify their existence.
-- Every non-FAQ H3 in the final article must have exactly 2 short paragraphs below it. Paragraph 1 defines or clarifies the H3 entity, component, or idea. Paragraph 2 explains its data output, function, operational impact, or decision value. Do not add a separate transition paragraph after an H3 before the next H2.
-- FAQ H3s must answer directly in one concise paragraph of 1 to 2 sentences.
+- Every non-FAQ H3 in the final article must be a tight chunk of 2 to 3 sentences. Sentence 1 names the H3 topic and function. Sentence 2 explains operational value. Sentence 3 is optional for a use case, integration, or specific detail.
+- FAQ H3s must answer directly in 2 to 3 self-contained sentences.
+- Bullet lists must use `- **Term:** Explanation` with parallel grammar unless the approved outline has a specific reason not to.
+- Comparison tables must use `Comparison Point` as the leftmost column and must not include `Drafting Caution`, `Verification Notes`, `Editorial Flag`, `Notes for Writer`, or `Caveat`.
 - Use tables only when comparison, mapping, or side-by-side evaluation improves clarity.
 - Eliminate repeated numbers of bullets, repeated numbers of H3s, repeated paragraph rhythm, and predictable formatting.
 - Component H3s, where used, should follow the two-paragraph H3 rule without padding.
@@ -63,7 +70,7 @@ Phase 5, structural variation:
 
 Phase 6, content execution:
 
-- Add a natural semantic bridge at the end of each major section so the next section follows logically.
+- Remove bridge sentences that reference previous or upcoming sections. Do not add end-of-section transition sentences.
 - Remove em dashes.
 - Remove or rewrite common AI phrases, especially vague claims such as "helps improve", "can support", "designed for", "built for", "clear understanding", "effective", and "efficient".
 - Replace vague claims with direct cause-effect statements.
@@ -71,6 +78,10 @@ Phase 6, content execution:
 - Extract the first 1 to 3 words of sentences in each section. Also check same entity match, same role match, same H2 keyword match, same comparison-term match, and same syntactic pattern. Rewrite repeated nearby starts instead of using random synonyms.
 - Check remaining sentence starter clusters. Rewrite repeated openings such as "this", "it", "these", "they", "when", "although", "by", "for", "while", or "each".
 - Remove filler, vague modifiers, and generic claims. Every sentence must carry information.
+- Remove editorial leak phrases, CTAs, exclamation marks, rhetorical questions in body prose, first-person body prose, and banned marketing language.
+- Rewrite or remove refusal-to-commit hedges. If a specific number or answer exists in the article, commit to it with named variation factors. If the article lacks support, remove the hedge rather than inventing a number.
+- Keep most sentences between 15 and 22 words, and split sentences over 30 words.
+- Ensure every statistic sentence includes source organization, year or time period, and specific number.
 
 Phase 7, micro section and authority:
 
@@ -88,13 +99,15 @@ Final quality filter:
 - No H2 or H3 section has more than two nearby sentences starting with the same entity or phrase.
 - No H2 or H3 section has more than two nearby sentences starting with the same H2 keyword, role, comparison term, or opening grammar pattern.
 - Bullet lists do not repeat the same grammar pattern across several consecutive bullets.
-- Every non-FAQ H3 has exactly two short paragraphs below it, and every FAQ H3 has one concise answer paragraph.
+- Every non-FAQ H3 has 2 to 3 sentences, and every FAQ H3 has a concise direct answer.
 - No repeated sentence starter clusters.
 - No filler-heavy sentences.
 - No weak or vague statements.
 - Each section answers its heading immediately.
-- Smooth contextual transitions exist.
+- No bridge sentences or editorial process notes remain.
 - Macro to Micro flow is visible.
+- No editorial leak phrases, banned adjectives, banned verbs, CTAs, exclamation marks, or process columns remain.
+- H3 chunks are 2 to 3 sentences, FAQ answers are direct, bullets are parallel, and comparison tables are reader-facing.
 - The article reads like a domain expert wrote it and a senior content strategist edited it.
 
 Return only the improved article in Markdown. Do not include a quality checklist, notes, explanations, or change summary.

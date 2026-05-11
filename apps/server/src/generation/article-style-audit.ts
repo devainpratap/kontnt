@@ -4,8 +4,13 @@ export type ArticleStyleIssue = {
     | "repeated-section-opener"
     | "repeated-topic-opener"
     | "repeated-sentence-pattern"
-    | "h3-paragraph-count"
-    | "repeated-bullet-opener";
+    | "h3-sentence-count"
+    | "repeated-bullet-opener"
+    | "bullet-format"
+    | "banned-phrase"
+    | "bridge-sentence"
+    | "long-sentence"
+    | "table-editorial-column";
   section: string;
   message: string;
   evidence: string[];
@@ -24,6 +29,41 @@ type Section = {
 };
 
 const forbiddenSentenceStarts = new Set(["the", "a", "that", "those", "this", "it"]);
+const bannedPhrasePatterns = [
+  /verify before publishing/i,
+  /should be verified before publication/i,
+  /before publishing this article/i,
+  /before publication/i,
+  /research needs to be read with care/i,
+  /should not be stretched into stereotypes/i,
+  /drafting caution/i,
+  /source-specific verification/i,
+  /claims require credible sources/i,
+  /newer results should be verified/i,
+  /before internal target setting/i,
+  /this should be checked/i,
+  /it is important to note that/i,
+  /in today's (?:world|fast-paced world)/i,
+  /in the modern era/i,
+  /as we all know/i,
+  /at the end of the day/i,
+  /in this article we will/i,
+  /\b(?:leverage|leverages|leveraging|utilize|utilizes|utilizing|empower|empowers|empowering|revolutionizes?|supercharges?|harnesses the power of|unlock the potential)\b/i,
+  /\b(?:cutting-edge|revolutionary|game-changing|world-class|best-in-class)\b/i
+];
+const bridgeSentencePatterns = [
+  /^once teams\b/i,
+  /^once the\b/i,
+  /^now that\b/i,
+  /^with .{1,60} now\b/i,
+  /^having established\b/i,
+  /^as discussed above\b/i,
+  /^building on\b/i,
+  /^before we get to\b/i,
+  /^now let's look at\b/i,
+  /^moving forward to\b/i
+];
+const editorialTableHeaders = new Set(["drafting caution", "verification notes", "editorial flag", "notes for writer", "caveat"]);
 const topicRoleTerms = new Set([
   "broker",
   "dispatcher",
@@ -250,7 +290,7 @@ function parseLeafSections(markdown: string) {
 
 function parseH3Blocks(markdown: string) {
   const lines = markdown.split("\n");
-  const blocks: Array<{ heading: string; parentHeading: string; paragraphCount: number }> = [];
+  const blocks: Array<{ heading: string; parentHeading: string; sentenceCount: number; sentences: string[] }> = [];
   let parentHeading = "";
 
   for (let index = 0; index < lines.length; index += 1) {
@@ -265,8 +305,7 @@ function parseH3Blocks(markdown: string) {
       continue;
     }
 
-    const paragraphs: string[] = [];
-    let current: string[] = [];
+    const bodyLines: string[] = [];
 
     for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
       if (/^#{2,3}\s+/.test(lines[cursor])) {
@@ -274,27 +313,19 @@ function parseH3Blocks(markdown: string) {
       }
 
       const trimmed = lines[cursor].trim();
-      if (!trimmed) {
-        if (current.length) {
-          paragraphs.push(current.join(" "));
-          current = [];
-        }
+      if (!trimmed || trimmed.startsWith("|") || trimmed.startsWith("-")) {
         continue;
       }
 
-      if (!trimmed.startsWith("|") && !trimmed.startsWith("-")) {
-        current.push(trimmed);
-      }
+      bodyLines.push(trimmed);
     }
-
-    if (current.length) {
-      paragraphs.push(current.join(" "));
-    }
+    const sentences = splitIntoSentences(bodyLines.join("\n"));
 
     blocks.push({
       heading: match[1].trim(),
       parentHeading,
-      paragraphCount: paragraphs.length
+      sentenceCount: sentences.length,
+      sentences
     });
   }
 
@@ -303,6 +334,51 @@ function parseH3Blocks(markdown: string) {
 
 function isFaqBlock(block: { heading: string; parentHeading: string }) {
   return /\b(faq|faqs|frequently asked|common questions)\b/i.test(`${block.parentHeading} ${block.heading}`);
+}
+
+function addBannedPhraseIssues(sections: Section[], issues: ArticleStyleIssue[]) {
+  sections.forEach((section) => {
+    const sentences = splitIntoSentences(section.body);
+
+    sentences.forEach((sentence) => {
+      bannedPhrasePatterns.forEach((pattern) => {
+        if (pattern.test(sentence)) {
+          issues.push({
+            code: "banned-phrase",
+            section: section.heading,
+            message: "Remove or rewrite banned editorial, bridge, hedge, puffery, or filler language.",
+            evidence: [sentence]
+          });
+        }
+      });
+    });
+  });
+}
+
+function addBridgeAndLengthIssues(sections: Section[], issues: ArticleStyleIssue[]) {
+  sections.forEach((section) => {
+    splitIntoSentences(section.body).forEach((sentence) => {
+      const wordCount = tokenize(sentence).length;
+
+      if (wordCount > 30) {
+        issues.push({
+          code: "long-sentence",
+          section: section.heading,
+          message: `Split sentences over 30 words. Found ${wordCount} words.`,
+          evidence: [sentence]
+        });
+      }
+
+      if (bridgeSentencePatterns.some((pattern) => pattern.test(sentence))) {
+        issues.push({
+          code: "bridge-sentence",
+          section: section.heading,
+          message: "Remove bridge sentences that refer to previous or upcoming sections.",
+          evidence: [sentence]
+        });
+      }
+    });
+  });
 }
 
 function addRepeatedOpenerIssues(sections: Section[], issues: ArticleStyleIssue[]) {
@@ -398,10 +474,26 @@ function addRepeatedOpenerIssues(sections: Section[], issues: ArticleStyleIssue[
 
 function addBulletPatternIssues(sections: Section[], issues: ArticleStyleIssue[]) {
   sections.forEach((section) => {
-    const bulletOpeners = section.body
+    const bulletLines = section.body
       .split("\n")
       .map((line) => line.trim())
-      .filter((line) => line.startsWith("- "))
+      .filter((line) => line.startsWith("- "));
+    const skipStrictFormat = /key takeaways|faq|faqs|frequently asked|common questions/i.test(section.heading);
+
+    if (!skipStrictFormat) {
+      bulletLines.forEach((line) => {
+        if (!/^-\s+\*\*[^*]+:\*\*\s+\S/.test(line)) {
+          issues.push({
+            code: "bullet-format",
+            section: section.heading,
+            message: "Format bullets as `- **Term:** Explanation`.",
+            evidence: [line]
+          });
+        }
+      });
+    }
+
+    const bulletOpeners = bulletLines
       .map((line) => normalizeOpener(line.replace(/^-\s+/, "").replace(/^\*\*[^*]+:\*\*\s*/, ""), 2))
       .filter(Boolean);
 
@@ -421,34 +513,63 @@ function addBulletPatternIssues(sections: Section[], issues: ArticleStyleIssue[]
   });
 }
 
+function addTableIssues(sections: Section[], issues: ArticleStyleIssue[]) {
+  sections.forEach((section) => {
+    const lines = section.body.split("\n").map((line) => line.trim());
+    lines.forEach((line) => {
+      if (!/^\|.+\|$/.test(line) || /^[:|\-\s]+$/.test(line.replace(/\|/g, ""))) {
+        return;
+      }
+
+      const headers = line
+        .split("|")
+        .map((item) => normalizeText(item).toLowerCase())
+        .filter(Boolean);
+      const hasEditorialHeader = headers.some((header) => editorialTableHeaders.has(header));
+
+      if (hasEditorialHeader) {
+        issues.push({
+          code: "table-editorial-column",
+          section: section.heading,
+          message: "Remove editorial/process columns from tables.",
+          evidence: [line]
+        });
+      }
+    });
+  });
+}
+
 export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   const sections = parseLeafSections(markdown);
   const issues: ArticleStyleIssue[] = [];
   const h3Blocks = parseH3Blocks(markdown);
 
   h3Blocks.forEach((block) => {
-    if (isFaqBlock(block) && block.paragraphCount > 1) {
+    if (isFaqBlock(block) && (block.sentenceCount < 1 || block.sentenceCount > 3)) {
       issues.push({
-        code: "h3-paragraph-count",
+        code: "h3-sentence-count",
         section: block.heading,
-        message: `FAQ H3 answers should use one concise paragraph. Found ${block.paragraphCount}.`,
-        evidence: [block.heading]
+        message: `FAQ H3 answers should use 1 to 3 concise sentences. Found ${block.sentenceCount}.`,
+        evidence: block.sentences.length ? block.sentences : [block.heading]
       });
       return;
     }
 
-    if (!isFaqBlock(block) && block.paragraphCount !== 2) {
+    if (!isFaqBlock(block) && (block.sentenceCount < 2 || block.sentenceCount > 3)) {
       issues.push({
-        code: "h3-paragraph-count",
+        code: "h3-sentence-count",
         section: block.heading,
-        message: `Non-FAQ H3 sections must have exactly two short paragraphs. Found ${block.paragraphCount}.`,
-        evidence: [block.heading]
+        message: `Non-FAQ H3 sections must have 2 to 3 sentences. Found ${block.sentenceCount}.`,
+        evidence: block.sentences.length ? block.sentences : [block.heading]
       });
     }
   });
 
+  addBannedPhraseIssues(sections, issues);
+  addBridgeAndLengthIssues(sections, issues);
   addRepeatedOpenerIssues(sections, issues);
   addBulletPatternIssues(sections, issues);
+  addTableIssues(sections, issues);
 
   return {
     issues,
@@ -462,7 +583,7 @@ export function renderArticleStyleAuditReport(audit: ArticleStyleAudit) {
     return [
       "# Article Style Audit",
       "",
-      "No sentence-opening diversity or H3 structure issues found.",
+      "No sentence-opening, H3, bullet, table, or QA language issues found.",
       "",
       `Sentence count: ${audit.sentenceCount}`,
       `H3 count: ${audit.h3Count}`
@@ -501,9 +622,12 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "- Rewrite sentence openings that begin with the, a, that, those, this, or it.",
     "- Break repeated nearby sentence-openers, repeated topic-first openings, and repeated opening grammar patterns by starting with context, condition, outcome, contrast, or the operational object.",
     "- Keep important entities present, but move them inside sentences instead of always starting with them.",
-    "- Make every non-FAQ H3 body exactly two short paragraphs: definition or clarification first, then data, function, impact, or decision value.",
-    "- Keep FAQ H3 answers to one concise paragraph, usually 1 to 2 sentences.",
-    "- Do not add a separate transition paragraph after an H3 before the next H2.",
+    "- Make every non-FAQ H3 body 2 to 3 sentences: function first, operational value second, optional use case or detail third.",
+    "- Keep FAQ H3 answers concise and self-contained, usually 1 to 3 sentences.",
+    "- Remove bridge sentences, editorial leak phrases, CTAs, exclamation marks, and marketing puffery.",
+    "- Split sentences over 30 words.",
+    "- Format bullets as `- **Term:** Explanation` when the audit flags bullet format.",
+    "- Remove editorial/process table columns such as Drafting Caution, Verification Notes, Editorial Flag, Notes for Writer, or Caveat.",
     "- Vary bullet grammar if the audit flags repeated bullet openings.",
     "",
     "Return only the repaired article in Markdown.",

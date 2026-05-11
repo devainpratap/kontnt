@@ -16,14 +16,19 @@ Follow these rules:
 
 {{SEMANTIC_SEO_RULES}}
 
+{{MATRACK_QUALITY_RULES}}
+
 Additional drafting rules:
 
+- Treat this as Stage 3 drafting. Execute the approved outline without adding new research, new statistics, new entities, or new article architecture.
+- If the outline includes frontmatter fields, preserve them and draft beneath them. If no frontmatter is supplied, use clean Markdown without inventing hidden metadata.
+- Do not write an introduction paragraph before the first H2 when the approved outline follows the Matrack definition-led structure.
 - Respect the approved outline as the contract for the article structure.
 - If the approved outline is for a comparison article, preserve the logical order: define both entities independently, explain responsibilities or core features, then compare, then address legal/compliance or decision guidance, then FAQs and final thoughts.
 - Before drafting each H2, identify its single dominant purpose: definition, responsibilities, process, comparison, legal/compliance clarification, decision guidance, red flags, metrics/KPIs, FAQs, or conclusion.
 - Do not blend multiple purposes inside one H2. For example, a responsibilities section should not also carry legal authority guidance and a comparison table.
 - Each section should answer its heading directly before expanding into examples or nuance.
-- Use transitions that help the article feel continuous rather than stitched together, but avoid repeated transition formulas.
+- Keep each section independently extractable. Do not add bridge sentences such as "Now that", "Once teams", "With X now visible", "Having established", "As discussed above", "Building on", "Before we get to", or "Now let's look at".
 - When a claim may depend on the product, market, or pricing context, state the uncertainty instead of inventing specifics.
 - Do not write a traditional introduction. Start with one direct line, then 3 to 5 key takeaways.
 - The first key takeaway must fully answer the title query.
@@ -34,14 +39,19 @@ Additional drafting rules:
 - Vary sentence openings by starting with decision context, condition, outcome, contrast, or the operational object when the topic entity would otherwise repeat.
 - For explanatory H2s, use the three-paragraph logic when natural: direct answer, mechanism, implication or transition.
 - For benefits, features, signs, steps, and mistakes, use one short lead sentence followed by structured bullets.
-- For multi-component sections, use H3s. Each non-FAQ H3 must have exactly 2 short paragraphs below it: paragraph 1 defines or clarifies the entity, component, or idea; paragraph 2 explains its data output, function, operational impact, or decision value.
-- For FAQ H3s, answer directly in one concise paragraph of 1 to 2 sentences.
+- For multi-component sections, use H3s. Each non-FAQ H3 must have 2 to 3 sentences: sentence 1 names the H3 topic and function, sentence 2 explains the operational value, and sentence 3 may add a use case or integration detail.
+- For FAQ H3s, answer directly in 2 to 3 self-contained sentences.
+- Format bullets as `- **Term:** Explanation` with 1 to 2 sentences per bullet unless the approved outline explicitly uses a different format.
+- Format comparison tables with `Comparison Point` as the leftmost column and never include editorial/process columns.
 - Use tables only when they make comparison or breakdown easier to understand.
-- Add micro-transitions at the end of major H2s, but vary the wording and keep them useful.
+- Do not add end-of-section micro-transitions that point to the next section. The H2 heading is the only transition needed.
 - Include a buying guide with 5 to 6 criteria when the outline calls for decision support.
 - Include a KPI section when the topic has operational, financial, performance, or evaluation intent. Define each KPI and explain why it matters.
 - Connect major entities through cause and effect rather than naming them separately.
 - Avoid generic claims. Replace broad statements with specific mechanisms.
+- Avoid editorial leak phrases, refusal-to-commit hedges, CTAs, first-person body prose, rhetorical questions in body prose, marketing puffery, and exclamation marks.
+- If using a statistic, include the named source, year or time period, and specific number in the same sentence.
+- If adding a Matrack pitch, use only canonical capabilities and keep it factual, third-person, and CTA-free.
 - Avoid em dashes and obvious AI phrases.
 - Before returning the draft, audit sentence openings and rewrite every sentence that begins with "the", "a", "that", or "those".
 - Before returning the draft, scan every section for repeated first 1 to 3 words, repeated role/entity starts, repeated H2 keyword starts, and repeated subject-plus-verb openings. Rewrite nearby repeats instead of swapping in random synonyms.

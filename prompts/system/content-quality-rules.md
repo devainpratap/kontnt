@@ -9,6 +9,9 @@
 - Do not invent statistics, quotes, pricing claims, market claims, case studies, or precise percentages.
 - Flag uncertain claims that require verification instead of presenting them as fact.
 - Replace vague phrases such as "helps improve", "can support", "designed for", "built for", "clear understanding", "effective", and "efficient" with specific cause-and-effect language.
+- Remove editorial leak phrases such as "verify before publishing", "should be verified before publication", "drafting caution", "source-specific verification", or "this should be checked".
+- Remove bridge sentences that reference earlier or later sections. Section headings provide enough transition.
+- Do not use CTAs, exclamation marks, rhetorical questions in body prose, or first-person body prose unless the approved brand section explicitly permits it.
 - Do not start sentences with "the", "a", "that", or "those". During final review, rewrite those openings with a more specific subject, verb-led construction, or context phrase.
 - Avoid overusing filler words and repeated sentence starters such as "this", "it", "these", "they", "when", "although", "by", "for", "while", and "each".
 - Use the primary entity naturally across the article, but vary the context around it instead of repeating the same phrase mechanically.
@@ -32,9 +35,13 @@ Use one sentence plus structured bullets for benefits, features, reasons, signs,
 
 Use one sentence plus H3 subsections when the H2 contains several subtopics that need separate treatment. H3s should be short, natural, and not forced.
 
-When a non-FAQ H3 is used in the article body, write exactly two short paragraphs below it. The first paragraph should define or clarify the H3 entity, component, or idea. The second paragraph should explain the data, function, operational impact, or decision it enables. Do not place a separate transition paragraph after an H3 before the next H2, because that creates a third paragraph under the H3.
+When a non-FAQ H3 is used in the article body, write a tight 2 to 3 sentence chunk below it. Sentence 1 should name the H3 topic and define what it does. Sentence 2 should explain the operational value, data, function, impact, or decision it enables. Sentence 3 is optional for a specific use case, integration, or detail.
 
-When an FAQ uses H3 questions, answer each one in a single concise paragraph of 1 to 2 sentences. Do not force the two-paragraph H3 structure onto FAQ answers.
+When an FAQ uses H3 questions, answer each one in 2 to 3 self-contained sentences. The first sentence must directly answer the question.
+
+Use bullet lists in this format unless the approved outline has a specific reason not to: `- **Term:** Explanation`. Keep each bullet explanation to 1 to 2 sentences.
+
+Comparison tables must use reader-facing columns. Use `Comparison Point` as the leftmost column and never include editorial/process columns such as `Drafting Caution`, `Verification Notes`, `Editorial Flag`, `Notes for Writer`, or `Caveat`.
 
 Use a table only for comparison, feature mapping, pricing, pros and cons, or side-by-side explanation where the table improves clarity.
 
@@ -52,4 +59,4 @@ For comparison articles, define both entities independently before comparison ta
 - H2 headings should be question-based unless a non-question heading is clearly more natural for FAQs or final thoughts.
 - Dense sections should be broken into H3s, bullets, or a concise table.
 - FAQs should answer questions not already answered by the main H2s.
-- Add natural semantic transitions between sections so no major section feels isolated.
+- Make each section independently extractable. Do not rely on bridge sentences for flow.

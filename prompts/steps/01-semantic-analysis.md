@@ -16,8 +16,13 @@ Follow these rules:
 
 {{SEMANTIC_SEO_RULES}}
 
+{{MATRACK_QUALITY_RULES}}
+
 Additional analysis rules:
 
+- Treat this as Stage 1 research intelligence when competitor extraction is available. Build a structured fact base for downstream outline and drafting, not article prose.
+- Prefer authoritative statistics from government, regulatory, academic, or reputable industry sources. Vendor pages may inform product context, but should not be treated as statistical authority.
+- If a statistic cannot be verified from the available evidence, omit the number and record the sourcing gap in Verification Notes.
 - Classify the article type before mapping sections: definition, comparison, process, buying guide, list, review, troubleshooting, or mixed intent.
 - For comparison articles such as "X vs Y", "X versus Y", or "difference between X and Y", build a comparison-first logic map without starting the article with comparison. The map must define Entity A and Entity B independently before responsibilities, differences, legal/compliance concerns, and decision guidance.
 - For comparison articles, identify the proper sequence: Entity A definition, Entity A responsibilities or features, Entity B definition, Entity B responsibilities or features, key differences, legal/compliance clarification if relevant, decision guidance, FAQs, and conclusion.
@@ -31,6 +36,8 @@ Additional analysis rules:
 - Identify where the article needs evidence, examples, KPI support, or verification notes.
 - Identify likely AI-pattern risks for this topic, such as repetitive section shapes, generic benefits, or unsupported statistics.
 - Identify likely repeated topical sentence starters for the topic, including the main entity, H2 keyword, role names, comparison terms, and repeated "X is", "X helps", "X should", or "X can" patterns.
+- Identify whether a Matrack pitch is relevant. If relevant, map 3 to 5 capabilities from the canonical Matrack list and do not invent capabilities.
+- Do not write article paragraphs, H2 copy, meta descriptions, or title options in this step.
 
 Return Markdown only using this structure:
 
@@ -71,6 +78,8 @@ Return Markdown only using this structure:
 ## Style And Structure Risks
 
 ## Verification Notes
+
+## Matrack Capability Mapping
 
 Article brief:
 

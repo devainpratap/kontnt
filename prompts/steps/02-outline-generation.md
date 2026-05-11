@@ -15,8 +15,16 @@ Follow these rules:
 
 {{SEMANTIC_SEO_RULES}}
 
+{{MATRACK_QUALITY_RULES}}
+
 Additional outline rules:
 
+- Treat this as Stage 2 outline architecture. Do not write publishable prose.
+- Include title, meta description, H2 architecture, section purposes, structure types, statistic placements, entity coverage, and Matrack capability placement where relevant.
+- Use the preferred title formula for definition-led Matrack/fleet articles when it fits: `What Is [Primary Term]? [Aspect 1], [Aspect 2], and [Aspect 3]`.
+- Meta description should be keyword-first, factual, 22 to 30 words, and no more than 155 characters.
+- For Matrack/fleet/logistics articles, plan a Matrack pitch H2 before Final Thoughts using only canonical capabilities.
+- Do not include bridge sentences, process-meta H2s, writer notes, verification columns, drafting caution columns, or article prose in the outline.
 - First classify the article type from the title, target keyword, and SERP evidence. If the article is a comparison article such as "X vs Y", "X versus Y", or "difference between X and Y", use comparison-first search intent logic without opening with the comparison itself.
 - For comparison articles, choose one sequence:
 - Basic comparison: What is X?; What is Y?; key features or responsibilities of each; key differences between X and Y; FAQs; conclusion.
@@ -34,8 +42,10 @@ Additional outline rules:
 - Assign a structure type to each H2: three-paragraph explanation, bullets, H3 subsections, or table.
 - Do not assign the same structure type to too many consecutive H2s.
 - Add H3 layering where needed for core components and benefits. H3s must represent single entities or components.
-- For every non-FAQ H3 planned in the outline, note that the final article should use exactly 2 short paragraphs below it: paragraph 1 defines or clarifies the H3 entity, paragraph 2 explains the data, function, impact, or decision it enables.
-- For FAQ H3s, plan one concise answer paragraph of 1 to 2 sentences.
+- For every non-FAQ H3 planned in the outline, note that the final article should use 2 to 3 sentences: functional definition, operational value, and optional use case or integration detail.
+- For FAQ H3s, plan a self-contained answer of 2 to 3 sentences.
+- For bullet sections, require `- **Term:** Explanation` formatting in the draft.
+- For comparison tables, require `Comparison Point` as the leftmost column and ban editorial columns such as `Drafting Caution`, `Verification Notes`, `Editorial Flag`, or `Notes for Writer`.
 - Add a sentence-start warning to the section structure plan: final prose should not begin sentences with "the", "a", "that", or "those".
 - Add a topic-start warning to the section structure plan: final prose should not repeatedly begin nearby sentences with the main entity, H2 keyword, role name, comparison term, or the same subject-plus-verb pattern.
 - Build a dynamic outline for this article. Do not mirror the exact H2 sequence, H3 density, bullet-heavy sections, or table placement from recent articles unless the search intent requires it.
