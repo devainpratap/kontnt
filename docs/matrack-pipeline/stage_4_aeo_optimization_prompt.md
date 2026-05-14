@@ -38,7 +38,7 @@ You receive a single Markdown article with YAML frontmatter — the Stage 3 outp
 
 ## MISSION
 
-Apply the **11 AEO transformations** defined below to the article. The output is the same article structure but with specific patterns optimized for citation extractability.
+Apply the **12 AEO transformations** defined below to the article. The output is the same article structure but with specific patterns optimized for citation extractability.
 
 ### What Stage 4 Does
 
@@ -88,13 +88,54 @@ You **must**:
 
 ---
 
-## THE 11 AEO TRANSFORMATIONS
+## THE 12 AEO TRANSFORMATIONS
 
 Apply each transformation pass in order. After each pass, hold the changes and continue to the next.
 
-### Transformation 1: First-Sentence Tightening Under Each H2
+### Transformation 1: First-Sentence Tightening and Variation Under Each H2
 
-The first sentence under every H2 must be a **standalone-extractable answer** to the H2 question, using the keyword (or the section's main subject) as the grammatical subject.
+The first sentence under every H2 must be:
+(a) A standalone-extractable answer to the H2 question
+(b) Self-contained (no pronouns referring backward)
+(c) Structurally different from at least 60% of the other H2 openings
+    in the same article
+
+Before:
+> ## How Should Owner Operators Compare Fleet Dash Camera Features?
+> Owner operators should compare fleet dash camera features by asking
+> whether each feature improves evidence capture, retrieval speed...
+
+After (when other H2s in the article also start with "Owner operators
+should..."):
+> ## How Should Owner Operators Compare Fleet Dash Camera Features?
+> Practical comparison of fleet dash cameras starts with evidence
+> capture, retrieval speed, driver acceptance, and total cost
+> control rather than feature length alone.
+
+VARIATION ENFORCEMENT PROCEDURE:
+
+After all transformations are applied, perform a final cross-section
+audit:
+
+1. Extract the first 5-7 words from each H2's opening sentence
+2. Group identical or near-identical openings
+3. If any opening pattern appears in 3+ H2s within the article,
+   rewrite all but one of them to use a different opener type
+4. Refer to the 5 approved opener types (A through E) defined in
+   the Stage 3 drafting prompt H2 Opening Sentence Variation Rule
+
+Banned cross-section repetition examples:
+- 3+ H2s starting with "Owner operators should..."
+- 3+ H2s starting with "Fleet managers can..."
+- 3+ H2s starting with "Trucking companies need..."
+- 3+ H2s starting with "[Topic] is/are..."  (when the topic is the
+  same article-wide topic)
+
+Acceptable repetition:
+- 2 H2s using the same definitional opener when both are explicitly
+  definitional ("What Is X?" and "What Is Y?")
+- 2 H2s starting with the same stakeholder if the rest of the
+  sentence structures clearly differ
 
 **Before:**
 > ## How Does Freight Factoring Work?
@@ -108,7 +149,7 @@ The first sentence under every H2 must be a **standalone-extractable answer** to
 
 **Rules:**
 - First sentence directly answers the H2 question
-- Subject is the keyword or section's main topic
+- Subject is clear, but it does not need to repeat the same topic-first pattern used elsewhere
 - Sentence is self-contained (no pronouns referring backward)
 - Sentence stands alone if extracted as a Featured Snippet
 
@@ -230,8 +271,24 @@ Every bullet list and numbered list must have parallel grammatical structure acr
 **Rules:**
 - Lead term: bolded noun phrase, parallel grammatical form across all bullets
 - Explanation: 1–2 sentences of similar length
-- Each bullet should follow the pattern: `[Outcome/Feature]: [What happens] [Resulting benefit].`
 - Same applies to numbered lists
+
+SUB-RULE: Structural Variation vs. Parallel Structure
+
+Parallel structure (grammatical similarity) is required across
+bullets — this means lead terms are nouns, explanations are complete
+sentences, lengths are roughly similar.
+
+Identical internal structure (same word order, same verb position,
+same clause pattern) is FORBIDDEN — this creates AI-tell feel.
+
+These two rules work together. Bullets should feel parallel in
+form but varied in construction.
+
+If 3+ consecutive bullets use the exact same sentence pattern
+(e.g., all starting "[List of items] + [verb] + [outcome]"),
+rewrite at least one of them to use a different internal structure
+from the 5 structure types defined in Stage 3 Protocol C.
 
 ### Transformation 7: Comparison Table Parallelism
 
@@ -333,6 +390,72 @@ The first H2 (the definition block) must have its definitional sentence formatte
 - First sentence pattern: `[Primary keyword] is [type of thing] that [function] using [3–5 entities].`
 - No throat-clearing ("Many businesses today...", "In the modern era...", "Companies often need...")
 - Subject of first sentence is the exact primary keyword
+
+### Transformation 12: Closing Sentence Variation
+
+The last sentence of each H2 section must NOT restate or mirror
+the first sentence of the same section. This pattern signals
+templated AI writing.
+
+BANNED PATTERN — Opening/Closing Mirror:
+
+Opening: "Owner operators should compare fleet dash camera features
+by asking whether each feature improves evidence capture, retrieval
+speed, driver acceptance, or total cost control."
+
+Closing: "Practical comparison comes from matching evidence capture,
+retrieval speed, and cost control to actual exposure."
+
+(The closing repeats the same 4 dimensions in the same order with
+mildly different wording. Banned.)
+
+APPROVED PATTERN — Distinct Closing:
+
+Opening: "Owner operators should compare fleet dash camera features
+by asking whether each feature improves evidence capture, retrieval
+speed, driver acceptance, or total cost control."
+
+Closing: "Vendor demo periods, real-world driver feedback, and a
+short pilot on actual routes usually reveal which features work
+in daily operations and which are sales-page filler."
+
+(The closing introduces specific actionable detail — demo periods,
+driver feedback, pilot routes — that did not appear in the opening.
+Approved.)
+
+CLOSING SENTENCE RULES:
+
+Each H2 section should close with one of these closing types,
+varied across the article:
+
+Closing Type 1 — Operational Implication:
+Names a specific operational action, decision, or follow-up that
+flows from the section content.
+
+Closing Type 2 — Connection to Stakeholder Decision:
+Connects the section content to a real decision a fleet manager,
+driver, or operator will face.
+
+Closing Type 3 — Constraint or Caveat with Specifics:
+Notes a specific operational constraint that limits the section's
+generalizations (with specific factors named, not vague hedging).
+
+Closing Type 4 — Forward Reference (Implicit):
+Names what becomes possible or visible when the section's content
+is applied, without explicitly previewing the next H2.
+
+ENFORCEMENT:
+
+After completing transformations 1-11, audit each H2 section:
+1. Extract the first sentence and last sentence of each section
+2. Compare them for content overlap
+3. If the last sentence repeats 50%+ of the key terms or concepts
+   from the first sentence, rewrite the last sentence using one of
+   the 4 closing types above
+
+This applies to all H2 sections except FAQ (which has Q&A pairs
+not closing sentences) and Final Thoughts (which is itself a
+closing).
 
 ---
 

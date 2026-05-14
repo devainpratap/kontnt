@@ -244,33 +244,167 @@ Example pattern:
 - Tables
 - Bridge sentences
 
-### Protocol B: `h3_subsections` (Components, Types, Industries, Challenges Sections)
+### H2 Opening Sentence Variation Rule (Cross-Section)
 
-Open with **one context sentence** that frames the section without restating the H2.
+After writing all sections, audit the H2 opening sentences as a set.
+The opening sentence of each H2 (the first sentence under the H2
+heading) must NOT follow the same grammatical pattern across the
+article.
 
-Then list H3 subsections from the outline. Each H3 follows this strict format:
+BANNED PATTERN: Three or more H2 sections in the same article
+opening with the same subject + modal verb structure.
 
-**H3 Heading** (Title Case, exactly as in outline)
+Examples of banned repetition:
+- "Owner operators should compare..."
+- "Owner operators should budget..."
+- "Owner operators should choose..."
 
-> Sentence 1: Functional definition — what it is or does, with 2–3 entities.
->
-> Sentence 2: Why it matters / what outcome it enables.
->
-> [Optional Sentence 3: Specific use case or detail.]
+(Three H2s starting with "Owner operators should" = banned.)
 
-**Hard limit: 2–3 sentences per H3. Never more.**
+Examples of banned repetition:
+- "Fleet managers can use..."
+- "Fleet managers can track..."
+- "Fleet managers can assign..."
 
-Each H3 is a self-contained, citable unit. If it sprawls, it breaks LLM extraction.
+(Three H2s starting with "Fleet managers can" = banned.)
 
-### Protocol C: `bullet_list` (Benefits, Challenges, Features Sections)
+APPROVED OPENER TYPES FOR H2 SECTIONS:
+
+When writing H2 opening sentences, deliberately rotate across these
+5 opener types. No single opener type may appear in more than 40% of
+H2 openings within a single article.
+
+Type A — Topic as Subject (definition/answer style):
+"[Topic noun] is/means/refers to [definition core]."
+Example: "Freight factoring works through an invoice-to-cash process
+where a completed load becomes eligible for funding..."
+
+Type B — Operational Outcome First:
+"[Outcome/benefit] comes from [action involving topic]."
+Example: "Reliable delivery commitments protect customer trust,
+reduce recovery work, and show where fulfillment breaks."
+
+Type C — Operating Context First:
+"[Condition/scenario] [verb] [topic implication]."
+Example: "Most barriers are practical operating problems, not vague
+culture concerns."
+
+Type D — Concrete Specific Fact First:
+"[Specific fact/number/category] [verb] [topic relevance]."
+Example: "Tankers, service trucks, trailers, generators, and field
+equipment often move across remote wells, drilling sites, and
+distribution routes."
+
+Type E — Stakeholder Action First (use sparingly, max 1-2 per
+article):
+"[Stakeholder] [action verb] [topic-relevant outcome]."
+Example: "Fleet managers should coach behaviors first when events
+are severe, repeated, tied to incidents, or connected to compliance
+risk."
+
+DISTRIBUTION REQUIREMENT:
+
+In an article with 7 H2 sections, the opener types should be
+distributed roughly:
+- 2-3 sections using Type A (definitional H2s are naturally Type A)
+- 1-2 sections using Type B
+- 1-2 sections using Type C
+- 1 section using Type D
+- 1 section using Type E (max)
+
+Audit the final article: if 3+ H2 openings start with the same
+stakeholder ("Owner operators", "Fleet managers", "Drivers", etc.)
+plus the same modal verb, rewrite at least 2 of them to use a
+different opener type from the list above.
+
+### Protocol B: h3_subsections (Components, Types, Industries, Challenges Sections)
+
+Open the section with **one context sentence** that frames the section
+without restating the H2.
+
+Then list H3 subsections from the outline. Each H3 section follows this
+strict format.
+
+H3 Heading Format: Use Title Case, exactly as specified in outline
+
+H3 Opening Sentence Rules (CRITICAL):
+
+The first sentence under an H3 must NOT begin by repeating the H3
+heading verbatim as the grammatical subject. This is an AI-tell that
+makes content feel mechanical and templated.
+
+BANNED PATTERN (verbatim heading echo):
+- H3: "Video Capture" → Opening: "Video capture records road, cab..."
+- H3: "Upfront Hardware" → Opening: "Upfront hardware covers..."
+- H3: "Storage And LTE" → Opening: "Storage and LTE costs depend..."
+
+This pattern is forbidden in 100% of H3 sections. Every H3 must use
+one of the approved alternative opener patterns below.
+
+APPROVED OPENER PATTERNS (use at least 3 different patterns across
+H3s in any single section):
+
+Pattern 1 — Topic Variant (rephrase the noun):
+- H3: "GPS Fleet Tracking Device" → Opening: "GPS fleet tracking
+  gives teams real-time visibility into vehicle location during
+  active routes."
+- H3: "Telematics Control Unit" → Opening: "Telematics systems
+  connect vehicle activity with operational performance."
+- H3: "Fleet Management Software" → Opening: "Fleet software brings
+  tracking, alerts, reports, and vehicle records into one dashboard."
+
+Pattern 2 — Function-First (lead with what it does):
+- H3: "AI Fleet Dash Cam" → Opening: "Visual context for distraction,
+  harsh braking, and incident review comes from AI-enabled dash cams."
+- H3: "ELD Compliance System" → Opening: "Driver hours and duty
+  status records are captured automatically by ELD compliance tools."
+
+Pattern 3 — Stakeholder-First (lead with who uses it):
+- H3: "Mobile App Interface" → Opening: "Supervisors can check van
+  status, receive alerts, and coordinate field teams through mobile
+  access to fleet data."
+- H3: "Maintenance Management System" → Opening: "Service teams use
+  maintenance tools to track inspections, repairs, and preventive
+  schedules across the fleet."
+
+Pattern 4 — Outcome-First (lead with the operational outcome):
+- H3: "Freight Factoring Integration" → Opening: "Faster invoice
+  payments help businesses cover fuel, payroll, repairs, and daily
+  operating costs."
+- H3: "Driver Behavior Monitoring" → Opening: "Repeat behaviors
+  like speeding, harsh braking, and distraction become visible
+  through driver behavior tracking."
+
+Pattern 5 — Operational Context (lead with the scenario):
+- H3: "Tanker Trucks" → Opening: "Crude oil, fuel, water, and
+  chemicals move between wells, processing units, and storage
+  facilities using tanker trucks."
+
+Distribution Rule:
+
+Within any single H2 section that contains multiple H3s, use at least
+3 different opener patterns across the H3 set. Do not use the same
+opener pattern more than twice in a row.
+
+If an H2 has only 2 H3s, the two openers must use different patterns.
+
+If an H2 has 5+ H3s, all 5 approved patterns should appear at least
+once across the section.
+
+Continuation Rules (Sentence 2 and Sentence 3):
+
+After the opener, follow these rules:
+- Sentence 2: Why it matters / what outcome it enables
+- Sentence 3 (optional): Specific use case or detail
+
+The 2-3 sentence hard limit per H3 still applies.
+
+### Protocol C: bullet_list (Benefits, Challenges, Features Sections)
 
 Open with **one context sentence** that frames the section.
 
 Then write bullets in the strict format:
-
-```
 - **Term:** Explanation in 1–2 sentences.
-```
 
 Rules:
 - Lead term is bolded and followed by a colon
@@ -278,9 +412,67 @@ Rules:
 - 5–8 bullets per section maximum
 - Each bullet should incorporate at least 1–2 entities from the section's `entities_to_include`
 
-Example:
-> - **Faster Payments:** Funds arrive soon after load delivery, helping cover expenses without waiting on broker or shipper settlements.
-> - **Steady Cash Flow:** Predictable working capital supports fuel purchases, payroll, insurance, repairs, and dispatch operations.
+BULLET INTERNAL VARIATION RULE (NEW):
+
+The internal sentence structure of bullet explanations must vary
+across the bullet list. Identical internal structures across multiple
+bullets create AI-pattern feel.
+
+BANNED PATTERN — Identical Internal Structure Across Bullets:
+
+- **Camera Views:** Road-facing, driver-facing, dual-facing, side,
+  rear, and cargo-adjacent views solve different evidence problems.
+- **Video Quality:** Resolution, low-light visibility, field of view,
+  and frame reliability determine whether footage can clarify an event.
+- **AI Alerts:** Distraction, tailgating, drowsiness, harsh braking,
+  and lane-departure alerts reduce manual review by tagging likely
+  risk events.
+- **GPS Context:** Location, speed, route, and timestamp overlays
+  strengthen incident timelines.
+
+All four bullets above follow the same structure: [List of items]
++ [generic verb] + [outcome]. This is mechanical.
+
+APPROVED PATTERN — Varied Internal Structures:
+
+- **Camera Views:** Road-facing, driver-facing, dual-facing, side,
+  rear, and cargo-adjacent views solve different evidence problems.
+- **Video Quality:** Resolution and low-light visibility decide
+  whether plates, lanes, and hazards remain readable when an
+  incident happens.
+- **AI Alerts:** Distraction, tailgating, drowsiness, and lane-
+  departure alerts reduce manual review by tagging likely risk
+  events.
+- **GPS Context:** When customer arrival, route choice, or speed
+  is disputed, location and timestamp overlays strengthen the
+  incident timeline.
+
+The four approved bullets use four different internal structures:
+- Bullet 1: List → verb → outcome
+- Bullet 2: Subject pair → verb → conditional clause
+- Bullet 3: List → verb → mechanism phrase
+- Bullet 4: Conditional opener → subject → verb → outcome
+
+INTERNAL STRUCTURE TYPES FOR BULLETS:
+
+Use at least 3 of these 5 structures across any bullet list with 4+
+items. No single structure may appear in more than 40% of bullets in
+a single list.
+
+Structure 1 — List + Verb + Outcome:
+"[Item, item, and item] [verb] [outcome]."
+
+Structure 2 — Subject + Verb + Conditional:
+"[Subject] [verb] [outcome] when [condition]."
+
+Structure 3 — Conditional Opener + Action:
+"When [condition], [subject] [verb] [outcome]."
+
+Structure 4 — Stakeholder + Action + Reason:
+"[Stakeholder] uses/needs [item] because [reason]."
+
+Structure 5 — Specific Detail + Connection:
+"[Specific fact or example] shows why [topic connection]."
 
 ### Protocol D: `numbered_list` (Implementation, How-To Steps Sections)
 

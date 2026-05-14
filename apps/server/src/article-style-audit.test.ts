@@ -60,13 +60,13 @@ describe("article style audit", () => {
       "",
       "### Telematics",
       "",
-      "Telematics captures diagnostics, mileage, and location data from vehicles.",
+      "Vehicle diagnostics, mileage, and location data come from telematics signals.",
       "",
       "Maintenance planning becomes more reliable when those signals trigger service alerts before failures interrupt scheduled work.",
       "",
       "### Fuel management",
       "",
-      "Fuel management connects purchases, idling, route choices, and vehicle assignments.",
+      "Fuel purchases, idling, route choices, and vehicle assignments connect through cost monitoring.",
       "",
       "Cost reviews become more precise when finance can compare fuel transactions with actual vehicle movement."
     ].join("\n");
@@ -258,6 +258,95 @@ describe("article style audit", () => {
     const audit = auditArticleStyle(markdown);
 
     assert.ok(audit.issues.some((issue) => issue.code === "repeated-caveat"));
+  });
+
+  it("flags H3 heading echoes", () => {
+    const markdown = [
+      "---",
+      "title: Camera Guide",
+      "---",
+      "",
+      "## What Features Matter?",
+      "",
+      "Camera feature reviews should focus on evidence quality and retrieval.",
+      "",
+      "### Video Capture",
+      "",
+      "Video capture records road, cab, and cargo context for incident review. Claim teams can compare footage with timestamps and GPS records.",
+      "",
+      "### Upfront Hardware",
+      "",
+      "Upfront hardware covers cameras, mounts, cables, and installation materials. Budget planning becomes easier when device costs are separated from monthly service."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "h3-heading-echo" && issue.section === "Video Capture"));
+  });
+
+  it("flags repeated H2 opening patterns across sections", () => {
+    const markdown = [
+      "---",
+      "title: Owner Operator Camera Guide",
+      "---",
+      "",
+      "## How Should Owner Operators Compare Features?",
+      "",
+      "Owner operators should compare camera features against evidence needs and total operating cost.",
+      "",
+      "## How Should Owner Operators Budget For Cameras?",
+      "",
+      "Owner operators should budget for hardware, installation, monthly service, and replacement risk.",
+      "",
+      "## How Should Owner Operators Choose A Vendor?",
+      "",
+      "Owner operators should choose vendors based on footage access, support response, and contract flexibility."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "h2-opening-pattern"));
+  });
+
+  it("flags repeated bullet internal structure", () => {
+    const markdown = [
+      "---",
+      "title: Camera Guide",
+      "---",
+      "",
+      "## What Features Matter?",
+      "",
+      "Camera feature reviews should separate evidence needs from sales claims.",
+      "",
+      "- **Camera Views:** Road-facing, driver-facing, side, rear, and cargo-adjacent views solve different evidence problems.",
+      "- **Video Quality:** Resolution, low-light visibility, field of view, and frame reliability determine whether footage can clarify an event.",
+      "- **AI Alerts:** Distraction, tailgating, drowsiness, harsh braking, and lane-departure alerts reduce manual review by tagging risk events.",
+      "- **GPS Context:** Location, speed, route, and timestamp overlays strengthen incident timelines."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "bullet-internal-pattern"));
+  });
+
+  it("flags section closings that mirror section openings", () => {
+    const markdown = [
+      "---",
+      "title: Camera Guide",
+      "---",
+      "",
+      "## How Should Owner Operators Compare Features?",
+      "",
+      "Owner operators should compare fleet dash camera features by checking evidence capture, retrieval speed, driver acceptance, and total cost control.",
+      "",
+      "Trial periods can reveal whether alerts, support workflows, and footage access match daily operations.",
+      "",
+      "Practical comparison comes from matching evidence capture, retrieval speed, driver acceptance, and total cost control to actual exposure."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "section-opening-closing-mirror"));
   });
 
   it("renders a repair prompt with the audit findings", () => {

@@ -38,7 +38,7 @@ Phase 4, structure correction:
 - Do not rewrite blindly. Improve the draft with targeted edits mapped to the semantic map and approved outline.
 - Treat this as a combined Stage 4 AEO pass and Stage 5 QA pass. Preserve factual content and headings unless the approved outline or article structure is invalid.
 - If YAML frontmatter exists, preserve frontmatter values exactly.
-- Apply AEO transformations without adding new facts: first-sentence tightening, bridge removal, pronoun-to-noun replacement at section openings, statistic isolation, hedge removal, list parallelism, table parallelism, FAQ direct answers, H3 anchor sentences, concrete Final Thoughts, and definition anchor reinforcement.
+- Apply AEO transformations without adding new facts: first-sentence tightening and variation, bridge removal, pronoun-to-noun replacement at section openings, statistic isolation, hedge removal, list parallelism with internal variation, table parallelism, FAQ direct answers, H3 anchor sentences, concrete Final Thoughts, definition anchor reinforcement, and closing sentence variation.
 - For comparison articles, enforce this order unless the approved outline has a user-approved reason to differ: define Entity A; define Entity B; explain responsibilities or core features; compare differences; handle legal/compliance after role clarity; provide decision guidance after comparison; place FAQs near the end; end with decision logic.
 - Never open a comparison article with a dense comparison table unless the topic has very high user familiarity and the user clearly expects a quick-answer format.
 - Remove any content between YAML frontmatter and the first H2. This includes Key Takeaways, TL;DR, summary blocks, executive summaries, callout boxes, quick answers, bullet summaries, or introduction paragraphs.
@@ -46,6 +46,7 @@ Phase 4, structure correction:
 - If no YAML frontmatter exists, remove any H1, Key Takeaways, TL;DR, summary block, or prose before the first topical H2 when the article follows the Matrack definition-led structure.
 - Ensure H2s are question-based wherever natural.
 - Ensure every H2 answers the heading immediately.
+- Ensure H2 opening sentences are self-contained and structurally varied across the article. If 3 or more H2s share the same opening pattern, rewrite all but one.
 - Break structural uniformity. Do not let all sections follow the same pattern.
 
 Phase 5, structural variation:
@@ -57,8 +58,10 @@ Phase 5, structural variation:
 - Use one sentence plus structured bullets for benefits, features, criteria, signs, steps, or risks. Bullet labels must be 2 to 3 words and each bullet must carry meaningful information.
 - Use one sentence plus H3s only when multiple subtopics genuinely need separate treatment. H3s should be 3 to 4 words and must justify their existence.
 - Every non-FAQ H3 in the final article must be a tight chunk of 2 to 3 sentences. Sentence 1 names the H3 topic and function. Sentence 2 explains operational value. Sentence 3 is optional for a use case, integration, or specific detail.
+- No H3 opening sentence may repeat the H3 heading verbatim as the grammatical subject. Rewrite heading echoes with topic variants, function-first openings, stakeholder-first openings, outcome-first openings, or operational-context openings.
 - FAQ H3s must answer directly in 2 to 3 self-contained sentences.
 - Bullet lists must use `- **Term:** Explanation` with parallel grammar unless the approved outline has a specific reason not to.
+- Bullet lists must vary internal sentence structure. If 3 or more consecutive bullets use the same pattern, rewrite at least one using conditional, stakeholder, outcome, or specific-detail framing.
 - Comparison tables must use `Comparison Point` as the leftmost column and must not include `Drafting Caution`, `Verification Notes`, `Editorial Flag`, `Notes for Writer`, or `Caveat`.
 - Use tables only when comparison, mapping, or side-by-side evaluation improves clarity.
 - Eliminate repeated numbers of bullets, repeated numbers of H3s, repeated paragraph rhythm, and predictable formatting.
@@ -75,6 +78,7 @@ Phase 6, content execution:
 - Replace vague claims with direct cause-effect statements.
 - Audit sentence starters across the full article. Rewrite every sentence that begins with "the", "a", "that", or "those".
 - Extract the first 1 to 3 words of sentences in each section. Also check same entity match, same role match, same H2 keyword match, same comparison-term match, and same syntactic pattern. Rewrite repeated nearby starts instead of using random synonyms.
+- Extract the first 5 to 7 words of every H2 opening sentence. Rewrite repeated cross-section patterns such as "Owner operators should", "Fleet managers can", or "[Topic] is" when they appear in 3 or more H2s.
 - Check remaining sentence starter clusters. Rewrite repeated openings such as "this", "it", "these", "they", "when", "although", "by", "for", "while", or "each".
 - Remove filler, vague modifiers, and generic claims. Every sentence must carry information.
 - Remove editorial leak phrases, CTAs, exclamation marks, rhetorical questions in body prose, first-person body prose, and banned marketing language.
@@ -93,6 +97,7 @@ Phase 7, micro section and authority:
 - Do not mark claims with editorial notes such as "(verify before publishing)". Remove unsupported claims or keep them as verification notes outside the article body.
 - Ensure the Matrack pitch, when present, remains exactly 3 prose paragraphs with no H3s, bullets, numbered lists, or tables.
 - Ensure the Matrack pitch includes both pricing context and flexibility context before final output.
+- Compare the first and last sentence of each non-FAQ, non-Final Thoughts H2 section. If the closing repeats 50% or more of the opening's key terms or concepts, rewrite the closing with a specific operational implication, stakeholder decision, concrete constraint, or implicit forward value.
 
 Final quality filter:
 
@@ -101,6 +106,9 @@ Final quality filter:
 - No H2 or H3 section has more than two nearby sentences starting with the same entity or phrase.
 - No H2 or H3 section has more than two nearby sentences starting with the same H2 keyword, role, comparison term, or opening grammar pattern.
 - Bullet lists do not repeat the same grammar pattern across several consecutive bullets.
+- H3 sections do not open by repeating the H3 heading verbatim.
+- H2 opening sentences vary across the article and do not repeat the same subject plus modal verb pattern.
+- Section closings do not mirror section openings.
 - Every non-FAQ H3 has 2 to 3 sentences, and every FAQ H3 has a concise direct answer.
 - No repeated sentence starter clusters.
 - No filler-heavy sentences.

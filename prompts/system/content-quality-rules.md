@@ -18,6 +18,10 @@
 - Keep semantic entities present, but do not let the same entity, noun, pronoun, or phrase dominate sentence openings. Place the entity later in the sentence when context, condition, outcome, contrast, or the operational object creates a more natural opening.
 - Do not treat sentence-opening quality as a banned-word list only. Repeated starts with the main entity, H2 keyword, role name, comparison term, or the same grammatical pattern also create AI rhythm.
 - Avoid clusters of "X is", "X helps", "X should", "X can", and other repeated subject-plus-verb openings. Rewrite with context-first, outcome-first, condition-first, contrast-first, or object-first sentence structure.
+- Across H2 openings, avoid 3 or more sections starting with the same subject plus modal verb pattern, such as "Owner operators should" or "Fleet managers can".
+- H3 openings must not repeat the H3 heading verbatim as the grammatical subject.
+- Bullet lists should be parallel in form but varied in internal sentence structure. Avoid 3 or more consecutive bullet explanations with the same word order and clause pattern.
+- Section closings should not mirror section openings. If the last sentence repeats the first sentence's key terms, close with a specific operational action, stakeholder decision, constraint, or applied value instead.
 - Keep product mentions useful, specific, and non-promotional unless the brief requests otherwise.
 - Make every section connect to the previous idea and the next idea. Avoid isolated content islands.
 
@@ -37,9 +41,13 @@ Use one sentence plus H3 subsections when the H2 contains several subtopics that
 
 When a non-FAQ H3 is used in the article body, write a tight 2 to 3 sentence chunk below it. Sentence 1 should name the H3 topic and define what it does. Sentence 2 should explain the operational value, data, function, impact, or decision it enables. Sentence 3 is optional for a specific use case, integration, or detail.
 
+For H3 chunks, do not begin sentence 1 by repeating the H3 heading verbatim. Use a topic variant, function-first opener, stakeholder-first opener, outcome-first opener, or operational-context opener.
+
 When an FAQ uses H3 questions, answer each one in 2 to 3 self-contained sentences. The first sentence must directly answer the question.
 
 Use bullet lists in this format unless the approved outline has a specific reason not to: `- **Term:** Explanation`. Keep each bullet explanation to 1 to 2 sentences.
+
+Within bullet lists with 4 or more items, use at least 3 internal sentence structures across the explanations: list plus verb plus outcome, subject plus verb plus conditional, conditional opener plus action, stakeholder plus action plus reason, or specific detail plus connection.
 
 Comparison tables must use reader-facing columns. Use `Comparison Point` as the leftmost column and never include editorial/process columns such as `Drafting Caution`, `Verification Notes`, `Editorial Flag`, `Notes for Writer`, or `Caveat`.
 

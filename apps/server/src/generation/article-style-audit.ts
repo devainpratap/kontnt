@@ -14,7 +14,11 @@ export type ArticleStyleIssue = {
     | "pre-h2-content"
     | "pitch-structure"
     | "pitch-pricing-flexibility"
-    | "repeated-caveat";
+    | "repeated-caveat"
+    | "h3-heading-echo"
+    | "h2-opening-pattern"
+    | "bullet-internal-pattern"
+    | "section-opening-closing-mirror";
   section: string;
   message: string;
   evidence: string[];
@@ -189,6 +193,7 @@ const ignoredOpeners = new Set([
   "with",
   "from"
 ]);
+const modalVerbs = new Set(["can", "could", "should", "must", "need", "needs", "may", "might", "will", "would"]);
 
 function normalizeText(value: string) {
   return value
@@ -225,6 +230,10 @@ function normalizeOpener(value: string, wordCount: number) {
     .slice(0, wordCount)
     .join(" ")
     .trim();
+}
+
+function getKeyTerms(value: string) {
+  return tokenize(value).filter((word) => word.length > 3 && !stopWords.has(word) && !modalVerbs.has(word));
 }
 
 function getSectionTopicTerms(heading: string) {
@@ -493,6 +502,199 @@ function addRepeatedCaveatIssues(markdown: string, issues: ArticleStyleIssue[]) 
   });
 }
 
+function addH3HeadingEchoIssues(h3Blocks: Array<{ heading: string; parentHeading: string; sentenceCount: number; sentences: string[] }>, issues: ArticleStyleIssue[]) {
+  const echoes = h3Blocks
+    .filter((block) => !isFaqBlock(block))
+    .map((block) => {
+      const headingTokens = tokenize(block.heading);
+      const sentence = block.sentences[0] ?? "";
+      const sentenceTokens = tokenize(sentence);
+      const isEcho = headingTokens.length > 0 && headingTokens.every((token, index) => sentenceTokens[index] === token);
+      return { block, sentence, isEcho };
+    })
+    .filter((item) => item.isEcho);
+
+  echoes.forEach(({ block, sentence }) => {
+    issues.push({
+      code: "h3-heading-echo",
+      section: block.heading,
+      message: echoes.length >= 3
+        ? "Critical: three or more H3 sections begin by repeating the H3 heading verbatim."
+        : "Rewrite the H3 opening so it does not repeat the H3 heading verbatim.",
+      evidence: [sentence || block.heading]
+    });
+  });
+}
+
+function getH2OpeningPattern(sentence: string) {
+  const tokens = tokenize(sentence).slice(0, 7);
+  if (tokens.length < 3) {
+    return "";
+  }
+
+  const modalIndex = tokens.findIndex((token, index) => index > 0 && index <= 3 && modalVerbs.has(token));
+  if (modalIndex !== -1) {
+    return `${tokens.slice(0, modalIndex).join(" ")} ${tokens[modalIndex]}`;
+  }
+
+  const verbIndex = tokens.findIndex((token, index) => index > 0 && index <= 2 && patternVerbs.has(token));
+  if (verbIndex !== -1) {
+    return `${tokens.slice(0, verbIndex).join(" ")} ${tokens[verbIndex]}`;
+  }
+
+  return tokens.slice(0, 3).join(" ");
+}
+
+function addH2OpeningPatternIssues(h2Sections: H2Section[], issues: ArticleStyleIssue[]) {
+  const openingRows = h2Sections
+    .filter((section) => !/\b(faq|faqs|frequently asked|common questions|final thoughts)\b/i.test(section.heading))
+    .map((section) => {
+      const openingSentence = splitIntoSentences(section.body)[0] ?? "";
+      return {
+        section,
+        openingSentence,
+        pattern: getH2OpeningPattern(openingSentence)
+      };
+    })
+    .filter((row) => row.openingSentence && row.pattern);
+
+  const grouped = new Map<string, Array<{ section: H2Section; openingSentence: string }>>();
+  openingRows.forEach((row) => {
+    grouped.set(row.pattern, [...(grouped.get(row.pattern) ?? []), row]);
+  });
+
+  grouped.forEach((rows, pattern) => {
+    if (rows.length >= 3) {
+      rows.forEach((row) => {
+        issues.push({
+          code: "h2-opening-pattern",
+          section: row.section.heading,
+          message: rows.length >= 4
+            ? `Critical: four or more H2 sections share the opening pattern "${pattern}".`
+            : `Three or more H2 sections share the opening pattern "${pattern}".`,
+          evidence: [row.openingSentence]
+        });
+      });
+    }
+  });
+}
+
+function getBulletExplanation(line: string) {
+  return normalizeText(line.replace(/^-\s+/, "").replace(/^\*\*[^*]+:\*\*\s*/, ""));
+}
+
+function classifyBulletStructure(explanation: string) {
+  const lower = explanation.toLowerCase();
+  const tokens = tokenize(explanation);
+  const firstSentence = splitIntoSentences(explanation)[0] ?? explanation;
+
+  if (/^when\b/i.test(firstSentence)) {
+    return "conditional-opener-action";
+  }
+
+  if (/\bbecause\b/i.test(firstSentence) && tokens.slice(0, 4).some((token) => topicRoleTerms.has(token) || token.endsWith("er") || token.endsWith("or"))) {
+    return "stakeholder-action-reason";
+  }
+
+  if (/\bshows why\b/i.test(firstSentence)) {
+    return "specific-detail-connection";
+  }
+
+  if (/\bwhen\b/i.test(firstSentence)) {
+    return "subject-verb-conditional";
+  }
+
+  const commaCount = (firstSentence.match(/,/g) ?? []).length;
+  const earlyAnd = /\b(?:and|or)\b/.test(tokens.slice(0, 8).join(" "));
+  if (commaCount >= 2 || earlyAnd) {
+    return "list-verb-outcome";
+  }
+
+  if (/\b(?:uses|needs|checks|reviews|compares|chooses)\b/i.test(lower)) {
+    return "stakeholder-action-reason";
+  }
+
+  return "subject-verb-outcome";
+}
+
+function addBulletInternalPatternIssues(sections: Section[], issues: ArticleStyleIssue[]) {
+  sections.forEach((section) => {
+    const bulletLines = section.body
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("- "));
+
+    if (bulletLines.length < 4) {
+      return;
+    }
+
+    const rows = bulletLines.map((line) => ({
+      line,
+      structure: classifyBulletStructure(getBulletExplanation(line))
+    }));
+
+    for (let index = 0; index <= rows.length - 3; index += 1) {
+      const window = rows.slice(index, index + 3);
+      if (window.every((row) => row.structure === window[0].structure)) {
+        issues.push({
+          code: "bullet-internal-pattern",
+          section: section.heading,
+          message: `Three or more consecutive bullets use the same internal structure "${window[0].structure}".`,
+          evidence: window.map((row) => row.line)
+        });
+        break;
+      }
+    }
+
+    if (rows.length >= 5) {
+      const counts = new Map<string, string[]>();
+      rows.forEach((row) => counts.set(row.structure, [...(counts.get(row.structure) ?? []), row.line]));
+      counts.forEach((evidence, structure) => {
+        if (evidence.length >= 4) {
+          issues.push({
+            code: "bullet-internal-pattern",
+            section: section.heading,
+            message: `Four or more bullets in this list use the same internal structure "${structure}".`,
+            evidence: evidence.slice(0, 5)
+          });
+        }
+      });
+    }
+  });
+}
+
+function addSectionOpeningClosingMirrorIssues(h2Sections: H2Section[], issues: ArticleStyleIssue[]) {
+  h2Sections
+    .filter((section) => !/\b(faq|faqs|frequently asked|common questions|final thoughts)\b/i.test(section.heading))
+    .forEach((section) => {
+      const sentences = splitIntoSentences(section.body);
+      if (sentences.length < 2) {
+        return;
+      }
+
+      const firstSentence = sentences[0];
+      const lastSentence = sentences[sentences.length - 1];
+      const firstTerms = getKeyTerms(firstSentence);
+      const lastTerms = new Set(getKeyTerms(lastSentence));
+
+      if (firstTerms.length < 4) {
+        return;
+      }
+
+      const overlappingTerms = firstTerms.filter((term) => lastTerms.has(term));
+      const overlapRatio = overlappingTerms.length / firstTerms.length;
+
+      if (overlapRatio >= 0.5 && overlappingTerms.length >= 3) {
+        issues.push({
+          code: "section-opening-closing-mirror",
+          section: section.heading,
+          message: "The section closing mirrors 50% or more of the opening sentence's key terms.",
+          evidence: [firstSentence, lastSentence]
+        });
+      }
+    });
+}
+
 function addBannedPhraseIssues(sections: Section[], issues: ArticleStyleIssue[]) {
   sections.forEach((section) => {
     const sentences = splitIntoSentences(section.body);
@@ -731,6 +933,10 @@ export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   addPreH2ContentIssues(markdown, issues);
   addPitchIssues(h2Sections, issues);
   addRepeatedCaveatIssues(markdown, issues);
+  addH3HeadingEchoIssues(h3Blocks, issues);
+  addH2OpeningPatternIssues(h2Sections, issues);
+  addBulletInternalPatternIssues(sections, issues);
+  addSectionOpeningClosingMirrorIssues(h2Sections, issues);
 
   return {
     issues,
@@ -794,6 +1000,10 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "- If the audit flags `pitch-structure`, rewrite the Matrack pitch as exactly three prose paragraphs with no H3s, bullets, numbered lists, or tables.",
     "- If the audit flags `pitch-pricing-flexibility`, add both pricing context and flexibility context to the Matrack pitch without adding a CTA.",
     "- If the audit flags `repeated-caveat`, keep the first useful caveat and remove later repeated caveat phrasing while preserving any new variation factors.",
+    "- If the audit flags `h3-heading-echo`, rewrite the H3 opener with a topic variant, function-first, stakeholder-first, outcome-first, or operational-context opener.",
+    "- If the audit flags `h2-opening-pattern`, rotate H2 opening sentence types so the same subject-plus-modal or subject-plus-verb pattern does not appear three or more times.",
+    "- If the audit flags `bullet-internal-pattern`, keep bullet labels parallel but rewrite explanations so internal sentence structures vary.",
+    "- If the audit flags `section-opening-closing-mirror`, rewrite the closing sentence with a specific operational implication, stakeholder decision, constraint, or applied value.",
     "",
     "Return only the repaired article in Markdown.",
     "",

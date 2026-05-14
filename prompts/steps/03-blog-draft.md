@@ -35,14 +35,21 @@ Additional drafting rules:
 - Do not add Key Takeaways unless the approved outline explicitly requires them for a non-Matrack article.
 - Use question-based H2s wherever the approved outline allows it.
 - Choose the best structure for each H2 rather than repeating the same pattern.
+- Rotate H2 opening sentence types across the article: topic-as-subject, operational-outcome-first, operating-context-first, concrete-specific-fact-first, and stakeholder-action-first.
+- Do not let 3 or more H2s open with the same subject plus modal verb pattern, such as "Owner operators should", "Fleet managers can", or "Trucking companies need".
+- No single H2 opener type should appear in more than 40% of the article's H2 openings. Stakeholder-action-first openings should appear no more than 1 to 2 times.
 - Do not let repeated entities dominate sentence openings. Within each H2 or H3, avoid starting more than two nearby sentences with the same entity, noun, pronoun, or phrase.
 - Do not repeatedly start sentences with the H2 keyword, role name, comparison term, or the same grammar pattern such as "X is", "X helps", "X should", or "X can".
 - Vary sentence openings by starting with decision context, condition, outcome, contrast, or the operational object when the topic entity would otherwise repeat.
 - For explanatory H2s, use the three-paragraph logic when natural: direct answer, mechanism, implication or transition.
 - For benefits, features, signs, steps, and mistakes, use one short lead sentence followed by structured bullets.
 - For multi-component sections, use H3s. Each non-FAQ H3 must have 2 to 3 sentences: sentence 1 names the H3 topic and function, sentence 2 explains the operational value, and sentence 3 may add a use case or integration detail.
+- The first sentence under an H3 must not begin by repeating the H3 heading verbatim as the grammatical subject. Use a topic variant, function-first opener, stakeholder-first opener, outcome-first opener, or operational-context opener instead.
+- Within any H2 that contains multiple H3s, use at least 3 different H3 opener patterns. If the H2 has only 2 H3s, the two openers must use different patterns.
 - For FAQ H3s, answer directly in 2 to 3 self-contained sentences.
 - Format bullets as `- **Term:** Explanation` with 1 to 2 sentences per bullet unless the approved outline explicitly uses a different format.
+- Vary bullet explanation structure within each list. Use at least 3 of these structures across any bullet list with 4 or more items: list plus verb plus outcome, subject plus verb plus conditional, conditional opener plus action, stakeholder plus action plus reason, and specific detail plus connection.
+- Do not let 3 or more consecutive bullets use the same internal word order, verb position, or clause pattern.
 - Format comparison tables with `Comparison Point` as the leftmost column and never include editorial/process columns.
 - Use tables only when they make comparison or breakdown easier to understand.
 - Do not add end-of-section micro-transitions that point to the next section. The H2 heading is the only transition needed.
@@ -60,6 +67,7 @@ Additional drafting rules:
 - Avoid em dashes and obvious AI phrases.
 - Before returning the draft, audit sentence openings and rewrite every sentence that begins with "the", "a", "that", or "those".
 - Before returning the draft, scan every section for repeated first 1 to 3 words, repeated role/entity starts, repeated H2 keyword starts, and repeated subject-plus-verb openings. Rewrite nearby repeats instead of swapping in random synonyms.
+- Before returning the draft, compare each H2 opening as a set and rewrite any cross-section pattern that appears 3 or more times.
 - Do not add standalone transition paragraphs after an H3 before the next H2. Place the transition inside the second H3 paragraph or before the H3 list begins.
 
 Return Markdown only.

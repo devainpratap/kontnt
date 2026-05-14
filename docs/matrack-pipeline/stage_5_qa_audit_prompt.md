@@ -350,6 +350,66 @@ Search for CTA patterns:
 - Check: Final Thoughts does not start with "In conclusion", "To summarize", "To wrap up", "All in all"
 - **Auto-fix:** Delete the filler opener phrase.
 
+### Y13. H3 Verbatim Heading Echo Detection (Major)
+
+For each H3 section in the article:
+- Extract the H3 heading text
+- Extract the first 5 words of the first sentence under that H3
+- Check: Does the first sentence begin with the exact H3 heading
+  phrase as the grammatical subject?
+
+If YES for any H3 = Major violation.
+If YES for 3+ H3s in the same article = Critical violation.
+
+Auto-fix: Not auto-fixable (requires sentence rewriting). Report
+with recommended action: re-run Stage 3 with stronger Protocol B
+variation rule.
+
+### Y14. H2 Opening Pattern Repetition Detection (Major)
+
+For each H2 section:
+- Extract the first 5 words of the first sentence under the H2
+
+Group H2 openings by structural similarity:
+- Same subject (e.g., "Owner operators")
+- Same modal verb (e.g., "should")
+- Same sentence shape (e.g., "Owner operators should [verb]...")
+
+If 3+ H2s share the same opening pattern = Major violation.
+If 4+ H2s share the same opening pattern = Critical violation.
+
+Auto-fix: Not auto-fixable. Recommend re-run Stage 3 + Stage 4
+with H2 variation rules enforced.
+
+### Y15. Bullet Internal Structure Repetition Detection (Major)
+
+For each bullet list with 4+ items:
+- Extract the internal structure of each bullet's explanation
+- Classify each bullet by structure type
+
+If 3+ consecutive bullets share the same internal structure
+(e.g., all using "List + verb + outcome" pattern) = Major
+violation.
+
+If a single bullet list of 5+ items uses the same internal
+structure for 4+ bullets = Critical violation.
+
+Auto-fix: Not auto-fixable. Recommend re-run Stage 4 with
+Transformation 6 enhanced sub-rule.
+
+### Y16. Section Opening/Closing Mirror Detection (Minor)
+
+For each H2 section (excluding FAQ and Final Thoughts):
+- Extract the first sentence and last sentence of the section
+- Compare key terms (nouns, named entities, action verbs)
+
+If the last sentence contains 50%+ overlap of key terms from the
+first sentence in the same order or near-same order = Minor
+violation.
+
+Auto-fix: Not auto-fixable. Recommend re-run Stage 4 with
+Transformation 12 closing variation rule.
+
 ---
 
 ## PHASE 3 — CONTENT AUDIT
@@ -466,6 +526,7 @@ After completing Phases 1–3, apply auto-fixes in this order:
 - Adding missing pitch pricing or flexibility references (requires Stage 3 re-run)
 - Adding missing FAQ (would require generation)
 - Rewriting hedges (requires specific number from article)
+- Rewriting H3 heading echoes, H2 opening patterns, bullet internal structure, or mirrored section closings
 - Rewriting H3 sections that exceed 3 sentences
 - Splitting sentences over 30 words
 - Replacing first-person constructions
@@ -639,7 +700,7 @@ Before outputting, validate:
 
 ### Audit Completeness Bars
 - [ ] All 17 structural checks (S1–S17) executed
-- [ ] All 12 style checks (Y1–Y12) executed
+- [ ] All 16 style checks (Y1–Y16) executed
 - [ ] All 9 content checks (C1–C9) executed
 - [ ] Auto-fixes applied where allowed
 - [ ] Auto-fixes documented in `auto_fixes_applied`
