@@ -271,24 +271,8 @@ Every bullet list and numbered list must have parallel grammatical structure acr
 **Rules:**
 - Lead term: bolded noun phrase, parallel grammatical form across all bullets
 - Explanation: 1–2 sentences of similar length
+- Each bullet should follow the pattern: `[Outcome/Feature]: [What happens] [Resulting benefit].`
 - Same applies to numbered lists
-
-SUB-RULE: Structural Variation vs. Parallel Structure
-
-Parallel structure (grammatical similarity) is required across
-bullets — this means lead terms are nouns, explanations are complete
-sentences, lengths are roughly similar.
-
-Identical internal structure (same word order, same verb position,
-same clause pattern) is FORBIDDEN — this creates AI-tell feel.
-
-These two rules work together. Bullets should feel parallel in
-form but varied in construction.
-
-If 3+ consecutive bullets use the exact same sentence pattern
-(e.g., all starting "[List of items] + [verb] + [outcome]"),
-rewrite at least one of them to use a different internal structure
-from the 5 structure types defined in Stage 3 Protocol C.
 
 ### Transformation 7: Comparison Table Parallelism
 

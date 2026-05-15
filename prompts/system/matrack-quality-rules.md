@@ -45,10 +45,8 @@ Apply these rules when the article is for Matrack, fleet management, trucking, t
 
 - Non-FAQ H3 sections should be tight, extractable chunks of 2 to 3 sentences.
 - H3 sentence 1 defines or names what the H3 topic does. Sentence 2 explains the operational value. Sentence 3 is optional for a use case, integration, or specific detail.
-- H3 sentence 1 must not repeat the H3 heading verbatim as its grammatical subject. Use a topic variant, function-first, stakeholder-first, outcome-first, or operational-context opener.
 - FAQ answers should be self-contained and usually 2 to 3 sentences.
 - Bullet lists should use `- **Term:** Explanation` where the explanation is 1 to 2 sentences.
-- Bullet explanations should vary internal structure across the list while staying parallel in format.
 - Numbered lists should be used only for ordered processes, ranked items, or ordered categories.
 - Comparison tables should use `Comparison Point` as the leftmost column, followed by one column per compared entity.
 - Never expose editorial columns such as `Drafting Caution`, `Verification Notes`, `Editorial Flag`, `Notes for Writer`, or `Caveat`.

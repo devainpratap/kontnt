@@ -260,30 +260,6 @@ describe("article style audit", () => {
     assert.ok(audit.issues.some((issue) => issue.code === "repeated-caveat"));
   });
 
-  it("flags H3 heading echoes", () => {
-    const markdown = [
-      "---",
-      "title: Camera Guide",
-      "---",
-      "",
-      "## What Features Matter?",
-      "",
-      "Camera feature reviews should focus on evidence quality and retrieval.",
-      "",
-      "### Video Capture",
-      "",
-      "Video capture records road, cab, and cargo context for incident review. Claim teams can compare footage with timestamps and GPS records.",
-      "",
-      "### Upfront Hardware",
-      "",
-      "Upfront hardware covers cameras, mounts, cables, and installation materials. Budget planning becomes easier when device costs are separated from monthly service."
-    ].join("\n");
-
-    const audit = auditArticleStyle(markdown);
-
-    assert.ok(audit.issues.some((issue) => issue.code === "h3-heading-echo" && issue.section === "Video Capture"));
-  });
-
   it("flags repeated H2 opening patterns across sections", () => {
     const markdown = [
       "---",
@@ -306,27 +282,6 @@ describe("article style audit", () => {
     const audit = auditArticleStyle(markdown);
 
     assert.ok(audit.issues.some((issue) => issue.code === "h2-opening-pattern"));
-  });
-
-  it("flags repeated bullet internal structure", () => {
-    const markdown = [
-      "---",
-      "title: Camera Guide",
-      "---",
-      "",
-      "## What Features Matter?",
-      "",
-      "Camera feature reviews should separate evidence needs from sales claims.",
-      "",
-      "- **Camera Views:** Road-facing, driver-facing, side, rear, and cargo-adjacent views solve different evidence problems.",
-      "- **Video Quality:** Resolution, low-light visibility, field of view, and frame reliability determine whether footage can clarify an event.",
-      "- **AI Alerts:** Distraction, tailgating, drowsiness, harsh braking, and lane-departure alerts reduce manual review by tagging risk events.",
-      "- **GPS Context:** Location, speed, route, and timestamp overlays strengthen incident timelines."
-    ].join("\n");
-
-    const audit = auditArticleStyle(markdown);
-
-    assert.ok(audit.issues.some((issue) => issue.code === "bullet-internal-pattern"));
   });
 
   it("flags section closings that mirror section openings", () => {

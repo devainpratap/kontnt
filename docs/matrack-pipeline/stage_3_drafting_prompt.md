@@ -317,94 +317,33 @@ stakeholder ("Owner operators", "Fleet managers", "Drivers", etc.)
 plus the same modal verb, rewrite at least 2 of them to use a
 different opener type from the list above.
 
-### Protocol B: h3_subsections (Components, Types, Industries, Challenges Sections)
+### Protocol B: `h3_subsections` (Components, Types, Industries, Challenges Sections)
 
-Open the section with **one context sentence** that frames the section
-without restating the H2.
+Open with **one context sentence** that frames the section without restating the H2.
 
-Then list H3 subsections from the outline. Each H3 section follows this
-strict format.
+Then list H3 subsections from the outline. Each H3 follows this strict format:
 
-H3 Heading Format: Use Title Case, exactly as specified in outline
+**H3 Heading** (Title Case, exactly as in outline)
 
-H3 Opening Sentence Rules (CRITICAL):
+> Sentence 1: Functional definition — what it is or does, with 2–3 entities.
+>
+> Sentence 2: Why it matters / what outcome it enables.
+>
+> [Optional Sentence 3: Specific use case or detail.]
 
-The first sentence under an H3 must NOT begin by repeating the H3
-heading verbatim as the grammatical subject. This is an AI-tell that
-makes content feel mechanical and templated.
+**Hard limit: 2–3 sentences per H3. Never more.**
 
-BANNED PATTERN (verbatim heading echo):
-- H3: "Video Capture" → Opening: "Video capture records road, cab..."
-- H3: "Upfront Hardware" → Opening: "Upfront hardware covers..."
-- H3: "Storage And LTE" → Opening: "Storage and LTE costs depend..."
+Each H3 is a self-contained, citable unit. If it sprawls, it breaks LLM extraction.
 
-This pattern is forbidden in 100% of H3 sections. Every H3 must use
-one of the approved alternative opener patterns below.
-
-APPROVED OPENER PATTERNS (use at least 3 different patterns across
-H3s in any single section):
-
-Pattern 1 — Topic Variant (rephrase the noun):
-- H3: "GPS Fleet Tracking Device" → Opening: "GPS fleet tracking
-  gives teams real-time visibility into vehicle location during
-  active routes."
-- H3: "Telematics Control Unit" → Opening: "Telematics systems
-  connect vehicle activity with operational performance."
-- H3: "Fleet Management Software" → Opening: "Fleet software brings
-  tracking, alerts, reports, and vehicle records into one dashboard."
-
-Pattern 2 — Function-First (lead with what it does):
-- H3: "AI Fleet Dash Cam" → Opening: "Visual context for distraction,
-  harsh braking, and incident review comes from AI-enabled dash cams."
-- H3: "ELD Compliance System" → Opening: "Driver hours and duty
-  status records are captured automatically by ELD compliance tools."
-
-Pattern 3 — Stakeholder-First (lead with who uses it):
-- H3: "Mobile App Interface" → Opening: "Supervisors can check van
-  status, receive alerts, and coordinate field teams through mobile
-  access to fleet data."
-- H3: "Maintenance Management System" → Opening: "Service teams use
-  maintenance tools to track inspections, repairs, and preventive
-  schedules across the fleet."
-
-Pattern 4 — Outcome-First (lead with the operational outcome):
-- H3: "Freight Factoring Integration" → Opening: "Faster invoice
-  payments help businesses cover fuel, payroll, repairs, and daily
-  operating costs."
-- H3: "Driver Behavior Monitoring" → Opening: "Repeat behaviors
-  like speeding, harsh braking, and distraction become visible
-  through driver behavior tracking."
-
-Pattern 5 — Operational Context (lead with the scenario):
-- H3: "Tanker Trucks" → Opening: "Crude oil, fuel, water, and
-  chemicals move between wells, processing units, and storage
-  facilities using tanker trucks."
-
-Distribution Rule:
-
-Within any single H2 section that contains multiple H3s, use at least
-3 different opener patterns across the H3 set. Do not use the same
-opener pattern more than twice in a row.
-
-If an H2 has only 2 H3s, the two openers must use different patterns.
-
-If an H2 has 5+ H3s, all 5 approved patterns should appear at least
-once across the section.
-
-Continuation Rules (Sentence 2 and Sentence 3):
-
-After the opener, follow these rules:
-- Sentence 2: Why it matters / what outcome it enables
-- Sentence 3 (optional): Specific use case or detail
-
-The 2-3 sentence hard limit per H3 still applies.
-
-### Protocol C: bullet_list (Benefits, Challenges, Features Sections)
+### Protocol C: `bullet_list` (Benefits, Challenges, Features Sections)
 
 Open with **one context sentence** that frames the section.
 
 Then write bullets in the strict format:
+
+```
 - **Term:** Explanation in 1–2 sentences.
+```
 
 Rules:
 - Lead term is bolded and followed by a colon
@@ -412,67 +351,9 @@ Rules:
 - 5–8 bullets per section maximum
 - Each bullet should incorporate at least 1–2 entities from the section's `entities_to_include`
 
-BULLET INTERNAL VARIATION RULE (NEW):
-
-The internal sentence structure of bullet explanations must vary
-across the bullet list. Identical internal structures across multiple
-bullets create AI-pattern feel.
-
-BANNED PATTERN — Identical Internal Structure Across Bullets:
-
-- **Camera Views:** Road-facing, driver-facing, dual-facing, side,
-  rear, and cargo-adjacent views solve different evidence problems.
-- **Video Quality:** Resolution, low-light visibility, field of view,
-  and frame reliability determine whether footage can clarify an event.
-- **AI Alerts:** Distraction, tailgating, drowsiness, harsh braking,
-  and lane-departure alerts reduce manual review by tagging likely
-  risk events.
-- **GPS Context:** Location, speed, route, and timestamp overlays
-  strengthen incident timelines.
-
-All four bullets above follow the same structure: [List of items]
-+ [generic verb] + [outcome]. This is mechanical.
-
-APPROVED PATTERN — Varied Internal Structures:
-
-- **Camera Views:** Road-facing, driver-facing, dual-facing, side,
-  rear, and cargo-adjacent views solve different evidence problems.
-- **Video Quality:** Resolution and low-light visibility decide
-  whether plates, lanes, and hazards remain readable when an
-  incident happens.
-- **AI Alerts:** Distraction, tailgating, drowsiness, and lane-
-  departure alerts reduce manual review by tagging likely risk
-  events.
-- **GPS Context:** When customer arrival, route choice, or speed
-  is disputed, location and timestamp overlays strengthen the
-  incident timeline.
-
-The four approved bullets use four different internal structures:
-- Bullet 1: List → verb → outcome
-- Bullet 2: Subject pair → verb → conditional clause
-- Bullet 3: List → verb → mechanism phrase
-- Bullet 4: Conditional opener → subject → verb → outcome
-
-INTERNAL STRUCTURE TYPES FOR BULLETS:
-
-Use at least 3 of these 5 structures across any bullet list with 4+
-items. No single structure may appear in more than 40% of bullets in
-a single list.
-
-Structure 1 — List + Verb + Outcome:
-"[Item, item, and item] [verb] [outcome]."
-
-Structure 2 — Subject + Verb + Conditional:
-"[Subject] [verb] [outcome] when [condition]."
-
-Structure 3 — Conditional Opener + Action:
-"When [condition], [subject] [verb] [outcome]."
-
-Structure 4 — Stakeholder + Action + Reason:
-"[Stakeholder] uses/needs [item] because [reason]."
-
-Structure 5 — Specific Detail + Connection:
-"[Specific fact or example] shows why [topic connection]."
+Example:
+> - **Faster Payments:** Funds arrive soon after load delivery, helping cover expenses without waiting on broker or shipper settlements.
+> - **Steady Cash Flow:** Predictable working capital supports fuel purchases, payroll, insurance, repairs, and dispatch operations.
 
 ### Protocol D: `numbered_list` (Implementation, How-To Steps Sections)
 
