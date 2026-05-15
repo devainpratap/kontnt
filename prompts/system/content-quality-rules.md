@@ -19,6 +19,7 @@
 - Do not treat sentence-opening quality as a banned-word list only. Repeated starts with the main entity, H2 keyword, role name, comparison term, or the same grammatical pattern also create AI rhythm.
 - Avoid clusters of "X is", "X helps", "X should", "X can", and other repeated subject-plus-verb openings. Rewrite with context-first, outcome-first, condition-first, contrast-first, or object-first sentence structure.
 - Across H2 openings, avoid 3 or more sections starting with the same subject plus modal verb pattern, such as "Owner operators should" or "Fleet managers can".
+- Across H2 openings, also avoid 3 or more sections using the same predicate frame with different subjects, such as "[concept] improves when", "[concept] works by", "[concept] matters because", "[concept] depends on", "[concept] starts with", or "[concept] comes from".
 - Section closings should not mirror section openings. If the last sentence repeats the first sentence's key terms, close with a specific operational action, stakeholder decision, constraint, or applied value instead.
 - Control article-wide rhythm, not only individual section quality. Repeated H3-list sections, repeated abstract nouns, and repeated "team/manager can/use" constructions can still make a technically correct article feel generated.
 - Keep product mentions useful, specific, and non-promotional unless the brief requests otherwise.

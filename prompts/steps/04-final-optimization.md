@@ -79,6 +79,7 @@ Phase 6, content execution:
 - Audit sentence starters across the full article. Rewrite every sentence that begins with "the", "a", "that", or "those".
 - Extract the first 1 to 3 words of sentences in each section. Also check same entity match, same role match, same H2 keyword match, same comparison-term match, and same syntactic pattern. Rewrite repeated nearby starts instead of using random synonyms.
 - Extract the first 5 to 7 words of every H2 opening sentence. Rewrite repeated cross-section patterns such as "Owner operators should", "Fleet managers can", or "[Topic] is" when they appear in 3 or more H2s.
+- Extract the predicate frame of every H2 opening sentence. Rewrite the article if 3 or more H2 openings use the same generic frame with different subjects, such as "[concept] improves when", "[concept] works by", "[concept] matters because", "[concept] depends on", "[concept] starts with", or "[concept] comes from".
 - Check remaining sentence starter clusters. Rewrite repeated openings such as "this", "it", "these", "they", "when", "although", "by", "for", "while", or "each".
 - Remove filler, vague modifiers, and generic claims. Every sentence must carry information.
 - Remove editorial leak phrases, CTAs, exclamation marks, rhetorical questions in body prose, first-person body prose, and banned marketing language.
@@ -112,6 +113,7 @@ Final quality filter:
 - No H2 or H3 section has more than two nearby sentences starting with the same H2 keyword, role, comparison term, or opening grammar pattern.
 - Bullet lists do not repeat the same grammar pattern across several consecutive bullets.
 - H2 opening sentences vary across the article and do not repeat the same subject plus modal verb pattern.
+- H2 opening sentences do not repeat the same generic predicate frame across 3 or more sections.
 - Section closings do not mirror section openings.
 - Every non-FAQ H3 has 2 to 3 sentences, and every FAQ H3 has a concise direct answer.
 - No repeated sentence starter clusters.

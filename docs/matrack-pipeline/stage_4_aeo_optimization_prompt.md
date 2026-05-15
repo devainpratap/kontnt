@@ -130,6 +130,10 @@ Banned cross-section repetition examples:
 - 3+ H2s starting with "Trucking companies need..."
 - 3+ H2s starting with "[Topic] is/are..."  (when the topic is the
   same article-wide topic)
+- 3+ H2s using the same generic predicate frame with different
+  subjects, such as "Service verification improves when...", "Driver
+  safety review improves when...", and "Preventive maintenance
+  improves when..."
 
 Acceptable repetition:
 - 2 H2s using the same definitional opener when both are explicitly
@@ -152,6 +156,11 @@ Acceptable repetition:
 - Subject is clear, but it does not need to repeat the same topic-first pattern used elsewhere
 - Sentence is self-contained (no pronouns referring backward)
 - Sentence stands alone if extracted as a Featured Snippet
+- If 3+ H2 openings use the same predicate frame ("improves when",
+  "works by", "matters because", "depends on", "starts with", "comes
+  from"), rewrite at least 2 openings using outcome-first,
+  condition-first, operational-detail-first, or stakeholder-decision
+  framing.
 
 ### Transformation 2: Bridge Sentence Removal
 

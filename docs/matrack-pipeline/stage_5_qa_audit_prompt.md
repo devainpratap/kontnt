@@ -359,6 +359,9 @@ Group H2 openings by structural similarity:
 - Same subject (e.g., "Owner operators")
 - Same modal verb (e.g., "should")
 - Same sentence shape (e.g., "Owner operators should [verb]...")
+- Same generic predicate frame with different subjects (e.g.,
+  "Service verification improves when...", "Driver safety review
+  improves when...", "Preventive maintenance improves when...")
 
 If 3+ H2s share the same opening pattern = Major violation.
 If 4+ H2s share the same opening pattern = Critical violation.

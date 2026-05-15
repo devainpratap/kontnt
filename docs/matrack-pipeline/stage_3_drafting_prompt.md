@@ -317,6 +317,28 @@ stakeholder ("Owner operators", "Fleet managers", "Drivers", etc.)
 plus the same modal verb, rewrite at least 2 of them to use a
 different opener type from the list above.
 
+GENERIC PREDICATE FRAME RULE:
+
+Do not let 3 or more H2 opening sentences share the same generic
+predicate frame, even when the subject changes.
+
+Banned frame examples:
+- "[concept] improves when..."
+- "[concept] works by..."
+- "[concept] matters because..."
+- "[concept] depends on..."
+- "[concept] starts with..."
+- "[concept] comes from..."
+
+Example of banned repetition:
+- "Service verification improves when..."
+- "Driver safety review improves when..."
+- "Preventive maintenance improves when..."
+
+Rewrite at least 2 of the repeated openings using outcome-first,
+condition-first, operational-detail-first, concrete-fact-first, or
+stakeholder-decision framing.
+
 ### Protocol B: `h3_subsections` (Components, Types, Industries, Challenges Sections)
 
 Open with **one context sentence** that frames the section without restating the H2.

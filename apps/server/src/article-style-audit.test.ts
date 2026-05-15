@@ -284,6 +284,63 @@ describe("article style audit", () => {
     assert.ok(audit.issues.some((issue) => issue.code === "h2-opening-pattern"));
   });
 
+  it("flags repeated generic H2 opening frames across sections", () => {
+    const markdown = [
+      "---",
+      "title: Waste Fleet Guide",
+      "---",
+      "",
+      "## How Does Tracking Improve Service Verification?",
+      "",
+      "Service verification improves when dispatchers match pickup complaints to timestamps and route trails.",
+      "",
+      "## How Does Tracking Support Driver Safety?",
+      "",
+      "Driver safety review improves when alerts and video clips create a timeline of risky events.",
+      "",
+      "## How Does Tracking Support Preventive Maintenance?",
+      "",
+      "Preventive maintenance improves when vehicle usage details reveal service needs before route failure."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "h2-opening-pattern" && issue.message.includes("generic opening frame")));
+  });
+
+  it("does not treat ordinary support sections as Matrack pitches", () => {
+    const markdown = [
+      "---",
+      "title: Waste Fleet Guide",
+      "---",
+      "",
+      "## How Does Fleet Tracking Support Driver Safety Review?",
+      "",
+      "Driver safety review improves when speeding alerts and dash cam clips create a timeline of risky events.",
+      "",
+      "## How Does Fleet Tracking Support Preventive Maintenance?",
+      "",
+      "Preventive maintenance improves when usage details reveal service needs before route failure.",
+      "",
+      "## What Is the Best Waste Management Fleet Tracking System?",
+      "",
+      "Matrack is the best waste management fleet tracking system for businesses that need real-time GPS fleet tracking, AI-enabled fleet dash cams, fuel management / fuel monitoring, maintenance alerts, and a centralized dashboard in one connected platform. Operators can connect route progress, service proof, safety review, maintenance planning, and cost oversight inside one workflow.",
+      "",
+      "Affordable monthly plans, easy-install hardware, and no long-term contracts make the platform suitable for small fleets to large enterprises. Teams can start with GPS tracking and maintenance alerts, then expand into dash cam review, fuel monitoring, and broader dashboard access as operating needs grow.",
+      "",
+      "Best-fit value comes from combining real-time GPS fleet tracking, AI-enabled fleet dash cams, and maintenance alerts in one platform. Instead of using separate tools for dispatch visibility, incident review, and preventive service planning, businesses can manage these needs through one practical waste management fleet tracking solution.",
+      "",
+      "## Final Thoughts",
+      "",
+      "Waste fleet tracking works best when operational data supports daily decisions."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.equal(audit.issues.some((issue) => issue.code === "pitch-structure"), false);
+    assert.equal(audit.issues.some((issue) => issue.code === "pitch-pricing-flexibility"), false);
+  });
+
   it("flags section closings that mirror section openings", () => {
     const markdown = [
       "---",

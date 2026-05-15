@@ -434,9 +434,7 @@ function addPreH2ContentIssues(markdown: string, issues: ArticleStyleIssue[]) {
 function findMatrackPitchSection(h2Sections: H2Section[]) {
   const finalThoughtsIndex = h2Sections.findIndex((section) => /^final thoughts$/i.test(section.heading));
   const beforeFinal = finalThoughtsIndex === -1 ? h2Sections : h2Sections.slice(0, finalThoughtsIndex);
-  const namedCandidate = [...beforeFinal].reverse().find((section) =>
-    /\b(matrack|best .*solution|best .*for|support)\b/i.test(section.heading)
-  );
+  const namedCandidate = [...beforeFinal].reverse().find((section) => isMatrackPitchCandidate(section));
 
   if (namedCandidate) {
     return namedCandidate;
@@ -452,6 +450,17 @@ function findMatrackPitchSection(h2Sections: H2Section[]) {
   }
 
   return undefined;
+}
+
+function isMatrackPitchCandidate(section: H2Section) {
+  const heading = section.heading;
+  const body = section.body;
+
+  if (/\bmatrack\b/i.test(`${heading}\n${body}`)) {
+    return true;
+  }
+
+  return /\bbest\b.*\b(solution|system|software|platform)\b/i.test(heading);
 }
 
 function countProseParagraphs(body: string) {
@@ -537,6 +546,29 @@ function getH2OpeningPattern(sentence: string) {
   return tokens.slice(0, 3).join(" ");
 }
 
+function getH2OpeningSyntaxPattern(sentence: string) {
+  const tokens = tokenize(sentence).slice(0, 10);
+  const genericFrames = [
+    ["improve", "when"],
+    ["work", "by"],
+    ["matter", "because"],
+    ["depend", "on"],
+    ["start", "with"],
+    ["come", "from"],
+    ["become", "easier"],
+    ["become", "more"]
+  ];
+
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    const frame = genericFrames.find(([verb, connector]) => tokens[index] === verb && tokens[index + 1] === connector);
+    if (frame) {
+      return `concept ${frame[0]} ${frame[1]}`;
+    }
+  }
+
+  return "";
+}
+
 function addH2OpeningPatternIssues(h2Sections: H2Section[], issues: ArticleStyleIssue[]) {
   const openingRows = h2Sections
     .filter((section) => !/\b(faq|faqs|frequently asked|common questions|final thoughts)\b/i.test(section.heading))
@@ -545,7 +577,8 @@ function addH2OpeningPatternIssues(h2Sections: H2Section[], issues: ArticleStyle
       return {
         section,
         openingSentence,
-        pattern: getH2OpeningPattern(openingSentence)
+        pattern: getH2OpeningPattern(openingSentence),
+        syntaxPattern: getH2OpeningSyntaxPattern(openingSentence)
       };
     })
     .filter((row) => row.openingSentence && row.pattern);
@@ -564,6 +597,28 @@ function addH2OpeningPatternIssues(h2Sections: H2Section[], issues: ArticleStyle
           message: rows.length >= 4
             ? `Critical: four or more H2 sections share the opening pattern "${pattern}".`
             : `Three or more H2 sections share the opening pattern "${pattern}".`,
+          evidence: [row.openingSentence]
+        });
+      });
+    }
+  });
+
+  const syntaxGrouped = new Map<string, Array<{ section: H2Section; openingSentence: string }>>();
+  openingRows.forEach((row) => {
+    if (!row.syntaxPattern) {
+      return;
+    }
+
+    syntaxGrouped.set(row.syntaxPattern, [...(syntaxGrouped.get(row.syntaxPattern) ?? []), row]);
+  });
+
+  syntaxGrouped.forEach((rows, pattern) => {
+    if (rows.length >= 3) {
+      rows.forEach((row) => {
+        issues.push({
+          code: "h2-opening-pattern",
+          section: row.section.heading,
+          message: `Three or more H2 sections share the generic opening frame "${pattern}". Rewrite some openings with outcome-first, condition-first, or concrete-detail-first framing.`,
           evidence: [row.openingSentence]
         });
       });
@@ -653,7 +708,7 @@ function getH2SectionShape(section: H2Section) {
     return "final-thoughts";
   }
 
-  if (/\b(matrack|best .*solution|best .*for|support)\b/i.test(section.heading)) {
+  if (isMatrackPitchCandidate(section)) {
     return "matrack-pitch";
   }
 
