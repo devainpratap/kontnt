@@ -44,6 +44,7 @@ Additional drafting rules:
 - For explanatory H2s, use the three-paragraph logic when natural: direct answer, mechanism, implication or transition.
 - For benefits, features, signs, steps, and mistakes, use one short lead sentence followed by structured bullets.
 - For multi-component sections, use H3s. Each non-FAQ H3 must have 2 to 3 sentences: sentence 1 names the H3 topic and function, sentence 2 explains the operational value, and sentence 3 may add a use case or integration detail.
+- H3 heading echo density rule: in any H2 section with 3 or more H3s, no more than half of the H3 opening sentences may begin with the exact H3 heading phrase. Keep the entity clear, but vary some openings with function-first, user/action-first, operational-condition-first, outcome-first, or object/data-first phrasing.
 - For FAQ H3s, answer directly in 2 to 3 self-contained sentences.
 - Format bullets as `- **Term:** Explanation` with 1 to 2 sentences per bullet unless the approved outline explicitly uses a different format.
 - Format comparison tables with `Comparison Point` as the leftmost column and never include editorial/process columns.

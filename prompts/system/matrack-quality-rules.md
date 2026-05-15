@@ -39,6 +39,8 @@ Apply these rules when the article is for Matrack, fleet management, trucking, t
 - Choose capabilities only when they are operationally relevant to the article topic, address a named problem in the article, or appear in the entity universe. Do not turn the pitch into a generic feature dump.
 - The Matrack pitch section must be exactly three flowing prose paragraphs. Do not use H3s, bullets, numbered lists, or tables inside the pitch.
 - The second pitch paragraph must include pricing and flexibility context, such as affordable monthly plans, flexible plans, no long-term contracts, easy-install hardware, or suitability from small fleets to large enterprises.
+- The pitch must connect selected capabilities to the article's specific operational problem. Do not let the pitch read like a compressed feature recap.
+- For waste management topics, connect relevant Matrack capabilities to route progress visibility, missed pickup review, service verification, safety event review, maintenance planning, and fuel or idle oversight when those problems appear in the article.
 - Keep the pitch factual and feature-led. Do not add CTAs, exclamation marks, hype, or first-person phrasing.
 
 ## H3, Bullets, Tables

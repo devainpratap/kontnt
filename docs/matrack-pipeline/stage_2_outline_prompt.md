@@ -206,6 +206,25 @@ Optional H2s (pick 4–6):
 
 ---
 
+## STEP 3A: SECTION SHAPE BUDGET
+
+Before finalizing the outline, assign a structure mix across the full article.
+
+Do not use H3 subsections for more than 3 H2 sections in one article unless the topic truly requires component-level explanation.
+
+For articles with 7-9 H2s, use a varied mix:
+- 2-3 explanatory prose sections
+- 2-3 H3-based sections
+- 1-2 bullet-list sections
+- 0-1 table sections only when comparison improves clarity
+- FAQ and Final Thoughts near the end
+
+Benefits, feature lists, KPIs, rollout steps, and buying criteria should not all become H3 sections. Use bullets, numbered steps, compact prose, or a concise table when the section is list-like or process-like.
+
+In `structural_decisions`, include a one-sentence shape-budget rationale explaining how repeated formats were limited.
+
+---
+
 ## STEP 4: FAQ SECTION RULES
 
 ### When FAQ Is Mandatory
@@ -363,6 +382,7 @@ Output a single JSON object matching this schema. Output only the JSON — no pr
     "faq_rationale": "string (1 sentence on why included or skipped)",
     "include_comparison_table": "boolean",
     "comparison_rationale": "string",
+    "shape_budget_rationale": "string (1 sentence explaining structure mix and why repeated formats were limited)",
     "h2_count": "number"
   },
 
@@ -478,6 +498,8 @@ Before outputting, validate against these bars:
 - [ ] FAQ section included if mandatory rule triggers
 - [ ] All H2s are questions in Title Case
 - [ ] H2 count is 5–9
+- [ ] Section shape budget avoids using H3 subsections for more than 3 H2 sections unless justified
+- [ ] Benefits, features, KPIs, rollout, and buying criteria do not all use the same H3-list structure
 
 ### Content Bars
 - [ ] Every Tier 1 and Tier 2 statistic from the dossier is placed in a section

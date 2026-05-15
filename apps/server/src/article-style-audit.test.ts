@@ -304,6 +304,86 @@ describe("article style audit", () => {
     assert.ok(audit.issues.some((issue) => issue.code === "section-opening-closing-mirror"));
   });
 
+  it("flags H3 heading echo density within a section", () => {
+    const markdown = [
+      "---",
+      "title: Waste Fleet Guide",
+      "---",
+      "",
+      "## How Does Waste Fleet Tracking Work?",
+      "",
+      "Waste fleet tracking connects field activity to dispatch decisions.",
+      "",
+      "### GPS Tracking",
+      "",
+      "GPS tracking reports vehicle location and timestamps. Dispatch teams use route replay to review service questions.",
+      "",
+      "### Telematics Data",
+      "",
+      "Telematics data adds engine activity, idle time, and diagnostic context. Maintenance teams can connect delays to vehicle condition.",
+      "",
+      "### Geofencing",
+      "",
+      "Virtual boundaries around transfer stations and service zones create arrival and departure records. Service teams use those events for verification."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "h3-echo-density"));
+  });
+
+  it("flags repeated H3-list section shape across the article", () => {
+    const markdown = [
+      "---",
+      "title: Waste Fleet Guide",
+      "---",
+      "",
+      "## How Does Waste Fleet Tracking Work?",
+      "",
+      "Waste fleet tracking connects field activity to dispatch decisions.",
+      "",
+      "### GPS Tracking",
+      "",
+      "Vehicle location updates show route progress. Dispatch teams use route replay to review service questions.",
+      "",
+      "## What Benefits Matter Most?",
+      "",
+      "Waste operations gain value when route activity becomes reviewable.",
+      "",
+      "### Route Visibility",
+      "",
+      "Live route views show current progress and delay points. Dispatchers can respond before complaints multiply.",
+      "",
+      "## Which KPIs Matter?",
+      "",
+      "Useful KPIs connect service, cost, safety, and maintenance decisions.",
+      "",
+      "### Idle Time",
+      "",
+      "Idle events show where trucks spend time without route movement. Managers can compare locations and route designs."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "repeated-section-shape"));
+  });
+
+  it("flags repeated abstract phrase density", () => {
+    const markdown = [
+      "---",
+      "title: Waste Fleet Guide",
+      "---",
+      "",
+      "## What Does Tracking Show?",
+      "",
+      "Service records help dispatch teams review completed work. Service records also support customer conversations. Service records give managers a route-level view. Service records become useful when tied to location and timestamps."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "repeated-abstract-phrase"));
+  });
+
   it("renders a repair prompt with the audit findings", () => {
     const markdown = "# Article\n\n## Section\n\nThe article starts badly.";
     const audit = auditArticleStyle(markdown);

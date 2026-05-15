@@ -441,6 +441,53 @@ This applies to all H2 sections except FAQ (which has Q&A pairs
 not closing sentences) and Final Thoughts (which is itself a
 closing).
 
+### Global Pattern Pass 1: Phrase Density
+
+After optimizing sections individually, scan the full article for repeated phrases and abstract nouns.
+
+Flag repeated use of:
+- one operating view
+- route history
+- service records
+- tracking records
+- data/signals/records
+- becomes easier
+- becomes stronger
+- use those signals
+- use those records
+- managers can
+- teams use
+
+If a phrase appears 4+ times, rewrite or remove later instances unless the repetition is necessary for accuracy.
+Replace repeated abstract phrasing with concrete operational detail.
+
+### Global Pattern Pass 2: Section Format Rebalancing
+
+If 3 or more consecutive H2 sections use the same structure, rebalance before final output.
+
+Repeated H3-list sections should be converted when appropriate:
+- feature sections may become bullets
+- KPI sections may become bullets or compact H3s
+- rollout sections may become numbered steps
+- benefit sections may become bullets
+- comparison sections may become tables
+
+Do not change approved meaning. Change only presentation shape when repeated formatting creates a template feel.
+
+### Global Pattern Pass 3: Matrack Pitch Specificity
+
+The Matrack pitch must not only list capabilities. It must connect the selected capabilities to the article's operational problem.
+
+For waste management topics, the pitch should connect:
+- route progress visibility
+- missed pickup review
+- service verification
+- safety event review
+- maintenance planning
+- fuel/idle oversight
+
+Avoid repeating generic phrases already used in the article, such as "one operating view" or "cleaner operating picture," unless followed by specific workflow detail.
+
 ---
 
 ## OPTIMIZATION PASS PROTOCOL
@@ -453,6 +500,7 @@ Walk the article from top to bottom. For each section, apply transformations in 
 4. **Pass D — Statistic Check:** Apply Transformation 4 wherever a statistic appears
 5. **Pass E — Structure-Specific:** Apply the relevant structural transformation (6, 7, 8, or 9) based on the section's structure type
 6. **Pass F — Final Thoughts (last section only):** Apply Transformation 10
+7. **Pass G — Global Pattern Review:** Apply the three Global Pattern Passes across the full article
 
 ---
 

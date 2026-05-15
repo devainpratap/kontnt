@@ -48,6 +48,7 @@ Phase 4, structure correction:
 - Ensure every H2 answers the heading immediately.
 - Ensure H2 opening sentences are self-contained and structurally varied across the article. If 3 or more H2s share the same opening pattern, rewrite all but one.
 - Break structural uniformity. Do not let all sections follow the same pattern.
+- If 3 or more consecutive H2 sections use the same format, rebalance section presentation before final output. Convert repeated H3-list sections into bullets, numbered steps, compact prose, or tables where that better matches reader intent.
 
 Phase 5, structural variation:
 
@@ -58,6 +59,7 @@ Phase 5, structural variation:
 - Use one sentence plus structured bullets for benefits, features, criteria, signs, steps, or risks. Bullet labels must be 2 to 3 words and each bullet must carry meaningful information.
 - Use one sentence plus H3s only when multiple subtopics genuinely need separate treatment. H3s should be 3 to 4 words and must justify their existence.
 - Every non-FAQ H3 in the final article must be a tight chunk of 2 to 3 sentences. Sentence 1 names the H3 topic and function. Sentence 2 explains operational value. Sentence 3 is optional for a use case, integration, or specific detail.
+- For any H2 section with 3 or more H3s, no more than half of the H3 openings may begin with the exact H3 heading phrase. Rewrite excess heading echoes with function-first, user/action-first, operational-condition-first, outcome-first, or object/data-first openings.
 - FAQ H3s must answer directly in 2 to 3 self-contained sentences.
 - Bullet lists must use `- **Term:** Explanation` with parallel grammar unless the approved outline has a specific reason not to.
 - Comparison tables must use `Comparison Point` as the leftmost column and must not include `Drafting Caution`, `Verification Notes`, `Editorial Flag`, `Notes for Writer`, or `Caveat`.
@@ -82,6 +84,9 @@ Phase 6, content execution:
 - Remove editorial leak phrases, CTAs, exclamation marks, rhetorical questions in body prose, first-person body prose, and banned marketing language.
 - Rewrite or remove refusal-to-commit hedges. If a specific number or answer exists in the article, commit to it with named variation factors. If the article lacks support, remove the hedge rather than inventing a number.
 - Detect repeated caveats such as "based on the manufacturer's definition", "exact wording can differ", "depending on context", and repeated "varies by" constructions. Keep the first useful caveat, remove later repetitions, and preserve any new variation factors without repeating the caveat preamble.
+- Run a global phrase density pass across the full article. If a phrase or abstract noun cluster appears 4 or more times, rewrite or remove later instances unless repetition is necessary for accuracy.
+- Watch especially for repeated use of: "one operating view", "route history", "service records", "tracking records", "data", "signals", "records", "becomes easier", "becomes stronger", "use those signals", "use those records", "managers can", and "teams use".
+- Replace repeated abstract phrasing with concrete operational detail, such as the action taken, role responsible, record consulted, exception handled, or decision made.
 - Keep most sentences between 15 and 22 words, and split sentences over 30 words.
 - Ensure every statistic sentence includes source organization, year or time period, and specific number.
 
@@ -95,6 +100,8 @@ Phase 7, micro section and authority:
 - Do not mark claims with editorial notes such as "(verify before publishing)". Remove unsupported claims or keep them as verification notes outside the article body.
 - Ensure the Matrack pitch, when present, remains exactly 3 prose paragraphs with no H3s, bullets, numbered lists, or tables.
 - Ensure the Matrack pitch includes both pricing context and flexibility context before final output.
+- Ensure the Matrack pitch connects selected capabilities to the article's specific operational problem, not only to a general feature list. Avoid repeating generic phrases already used in the article unless followed by specific workflow detail.
+- For waste management topics, connect the pitch to route progress visibility, missed pickup review, service verification, safety event review, maintenance planning, and fuel or idle oversight when those issues appear in the article.
 - Compare the first and last sentence of each non-FAQ, non-Final Thoughts H2 section. If the closing repeats 50% or more of the opening's key terms or concepts, rewrite the closing with a specific operational implication, stakeholder decision, concrete constraint, or implicit forward value.
 
 Final quality filter:
@@ -108,6 +115,8 @@ Final quality filter:
 - Section closings do not mirror section openings.
 - Every non-FAQ H3 has 2 to 3 sentences, and every FAQ H3 has a concise direct answer.
 - No repeated sentence starter clusters.
+- No repeated H3-list format across 3 or more consecutive H2 sections when another structure would fit.
+- No repeated abstract phrase appears 4 or more times unless required for accuracy.
 - No filler-heavy sentences.
 - No weak or vague statements.
 - Each section answers its heading immediately.

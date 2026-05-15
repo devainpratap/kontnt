@@ -16,7 +16,10 @@ export type ArticleStyleIssue = {
     | "pitch-pricing-flexibility"
     | "repeated-caveat"
     | "h2-opening-pattern"
-    | "section-opening-closing-mirror";
+    | "section-opening-closing-mirror"
+    | "h3-echo-density"
+    | "repeated-section-shape"
+    | "repeated-abstract-phrase";
   section: string;
   message: string;
   evidence: string[];
@@ -81,6 +84,21 @@ const repeatedCaveatPatterns = [
   { label: "exact assumptions can vary", pattern: /exact assumptions can vary/gi, threshold: 3 },
   { label: "depending on context", pattern: /depending on context/gi, threshold: 3 },
   { label: "varies by", pattern: /\bvaries by\b/gi, threshold: 4 }
+];
+const abstractPhrasePatterns = [
+  { label: "one operating view", pattern: /\bone operating view\b/gi },
+  { label: "route history", pattern: /\broute history\b/gi },
+  { label: "service records", pattern: /\bservice records\b/gi },
+  { label: "tracking records", pattern: /\btracking records\b/gi },
+  { label: "data", pattern: /\bdata\b/gi },
+  { label: "signals", pattern: /\bsignals\b/gi },
+  { label: "records", pattern: /\brecords\b/gi },
+  { label: "becomes easier", pattern: /\bbecomes easier\b/gi },
+  { label: "becomes stronger", pattern: /\bbecomes stronger\b/gi },
+  { label: "use those signals", pattern: /\buse those signals\b/gi },
+  { label: "use those records", pattern: /\buse those records\b/gi },
+  { label: "managers can", pattern: /\bmanagers can\b/gi },
+  { label: "teams use", pattern: /\bteams use\b/gi }
 ];
 const topicRoleTerms = new Set([
   "broker",
@@ -585,6 +603,125 @@ function addSectionOpeningClosingMirrorIssues(h2Sections: H2Section[], issues: A
     });
 }
 
+function startsWithHeadingPhrase(heading: string, sentence: string) {
+  const headingTokens = tokenize(heading);
+  const sentenceTokens = tokenize(sentence);
+
+  return headingTokens.length > 0 && headingTokens.every((token, index) => sentenceTokens[index] === token);
+}
+
+function addH3EchoDensityIssues(h3Blocks: Array<{ heading: string; parentHeading: string; sentenceCount: number; sentences: string[] }>, issues: ArticleStyleIssue[]) {
+  const byParent = new Map<string, Array<{ heading: string; firstSentence: string; isEcho: boolean }>>();
+
+  h3Blocks
+    .filter((block) => !isFaqBlock(block))
+    .forEach((block) => {
+      const firstSentence = block.sentences[0] ?? "";
+      byParent.set(block.parentHeading, [
+        ...(byParent.get(block.parentHeading) ?? []),
+        {
+          heading: block.heading,
+          firstSentence,
+          isEcho: startsWithHeadingPhrase(block.heading, firstSentence)
+        }
+      ]);
+    });
+
+  byParent.forEach((blocks, parentHeading) => {
+    if (blocks.length < 3) {
+      return;
+    }
+
+    const echoes = blocks.filter((block) => block.isEcho);
+    if (echoes.length / blocks.length > 0.5) {
+      issues.push({
+        code: "h3-echo-density",
+        section: parentHeading,
+        message: `More than half of this section's H3 openings repeat the H3 heading phrase (${echoes.length}/${blocks.length}).`,
+        evidence: echoes.slice(0, 6).map((block) => `${block.heading}: ${block.firstSentence}`)
+      });
+    }
+  });
+}
+
+function getH2SectionShape(section: H2Section) {
+  if (/\b(faq|faqs|frequently asked|common questions)\b/i.test(section.heading)) {
+    return "faq";
+  }
+
+  if (/^final thoughts$/i.test(section.heading)) {
+    return "final-thoughts";
+  }
+
+  if (/\b(matrack|best .*solution|best .*for|support)\b/i.test(section.heading)) {
+    return "matrack-pitch";
+  }
+
+  if (/^###\s+/m.test(section.body)) {
+    return "h3-list";
+  }
+
+  if (/^\s*[-*]\s+/m.test(section.body)) {
+    return "bullet-list";
+  }
+
+  if (/^\s*\d+\.\s+/m.test(section.body)) {
+    return "numbered-list";
+  }
+
+  if (/^\|.+\|$/m.test(section.body)) {
+    return "table";
+  }
+
+  return "prose";
+}
+
+function addRepeatedSectionShapeIssues(h2Sections: H2Section[], issues: ArticleStyleIssue[]) {
+  const articleSections = h2Sections.filter((section) => !/\b(faq|faqs|frequently asked|common questions|final thoughts)\b/i.test(section.heading));
+  const shapeRows = articleSections.map((section) => ({
+    section,
+    shape: getH2SectionShape(section)
+  }));
+  const h3Rows = shapeRows.filter((row) => row.shape === "h3-list");
+
+  if (h3Rows.length >= 3) {
+    issues.push({
+      code: "repeated-section-shape",
+      section: "Article Structure",
+      message: `H3-list format appears in ${h3Rows.length} H2 sections. Rebalance benefits, features, KPIs, rollout, or buying criteria where possible.`,
+      evidence: h3Rows.map((row) => row.section.heading).slice(0, 8)
+    });
+  }
+
+  for (let index = 0; index <= shapeRows.length - 3; index += 1) {
+    const window = shapeRows.slice(index, index + 3);
+    const shape = window[0].shape;
+    if (shape !== "prose" && window.every((row) => row.shape === shape)) {
+      issues.push({
+        code: "repeated-section-shape",
+        section: "Article Structure",
+        message: `Three consecutive H2 sections use the same "${shape}" format.`,
+        evidence: window.map((row) => row.section.heading)
+      });
+      break;
+    }
+  }
+}
+
+function addRepeatedAbstractPhraseIssues(markdown: string, issues: ArticleStyleIssue[]) {
+  abstractPhrasePatterns.forEach(({ label, pattern }) => {
+    const matches = Array.from(markdown.matchAll(pattern)).map((match) => match[0]);
+    if (matches.length >= 4) {
+      issues.push({
+        code: "repeated-abstract-phrase",
+        section: "Article Body",
+        message: `The phrase "${label}" appears ${matches.length} times. Replace later instances with concrete operational detail where possible.`,
+        evidence: matches.slice(0, 6)
+      });
+    }
+  });
+}
+
 function addBannedPhraseIssues(sections: Section[], issues: ArticleStyleIssue[]) {
   sections.forEach((section) => {
     const sentences = splitIntoSentences(section.body);
@@ -825,6 +962,9 @@ export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   addRepeatedCaveatIssues(markdown, issues);
   addH2OpeningPatternIssues(h2Sections, issues);
   addSectionOpeningClosingMirrorIssues(h2Sections, issues);
+  addH3EchoDensityIssues(h3Blocks, issues);
+  addRepeatedSectionShapeIssues(h2Sections, issues);
+  addRepeatedAbstractPhraseIssues(markdown, issues);
 
   return {
     issues,
@@ -890,6 +1030,9 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "- If the audit flags `repeated-caveat`, keep the first useful caveat and remove later repeated caveat phrasing while preserving any new variation factors.",
     "- If the audit flags `h2-opening-pattern`, rotate H2 opening sentence types so the same subject-plus-modal or subject-plus-verb pattern does not appear three or more times.",
     "- If the audit flags `section-opening-closing-mirror`, rewrite the closing sentence with a specific operational implication, stakeholder decision, constraint, or applied value.",
+    "- If the audit flags `h3-echo-density`, rewrite excess H3 openers with function-first, user/action-first, condition-first, outcome-first, or object/data-first phrasing.",
+    "- If the audit flags `repeated-section-shape`, rebalance repeated H3-list sections into bullets, numbered steps, compact prose, or tables where reader intent allows.",
+    "- If the audit flags `repeated-abstract-phrase`, replace later repeated abstract phrases with specific operational actions, records, roles, exceptions, or decisions.",
     "",
     "Return only the repaired article in Markdown.",
     "",

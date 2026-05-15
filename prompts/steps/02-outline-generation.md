@@ -44,6 +44,10 @@ Additional outline rules:
 - The first H2's definition block is the article entry point and should answer the main query directly.
 - Assign a structure type to each H2: three-paragraph explanation, bullets, H3 subsections, or table.
 - Do not assign the same structure type to too many consecutive H2s.
+- Apply a section shape budget before finalizing the outline. For 7 to 9 H2 articles, aim for 2 to 3 explanatory prose sections, 2 to 3 H3-based sections, 1 to 2 bullet-list sections, and 0 to 1 table sections only when comparison improves clarity.
+- Do not use H3 subsections for more than 3 H2 sections in one article unless the topic truly requires component-level explanation.
+- Benefits, feature lists, KPIs, rollout steps, and buying criteria should not all become H3 sections. Use bullets, numbered steps, compact prose, or a concise table when the section is list-like or process-like.
+- In the Section Structure Plan, include a brief "shape budget" note that explains why each repeated structure is necessary.
 - Add H3 layering where needed for core components and benefits. H3s must represent single entities or components.
 - For every non-FAQ H3 planned in the outline, note that the final article should use 2 to 3 sentences: functional definition, operational value, and optional use case or integration detail.
 - For FAQ H3s, plan a self-contained answer of 2 to 3 sentences.

@@ -335,6 +335,19 @@ Then list H3 subsections from the outline. Each H3 follows this strict format:
 
 Each H3 is a self-contained, citable unit. If it sprawls, it breaks LLM extraction.
 
+### H3 Opening Echo Density Rule
+
+Across any H2 section with 3 or more H3s, no more than half of the H3 opening sentences may begin with the exact H3 heading phrase.
+
+If several H3s naturally require the topic first, vary the opening grammar:
+- function first
+- user/action first
+- operational condition first
+- outcome first
+- object/data first
+
+Do not force synonyms. Keep the entity clear, but avoid repeating the heading as the first words in every H3.
+
 ### Protocol C: `bullet_list` (Benefits, Challenges, Features Sections)
 
 Open with **one context sentence** that frames the section.
