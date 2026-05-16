@@ -339,6 +339,15 @@ Rewrite at least 2 of the repeated openings using outcome-first,
 condition-first, operational-detail-first, concrete-fact-first, or
 stakeholder-decision framing.
 
+HEADING-ECHO DENSITY RULE:
+
+Do not let most H2 opening sentences begin by restating the H2
+heading topic. The first definition H2 may start with the primary
+term, and some direct-answer sections may naturally use the heading
+entity first. Across the full article, however, later H2 openings
+must rotate into outcome-first, condition-first, concrete-fact-first,
+operational-detail-first, or stakeholder-decision framing.
+
 ### Protocol B: `h3_subsections` (Components, Types, Industries, Challenges Sections)
 
 Open with **one context sentence** that frames the section without restating the H2.
@@ -369,6 +378,20 @@ If several H3s naturally require the topic first, vary the opening grammar:
 - object/data first
 
 Do not force synonyms. Keep the entity clear, but avoid repeating the heading as the first words in every H3.
+
+### H3 Sibling Opener Variation Rule
+
+Across any H2 section with 3 or more H3s, do not let 3 or more sibling
+H3 opening sentences start with the same condition starter or frame.
+
+Banned sibling pattern:
+- "After a vehicle leaves..."
+- "After a VIN check..."
+- "After inspections..."
+
+Also watch for repeated "When", "Before", and "During" openings.
+Rewrite some H3 openings with object-first, function-first,
+stakeholder-action-first, or outcome-first phrasing.
 
 ### Protocol C: `bullet_list` (Benefits, Challenges, Features Sections)
 

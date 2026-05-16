@@ -308,6 +308,70 @@ describe("article style audit", () => {
     assert.ok(audit.issues.some((issue) => issue.code === "h2-opening-pattern" && issue.message.includes("generic opening frame")));
   });
 
+  it("flags article-wide H2 heading echo density", () => {
+    const markdown = [
+      "---",
+      "title: DOT Guide",
+      "---",
+      "",
+      "## Who Has to Follow DOT Requirements?",
+      "",
+      "DOT requirements apply when vehicle type, cargo, or route brings a driver under commercial rules.",
+      "",
+      "## What CDL Driver Qualifications Does DOT Require?",
+      "",
+      "Driver qualification rules confirm whether licensing, medical status, and carrier files are complete.",
+      "",
+      "## What Medical and Drug Testing Rules Apply?",
+      "",
+      "Medical and drug testing rules determine whether a CDL driver is available for covered work.",
+      "",
+      "## What Hours of Service Rules Apply?",
+      "",
+      "Hours of Service rules limit driving and on-duty time during regulated trips.",
+      "",
+      "## What Vehicle Inspection Rules Matter?",
+      "",
+      "Vehicle inspection rules require drivers and carriers to find defects before dispatch.",
+      "",
+      "## What DOT Compliance KPIs Matter?",
+      "",
+      "DOT compliance KPIs connect deadlines, file gaps, and inspection outcomes to dispatch decisions."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "h2-heading-echo-density"));
+  });
+
+  it("flags repeated sibling H3 openers inside one H2", () => {
+    const markdown = [
+      "---",
+      "title: FMVSS Guide",
+      "---",
+      "",
+      "## Where Do Fleets Face FMVSS-Related Risk?",
+      "",
+      "FMVSS risk often appears after purchase.",
+      "",
+      "### Unsafe Modifications",
+      "",
+      "After a vehicle leaves the manufacturer, unsafe modifications can interfere with regulated safety systems. Lighting and visibility changes need review before deployment.",
+      "",
+      "### Open Recalls",
+      "",
+      "After a VIN check identifies an affected vehicle, open recalls require ownership and completion proof. Manufacturer guidance should shape vehicle-use decisions.",
+      "",
+      "### Weak Documentation",
+      "",
+      "After inspections or claims, weak documentation makes safety decisions harder to reconstruct. Vehicle history should show defects, actions, owners, and completion proof."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "h3-sibling-opener-repetition"));
+  });
+
   it("does not treat ordinary support sections as Matrack pitches", () => {
     const markdown = [
       "---",

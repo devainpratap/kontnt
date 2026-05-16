@@ -369,6 +369,20 @@ If 4+ H2s share the same opening pattern = Critical violation.
 Auto-fix: Not auto-fixable. Recommend re-run Stage 3 + Stage 4
 with H2 variation rules enforced.
 
+### Y17. H2 Heading Echo Density Detection (Major)
+
+For non-FAQ, non-Final Thoughts H2 sections:
+- Extract the H2 heading topic terms.
+- Extract the first sentence under the H2.
+- Check whether the opening sentence begins by restating the H2
+  heading topic.
+
+If at least 5 H2 sections and 45%+ of eligible H2 sections open this
+way, flag as Major pattern risk.
+
+Auto-fix: Not auto-fixable. Recommend re-run Stage 4 with H2 opening
+variation rules enforced.
+
 ### Y16. Section Opening/Closing Mirror Detection (Minor)
 
 For each H2 section (excluding FAQ and Final Thoughts):
@@ -389,6 +403,17 @@ Check each H2 with 3+ H3s.
 If more than 50% of H3 opening sentences begin with the exact H3 heading phrase, flag as Major pattern risk.
 
 Auto-fix: Not auto-fixable. Recommend re-run Stage 3 + Stage 4 with H3 echo density control.
+
+### P1A. Pattern Risk: H3 Sibling Opener Repetition (Major)
+
+Check each H2 with 3+ H3s.
+
+If 3+ sibling H3 opening sentences start with the same condition
+starter or frame, such as "After", "When", "Before", or "During",
+flag as Major pattern risk.
+
+Auto-fix: Not auto-fixable. Recommend re-run Stage 4 with H3 sibling
+opener variation control.
 
 ### P2. Pattern Risk: Repeated Section Shape (Major)
 
@@ -708,8 +733,8 @@ Before outputting, validate:
 
 ### Audit Completeness Bars
 - [ ] All 17 structural checks (S1–S17) executed
-- [ ] All 14 style checks (Y1–Y12, Y14, Y16) executed
-- [ ] All 3 pattern-risk checks (P1–P3) executed
+- [ ] All 15 style checks (Y1–Y12, Y14, Y16, Y17) executed
+- [ ] All 4 pattern-risk checks (P1, P1A, P2, P3) executed
 - [ ] All 9 content checks (C1–C9) executed
 - [ ] Auto-fixes applied where allowed
 - [ ] Auto-fixes documented in `auto_fixes_applied`

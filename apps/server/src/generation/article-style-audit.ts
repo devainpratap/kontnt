@@ -17,6 +17,8 @@ export type ArticleStyleIssue = {
     | "repeated-caveat"
     | "h2-opening-pattern"
     | "section-opening-closing-mirror"
+    | "h2-heading-echo-density"
+    | "h3-sibling-opener-repetition"
     | "h3-echo-density"
     | "repeated-section-shape"
     | "repeated-abstract-phrase";
@@ -626,6 +628,45 @@ function addH2OpeningPatternIssues(h2Sections: H2Section[], issues: ArticleStyle
   });
 }
 
+function isExcludedFromH2PatternAudit(section: H2Section) {
+  return /\b(faq|faqs|frequently asked|common questions|final thoughts)\b/i.test(section.heading) || isMatrackPitchCandidate(section);
+}
+
+function h2OpeningEchoesHeading(section: H2Section) {
+  const openingSentence = splitIntoSentences(section.body)[0] ?? "";
+  const headingTerms = getSectionTopicTerms(section.heading);
+  const openingTokens = tokenize(openingSentence).slice(0, 8);
+  const matchedTerms = openingTokens.filter((token) => headingTerms.has(token) && token.length > 2);
+
+  if (matchedTerms.length < 2) {
+    return false;
+  }
+
+  const firstMeaningfulOpening = openingTokens.find((token) => token.length > 2 && !stopWords.has(token));
+  return Boolean(firstMeaningfulOpening && headingTerms.has(firstMeaningfulOpening));
+}
+
+function addH2HeadingEchoDensityIssues(h2Sections: H2Section[], issues: ArticleStyleIssue[]) {
+  const rows = h2Sections
+    .filter((section) => !isExcludedFromH2PatternAudit(section))
+    .map((section) => ({
+      section,
+      openingSentence: splitIntoSentences(section.body)[0] ?? "",
+      echoesHeading: h2OpeningEchoesHeading(section)
+    }))
+    .filter((row) => row.openingSentence);
+
+  const echoes = rows.filter((row) => row.echoesHeading);
+  if (rows.length >= 6 && echoes.length >= 5 && echoes.length / rows.length >= 0.45) {
+    issues.push({
+      code: "h2-heading-echo-density",
+      section: "Article Structure",
+      message: `${echoes.length}/${rows.length} non-FAQ H2 openings start by restating the heading topic. Vary some openings with outcome-first, condition-first, concrete-fact-first, or stakeholder-decision framing.`,
+      evidence: echoes.slice(0, 8).map((row) => `${row.section.heading}: ${row.openingSentence}`)
+    });
+  }
+}
+
 function addSectionOpeningClosingMirrorIssues(h2Sections: H2Section[], issues: ArticleStyleIssue[]) {
   h2Sections
     .filter((section) => !/\b(faq|faqs|frequently asked|common questions|final thoughts)\b/i.test(section.heading))
@@ -696,6 +737,67 @@ function addH3EchoDensityIssues(h3Blocks: Array<{ heading: string; parentHeading
         evidence: echoes.slice(0, 6).map((block) => `${block.heading}: ${block.firstSentence}`)
       });
     }
+  });
+}
+
+function getH3SiblingOpeningKey(sentence: string) {
+  const tokens = tokenize(sentence).slice(0, 4);
+  const conditionStarter = tokens.find((token, index) => index === 0 && ["after", "before", "during", "when"].includes(token));
+
+  if (conditionStarter) {
+    return conditionStarter;
+  }
+
+  const firstMeaningful = tokens.find((token) => token.length > 3 && !stopWords.has(token));
+
+  if (!firstMeaningful) {
+    return "";
+  }
+
+  return firstMeaningful;
+}
+
+function addH3SiblingOpenerRepetitionIssues(h3Blocks: Array<{ heading: string; parentHeading: string; sentenceCount: number; sentences: string[] }>, issues: ArticleStyleIssue[]) {
+  const byParent = new Map<string, Array<{ heading: string; firstSentence: string; opener: string }>>();
+
+  h3Blocks
+    .filter((block) => !isFaqBlock(block))
+    .forEach((block) => {
+      const firstSentence = block.sentences[0] ?? "";
+      byParent.set(block.parentHeading, [
+        ...(byParent.get(block.parentHeading) ?? []),
+        {
+          heading: block.heading,
+          firstSentence,
+          opener: getH3SiblingOpeningKey(firstSentence)
+        }
+      ]);
+    });
+
+  byParent.forEach((blocks, parentHeading) => {
+    if (blocks.length < 3) {
+      return;
+    }
+
+    const grouped = new Map<string, Array<{ heading: string; firstSentence: string }>>();
+    blocks.forEach((block) => {
+      if (!block.opener) {
+        return;
+      }
+
+      grouped.set(block.opener, [...(grouped.get(block.opener) ?? []), block]);
+    });
+
+    grouped.forEach((rows, opener) => {
+      if (rows.length >= 3) {
+        issues.push({
+          code: "h3-sibling-opener-repetition",
+          section: parentHeading,
+          message: `Three or more H3 sibling sections start with the same opener "${opener}". Vary the H3 openings so the subsection set does not feel templated.`,
+          evidence: rows.slice(0, 6).map((row) => `${row.heading}: ${row.firstSentence}`)
+        });
+      }
+    });
   });
 }
 
@@ -1016,8 +1118,10 @@ export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   addPitchIssues(h2Sections, issues);
   addRepeatedCaveatIssues(markdown, issues);
   addH2OpeningPatternIssues(h2Sections, issues);
+  addH2HeadingEchoDensityIssues(h2Sections, issues);
   addSectionOpeningClosingMirrorIssues(h2Sections, issues);
   addH3EchoDensityIssues(h3Blocks, issues);
+  addH3SiblingOpenerRepetitionIssues(h3Blocks, issues);
   addRepeatedSectionShapeIssues(h2Sections, issues);
   addRepeatedAbstractPhraseIssues(markdown, issues);
 
@@ -1084,8 +1188,10 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "- If the audit flags `pitch-pricing-flexibility`, add both pricing context and flexibility context to the Matrack pitch without adding a CTA.",
     "- If the audit flags `repeated-caveat`, keep the first useful caveat and remove later repeated caveat phrasing while preserving any new variation factors.",
     "- If the audit flags `h2-opening-pattern`, rotate H2 opening sentence types so the same subject-plus-modal or subject-plus-verb pattern does not appear three or more times.",
+    "- If the audit flags `h2-heading-echo-density`, keep direct answers but rewrite some H2 openings so they do not all begin by restating the heading topic.",
     "- If the audit flags `section-opening-closing-mirror`, rewrite the closing sentence with a specific operational implication, stakeholder decision, constraint, or applied value.",
     "- If the audit flags `h3-echo-density`, rewrite excess H3 openers with function-first, user/action-first, condition-first, outcome-first, or object/data-first phrasing.",
+    "- If the audit flags `h3-sibling-opener-repetition`, rewrite sibling H3 openings so three or more do not start with the same word or frame.",
     "- If the audit flags `repeated-section-shape`, rebalance repeated H3-list sections into bullets, numbered steps, compact prose, or tables where reader intent allows.",
     "- If the audit flags `repeated-abstract-phrase`, replace later repeated abstract phrases with specific operational actions, records, roles, exceptions, or decisions.",
     "",

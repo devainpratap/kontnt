@@ -19,6 +19,7 @@
 - Do not treat sentence-opening quality as a banned-word list only. Repeated starts with the main entity, H2 keyword, role name, comparison term, or the same grammatical pattern also create AI rhythm.
 - Avoid clusters of "X is", "X helps", "X should", "X can", and other repeated subject-plus-verb openings. Rewrite with context-first, outcome-first, condition-first, contrast-first, or object-first sentence structure.
 - Across H2 openings, avoid 3 or more sections starting with the same subject plus modal verb pattern, such as "Owner operators should" or "Fleet managers can".
+- Across H2 openings, avoid making most sections begin by echoing the H2 heading topic. Direct answers are required, but the article should not read like a chain of heading restatements.
 - Across H2 openings, also avoid 3 or more sections using the same predicate frame with different subjects, such as "[concept] improves when", "[concept] works by", "[concept] matters because", "[concept] depends on", "[concept] starts with", or "[concept] comes from".
 - Section closings should not mirror section openings. If the last sentence repeats the first sentence's key terms, close with a specific operational action, stakeholder decision, constraint, or applied value instead.
 - Control article-wide rhythm, not only individual section quality. Repeated H3-list sections, repeated abstract nouns, and repeated "team/manager can/use" constructions can still make a technically correct article feel generated.
@@ -42,6 +43,8 @@ Use one sentence plus H3 subsections when the H2 contains several subtopics that
 When a non-FAQ H3 is used in the article body, write a tight 2 to 3 sentence chunk below it. Sentence 1 should name the H3 topic and define what it does. Sentence 2 should explain the operational value, data, function, impact, or decision it enables. Sentence 3 is optional for a specific use case, integration, or detail.
 
 When an H2 section has 3 or more H3s, no more than half of the H3 opening sentences should begin with the exact H3 heading phrase. Keep entities clear, but vary some openings with function-first, outcome-first, condition-first, user/action-first, or object/data-first structure.
+
+When an H2 has several H3s, do not let 3 or more sibling H3 opening sentences start with the same condition starter or frame, such as "After", "When", "Before", or "During".
 
 When an FAQ uses H3 questions, answer each one in 2 to 3 self-contained sentences. The first sentence must directly answer the question.
 

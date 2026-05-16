@@ -65,7 +65,9 @@ Additional drafting rules:
 - Before returning the draft, audit sentence openings and rewrite every sentence that begins with "the", "a", "that", or "those".
 - Before returning the draft, scan every section for repeated first 1 to 3 words, repeated role/entity starts, repeated H2 keyword starts, and repeated subject-plus-verb openings. Rewrite nearby repeats instead of swapping in random synonyms.
 - Before returning the draft, compare each H2 opening as a set and rewrite any cross-section pattern that appears 3 or more times.
+- Do not let most H2 opening sentences begin by restating the H2 heading topic. The first definition H2 may use the primary term directly, but later sections should rotate into outcome-first, condition-first, concrete-fact-first, operational-detail-first, or stakeholder-decision openings.
 - Do not let 3 or more H2 opening sentences share the same generic predicate frame, even when the subject changes. Watch for repeated frames such as "[concept] improves when", "[concept] works by", "[concept] matters because", "[concept] depends on", "[concept] starts with", or "[concept] comes from". Rewrite with outcome-first, condition-first, operational-detail-first, or stakeholder-decision framing.
+- In any H2 with multiple H3s, do not let 3 or more sibling H3 opening sentences start with the same condition word or frame such as "After", "When", "Before", or "During".
 - Do not add standalone transition paragraphs after an H3 before the next H2. Place the transition inside the second H3 paragraph or before the H3 list begins.
 
 Return Markdown only.

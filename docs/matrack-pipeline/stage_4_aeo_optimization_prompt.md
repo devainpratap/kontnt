@@ -156,6 +156,10 @@ Acceptable repetition:
 - Subject is clear, but it does not need to repeat the same topic-first pattern used elsewhere
 - Sentence is self-contained (no pronouns referring backward)
 - Sentence stands alone if extracted as a Featured Snippet
+- If most H2 openings begin by restating their H2 heading topic, keep
+  the direct answer but rewrite several later sections with outcome-
+  first, condition-first, concrete-fact-first, operational-detail-
+  first, or stakeholder-decision framing.
 - If 3+ H2 openings use the same predicate frame ("improves when",
   "works by", "matters because", "depends on", "starts with", "comes
   from"), rewrite at least 2 openings using outcome-first,
@@ -483,6 +487,19 @@ Repeated H3-list sections should be converted when appropriate:
 
 Do not change approved meaning. Change only presentation shape when repeated formatting creates a template feel.
 
+### Global Pattern Pass 2A: H3 Sibling Opener Review
+
+For every H2 section with 3 or more H3s, compare the first sentence
+under each sibling H3.
+
+If 3 or more sibling H3s start with the same condition starter or
+frame, such as "After", "When", "Before", or "During", rewrite some
+openings with object-first, function-first, stakeholder-action-first,
+or outcome-first phrasing.
+
+Preserve H3 headings and meaning. Change only the opening sentence
+rhythm.
+
 ### Global Pattern Pass 3: Matrack Pitch Specificity
 
 The Matrack pitch must not only list capabilities. It must connect the selected capabilities to the article's operational problem.
@@ -509,7 +526,7 @@ Walk the article from top to bottom. For each section, apply transformations in 
 4. **Pass D — Statistic Check:** Apply Transformation 4 wherever a statistic appears
 5. **Pass E — Structure-Specific:** Apply the relevant structural transformation (6, 7, 8, or 9) based on the section's structure type
 6. **Pass F — Final Thoughts (last section only):** Apply Transformation 10
-7. **Pass G — Global Pattern Review:** Apply the three Global Pattern Passes across the full article
+7. **Pass G — Global Pattern Review:** Apply the Global Pattern Passes across the full article
 
 ---
 
