@@ -39,6 +39,7 @@ Additional drafting rules:
 - Do not let 3 or more H2s open with the same subject plus modal verb pattern, such as "Owner operators should", "Fleet managers can", or "Trucking companies need".
 - No single H2 opener type should appear in more than 40% of the article's H2 openings. Stakeholder-action-first openings should appear no more than 1 to 2 times.
 - Do not let repeated entities dominate sentence openings. Within each H2 or H3, avoid starting more than two nearby sentences with the same entity, noun, pronoun, or phrase.
+- Keep the primary keyword lowercase in body prose unless it is a proper noun, acronym, regulation name, or official product name. Do not title-case a generic keyword just because it appears in the title.
 - Do not repeatedly start sentences with the H2 keyword, role name, comparison term, or the same grammar pattern such as "X is", "X helps", "X should", or "X can".
 - Vary sentence openings by starting with decision context, condition, outcome, contrast, or the operational object when the topic entity would otherwise repeat.
 - For explanatory H2s, use the three-paragraph logic when natural: direct answer, mechanism, implication or transition.
@@ -68,6 +69,8 @@ Additional drafting rules:
 - Do not let most H2 opening sentences begin by restating the H2 heading topic. The first definition H2 may use the primary term directly, but later sections should rotate into outcome-first, condition-first, concrete-fact-first, operational-detail-first, or stakeholder-decision openings.
 - Do not let 3 or more H2 opening sentences share the same generic predicate frame, even when the subject changes. Watch for repeated frames such as "[concept] improves when", "[concept] works by", "[concept] matters because", "[concept] depends on", "[concept] starts with", or "[concept] comes from". Rewrite with outcome-first, condition-first, operational-detail-first, or stakeholder-decision framing.
 - In any H2 with multiple H3s, do not let 3 or more sibling H3 opening sentences start with the same condition word or frame such as "After", "When", "Before", or "During".
+- Avoid using generic glue nouns as the repeated connective tissue of the article. Terms such as context, events, alerts, review, records, data, dashboard, workflow, visibility, and signals are allowed when needed, but repeated use should be replaced with the specific object: fatigue warning, distraction clip, HOS log, repair ticket, route replay, claim file, coaching note, driver scorecard, dispatch decision, or inspection record.
+- The ideal Matrack-style articles use simple causal flow and concrete operational nouns. When a sentence says something "adds context", "supports review", or "creates workflow", revise it to say who acts, what file or signal they use, and what decision changes.
 - Do not add standalone transition paragraphs after an H3 before the next H2. Place the transition inside the second H3 paragraph or before the H3 list begins.
 
 Return Markdown only.

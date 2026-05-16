@@ -82,6 +82,8 @@ Phase 6, content execution:
 - Check whether too many H2 openings restate the H2 heading topic as the opening subject. Keep direct answers, but rewrite later sections so the article does not read like a chain of heading definitions.
 - Extract the predicate frame of every H2 opening sentence. Rewrite the article if 3 or more H2 openings use the same generic frame with different subjects, such as "[concept] improves when", "[concept] works by", "[concept] matters because", "[concept] depends on", "[concept] starts with", or "[concept] comes from".
 - For H2 sections with multiple H3s, compare sibling H3 opening sentences. If 3 or more start with the same condition word or frame such as "After", "When", "Before", or "During", rewrite some with object-first, function-first, or stakeholder-action-first openings.
+- Check whether generic glue nouns are carrying too much of the article. If context, events, alerts, review, workflow, records, data, dashboard, visibility, or signals appear repeatedly, keep only necessary uses and replace the rest with concrete operational details such as fatigue warning, distraction clip, route replay, HOS log, repair ticket, claim file, driver scorecard, coaching note, dispatch decision, or inspection record.
+- Normalize generic body terms to sentence case. Do not write title-style phrases such as "Driver Monitoring System technology" unless the phrase is an official named standard, regulation, brand, or acronym expansion.
 - Check remaining sentence starter clusters. Rewrite repeated openings such as "this", "it", "these", "they", "when", "although", "by", "for", "while", or "each".
 - Remove filler, vague modifiers, and generic claims. Every sentence must carry information.
 - Remove editorial leak phrases, CTAs, exclamation marks, rhetorical questions in body prose, first-person body prose, and banned marketing language.
@@ -118,6 +120,8 @@ Final quality filter:
 - H2 openings do not mostly begin by echoing the H2 heading topic.
 - H2 opening sentences do not repeat the same generic predicate frame across 3 or more sections.
 - Sibling H3 openings do not repeat the same condition starter 3 or more times inside one H2 section.
+- Repeated abstract glue terms have been reduced or replaced with concrete roles, files, signals, actions, or decisions.
+- Generic keywords are not title-cased inside prose unless they are official names.
 - Section closings do not mirror section openings.
 - Every non-FAQ H3 has 2 to 3 sentences, and every FAQ H3 has a concise direct answer.
 - No repeated sentence starter clusters.

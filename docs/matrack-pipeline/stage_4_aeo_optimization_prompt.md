@@ -165,6 +165,10 @@ Acceptable repetition:
   from"), rewrite at least 2 openings using outcome-first,
   condition-first, operational-detail-first, or stakeholder-decision
   framing.
+- Generic body terms should use sentence case unless they are official
+  names, acronyms, brands, regulations, or named standards. Rewrite
+  title-style body phrases such as "Driver Monitoring System
+  technology" into natural sentence case.
 
 ### Transformation 2: Bridge Sentence Removal
 
@@ -473,6 +477,13 @@ Flag repeated use of:
 
 If a phrase appears 4+ times, rewrite or remove later instances unless the repetition is necessary for accuracy.
 Replace repeated abstract phrasing with concrete operational detail.
+
+Also scan for semantic glue overuse. If context, events, alerts,
+review, workflow, records, data, dashboard, visibility, or signals
+appear repeatedly, keep accurate necessary uses and replace the rest
+with specific operational objects: fatigue warning, distraction clip,
+route replay, HOS log, repair ticket, claim file, driver scorecard,
+coaching note, dispatch decision, or inspection record.
 
 ### Global Pattern Pass 2: Section Format Rebalancing
 

@@ -21,7 +21,9 @@ export type ArticleStyleIssue = {
     | "h3-sibling-opener-repetition"
     | "h3-echo-density"
     | "repeated-section-shape"
-    | "repeated-abstract-phrase";
+    | "repeated-abstract-phrase"
+    | "missing-h1-title"
+    | "semantic-glue-overuse";
   section: string;
   message: string;
   evidence: string[];
@@ -101,6 +103,13 @@ const abstractPhrasePatterns = [
   { label: "use those records", pattern: /\buse those records\b/gi },
   { label: "managers can", pattern: /\bmanagers can\b/gi },
   { label: "teams use", pattern: /\bteams use\b/gi }
+];
+const semanticGluePatterns = [
+  { label: "context", pattern: /\bcontext\b/gi, threshold: 10 },
+  { label: "events", pattern: /\bevents?\b/gi, threshold: 12 },
+  { label: "alerts", pattern: /\balerts?\b/gi, threshold: 12 },
+  { label: "review", pattern: /\breviews?\b|\breviewing\b/gi, threshold: 14 },
+  { label: "workflow", pattern: /\bworkflows?\b/gi, threshold: 7 }
 ];
 const topicRoleTerms = new Set([
   "broker",
@@ -430,6 +439,36 @@ function addPreH2ContentIssues(markdown: string, issues: ArticleStyleIssue[]) {
     section: "Document Start",
     message: "Delete all content between YAML frontmatter or document start and the first H2.",
     evidence: preH2Lines.slice(0, 6)
+  });
+}
+
+function addMissingH1TitleIssue(markdown: string, issues: ArticleStyleIssue[]) {
+  const lines = markdown.split("\n");
+  let bodyStart = 0;
+  let hasFrontmatterTitle = false;
+
+  if (lines[0]?.trim() === "---") {
+    const closingIndex = lines.findIndex((line, index) => index > 0 && line.trim() === "---");
+    if (closingIndex !== -1) {
+      hasFrontmatterTitle = lines.slice(1, closingIndex).some((line) => /^title\s*:/i.test(line.trim()));
+      bodyStart = closingIndex + 1;
+    }
+  }
+
+  if (hasFrontmatterTitle) {
+    return;
+  }
+
+  const firstContentLine = lines.slice(bodyStart).find((line) => line.trim().length > 0)?.trim() ?? "";
+  if (!firstContentLine || /^#\s+/.test(firstContentLine)) {
+    return;
+  }
+
+  issues.push({
+    code: "missing-h1-title",
+    section: "Document Start",
+    message: "Add a single H1 article title before the first H2 unless YAML frontmatter is the only title format requested.",
+    evidence: [firstContentLine]
   });
 }
 
@@ -879,6 +918,20 @@ function addRepeatedAbstractPhraseIssues(markdown: string, issues: ArticleStyleI
   });
 }
 
+function addSemanticGlueOveruseIssues(markdown: string, issues: ArticleStyleIssue[]) {
+  semanticGluePatterns.forEach(({ label, pattern, threshold }) => {
+    const matches = Array.from(markdown.matchAll(pattern)).map((match) => match[0]);
+    if (matches.length >= threshold) {
+      issues.push({
+        code: "semantic-glue-overuse",
+        section: "Article Body",
+        message: `The generic connective term "${label}" appears ${matches.length} times. Keep necessary uses, but replace repetitive glue with concrete objects, actions, roles, records, or decisions.`,
+        evidence: matches.slice(0, 8)
+      });
+    }
+  });
+}
+
 function addBannedPhraseIssues(sections: Section[], issues: ArticleStyleIssue[]) {
   sections.forEach((section) => {
     const sentences = splitIntoSentences(section.body);
@@ -1088,6 +1141,8 @@ export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   const h3Blocks = parseH3Blocks(markdown);
   const h2Sections = parseH2Sections(markdown);
 
+  addMissingH1TitleIssue(markdown, issues);
+
   h3Blocks.forEach((block) => {
     if (isFaqBlock(block) && (block.sentenceCount < 1 || block.sentenceCount > 3)) {
       issues.push({
@@ -1124,6 +1179,7 @@ export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   addH3SiblingOpenerRepetitionIssues(h3Blocks, issues);
   addRepeatedSectionShapeIssues(h2Sections, issues);
   addRepeatedAbstractPhraseIssues(markdown, issues);
+  addSemanticGlueOveruseIssues(markdown, issues);
 
   return {
     issues,
@@ -1174,6 +1230,7 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "",
     "Repair only the issues listed in the audit:",
     "- Rewrite sentence openings that begin with the, a, that, those, this, or it.",
+    "- If the audit flags `missing-h1-title`, add exactly one H1 article title before the first H2.",
     "- Break repeated nearby sentence-openers, repeated topic-first openings, and repeated opening grammar patterns by starting with context, condition, outcome, contrast, or the operational object.",
     "- Keep important entities present, but move them inside sentences instead of always starting with them.",
     "- Make every non-FAQ H3 body 2 to 3 sentences: function first, operational value second, optional use case or detail third.",
@@ -1194,6 +1251,7 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "- If the audit flags `h3-sibling-opener-repetition`, rewrite sibling H3 openings so three or more do not start with the same word or frame.",
     "- If the audit flags `repeated-section-shape`, rebalance repeated H3-list sections into bullets, numbered steps, compact prose, or tables where reader intent allows.",
     "- If the audit flags `repeated-abstract-phrase`, replace later repeated abstract phrases with specific operational actions, records, roles, exceptions, or decisions.",
+    "- If the audit flags `semantic-glue-overuse`, reduce repeated generic glue terms such as context, events, alerts, review, and workflow by naming the specific signal, file, role, action, or decision instead.",
     "",
     "Return only the repaired article in Markdown.",
     "",

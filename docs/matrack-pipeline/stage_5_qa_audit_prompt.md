@@ -443,6 +443,42 @@ Examples:
 
 Auto-fix: Not auto-fixable. Recommend re-run Stage 4 with global phrase density pass.
 
+### P4. Pattern Risk: Semantic Glue Overuse (Major)
+
+Scan the full article for overuse of generic connective nouns.
+
+Flag if any of these terms appears above the article-appropriate
+threshold and appears to be carrying meaning without concrete detail:
+- context
+- events
+- alerts
+- review
+- workflow / workflows
+- records
+- data
+- dashboard
+- visibility
+- signals
+
+The issue is not the word itself. The issue is repeated use of the
+same abstract glue instead of naming the specific object, file, role,
+action, or decision.
+
+Examples of stronger replacements:
+- distraction clip
+- fatigue warning
+- route replay
+- HOS log
+- repair ticket
+- claim file
+- driver scorecard
+- coaching note
+- dispatch decision
+- inspection record
+
+Auto-fix: Not auto-fixable. Recommend re-run Stage 4 with semantic
+glue reduction.
+
 ---
 
 ## PHASE 3 — CONTENT AUDIT
@@ -734,7 +770,7 @@ Before outputting, validate:
 ### Audit Completeness Bars
 - [ ] All 17 structural checks (S1–S17) executed
 - [ ] All 15 style checks (Y1–Y12, Y14, Y16, Y17) executed
-- [ ] All 4 pattern-risk checks (P1, P1A, P2, P3) executed
+- [ ] All 5 pattern-risk checks (P1, P1A, P2, P3, P4) executed
 - [ ] All 9 content checks (C1–C9) executed
 - [ ] Auto-fixes applied where allowed
 - [ ] Auto-fixes documented in `auto_fixes_applied`
@@ -799,7 +835,7 @@ Now perform the following sequence:
 
 1. **Read** the Stage 4 article provided as input.
 2. **Phase 1:** Run all 17 structural checks. Record results.
-3. **Phase 2:** Run all 14 style checks and all 3 pattern-risk checks. Record results.
+3. **Phase 2:** Run all 15 style checks and all 5 pattern-risk checks. Record results.
 4. **Phase 3:** Run all 8 content checks. Record results.
 5. **Phase 4:** Apply auto-fixes within allowed scope. Document each fix.
 6. **Phase 5:** Apply final verdict logic. Determine `ready_to_publish`.

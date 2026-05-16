@@ -393,6 +393,22 @@ Also watch for repeated "When", "Before", and "During" openings.
 Rewrite some H3 openings with object-first, function-first,
 stakeholder-action-first, or outcome-first phrasing.
 
+### Semantic Glue Control
+
+Do not let generic connective nouns carry the article. Terms such as
+context, events, alerts, review, workflow, records, data, dashboard,
+visibility, and signals are allowed when they are the accurate term,
+but repeated use should be replaced with concrete operational details:
+fatigue warning, distraction clip, route replay, HOS log, repair ticket,
+claim file, driver scorecard, coaching note, dispatch decision, or
+inspection record.
+
+### Generic Keyword Casing
+
+Use sentence case for generic terms in body prose. Do not title-case a
+primary keyword inside a sentence unless it is a proper noun, official
+regulation, acronym, brand, or named standard.
+
 ### Protocol C: `bullet_list` (Benefits, Challenges, Features Sections)
 
 Open with **one context sentence** that frames the section.

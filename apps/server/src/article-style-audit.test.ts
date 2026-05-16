@@ -184,6 +184,18 @@ describe("article style audit", () => {
     assert.ok(preH2Audit.issues.some((issue) => issue.code === "pre-h2-content"));
   });
 
+  it("flags missing H1 titles when no frontmatter title is present", () => {
+    const markdown = [
+      "## What Is Driver Monitoring?",
+      "",
+      "Driver monitoring detects fatigue, distraction, and in-cab attention risk."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "missing-h1-title"));
+  });
+
   it("flags Matrack pitch structure and missing pricing or flexibility", () => {
     const markdown = [
       "---",
@@ -503,6 +515,24 @@ describe("article style audit", () => {
     const audit = auditArticleStyle(markdown);
 
     assert.ok(audit.issues.some((issue) => issue.code === "repeated-abstract-phrase"));
+  });
+
+  it("flags semantic glue overuse across the article", () => {
+    const markdown = [
+      "# Driver Monitoring Guide",
+      "",
+      "## What Does DMS Show?",
+      "",
+      "Driver monitoring creates safety events for review. Event context helps review teams review alerts. Dashboard review connects events, alerts, context, and workflow notes.",
+      "",
+      "## Which KPIs Matter?",
+      "",
+      "Event review, alert review, and context review can overwhelm the workflow when events and alerts repeat. Events need a label, events need an owner, events need a status, events need review, events need context, events need routing, and events need workflow routing. Context should name the distraction clip, fatigue warning, coaching note, or claim file instead of repeating context."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "semantic-glue-overuse"));
   });
 
   it("renders a repair prompt with the audit findings", () => {

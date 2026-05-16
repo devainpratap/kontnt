@@ -211,40 +211,49 @@ export class StepRunner {
     }
 
     const auditPath = `${outputDir}/${stepName}-style-audit.md`;
-    const repairPromptPath = `${promptDir}/${stepName}-style-repair.md`;
-    const audit = auditArticleStyle(generated);
-    await writeMarkdownFile(auditPath, renderArticleStyleAuditReport(audit));
+    const initialAudit = auditArticleStyle(generated);
+    await writeMarkdownFile(auditPath, renderArticleStyleAuditReport(initialAudit));
 
-    if (audit.issues.length === 0) {
+    if (initialAudit.issues.length === 0) {
       return "Step completed successfully.";
     }
 
-    const repairPrompt = renderArticleStyleRepairPrompt(generated, audit);
-    await writeMarkdownFile(repairPromptPath, repairPrompt);
-    const repairResult = await runCodexStep({
-      cwd,
-      outputPath,
-      prompt: repairPrompt
-    });
+    let currentMarkdown = generated;
+    let currentAudit = initialAudit;
+    const maxRepairPasses = 2;
 
-    if (repairResult.exitCode !== 0) {
-      return `Step completed, but the style repair pass could not run: ${summarizeCodexFailure(repairResult.stdout, repairResult.stderr)}`;
+    for (let pass = 1; pass <= maxRepairPasses; pass += 1) {
+      const repairPromptPath = `${promptDir}/${stepName}-style-repair-pass-${pass}.md`;
+      const repairPrompt = renderArticleStyleRepairPrompt(currentMarkdown, currentAudit);
+      await writeMarkdownFile(repairPromptPath, repairPrompt);
+      const repairResult = await runCodexStep({
+        cwd,
+        outputPath,
+        prompt: repairPrompt
+      });
+
+      if (repairResult.exitCode !== 0) {
+        return `Step completed, but style repair pass ${pass} could not run: ${summarizeCodexFailure(repairResult.stdout, repairResult.stderr)}`;
+      }
+
+      const repaired = await readTextFile(outputPath);
+      if (!repaired) {
+        return `Step completed, but style repair pass ${pass} did not save output.`;
+      }
+
+      currentMarkdown = sanitizeGeneratedMarkdown(repaired);
+      await writeMarkdownFile(outputPath, currentMarkdown);
+      currentAudit = auditArticleStyle(currentMarkdown);
+      await writeMarkdownFile(auditPath, renderArticleStyleAuditReport(currentAudit));
+
+      if (currentAudit.issues.length === 0) {
+        return pass === 1
+          ? "Step completed successfully after style audit repair."
+          : `Step completed successfully after ${pass} style audit repair passes.`;
+      }
     }
 
-    const repaired = await readTextFile(outputPath);
-    if (!repaired) {
-      return "Step completed, but the style repair output was not saved.";
-    }
-
-    const sanitized = sanitizeGeneratedMarkdown(repaired);
-    await writeMarkdownFile(outputPath, sanitized);
-
-    const finalAudit = auditArticleStyle(sanitized);
-    await writeMarkdownFile(auditPath, renderArticleStyleAuditReport(finalAudit));
-
-    return finalAudit.issues.length === 0
-      ? "Step completed successfully after style audit repair."
-      : `Step completed, but style audit still found ${finalAudit.issues.length} issue(s). Review the saved style audit.`;
+    return `Step completed, but style audit still found ${currentAudit.issues.length} issue(s) after ${maxRepairPasses} repair passes. Review the saved style audit.`;
   }
 
   private async repairPostGenerationIssuesIfNeeded(

@@ -23,6 +23,8 @@
 - Across H2 openings, also avoid 3 or more sections using the same predicate frame with different subjects, such as "[concept] improves when", "[concept] works by", "[concept] matters because", "[concept] depends on", "[concept] starts with", or "[concept] comes from".
 - Section closings should not mirror section openings. If the last sentence repeats the first sentence's key terms, close with a specific operational action, stakeholder decision, constraint, or applied value instead.
 - Control article-wide rhythm, not only individual section quality. Repeated H3-list sections, repeated abstract nouns, and repeated "team/manager can/use" constructions can still make a technically correct article feel generated.
+- Do not let generic glue nouns carry the article. Words such as context, events, alerts, review, workflow, records, data, dashboard, visibility, and signals are useful, but repeated use makes sections feel assembled. Replace excess repetition with the concrete object, file, role, action, or decision.
+- Use sentence case for generic terms in body prose. Do not title-case the primary keyword inside sentences unless it is a proper noun, official regulation, acronym, brand, or named standard.
 - Keep product mentions useful, specific, and non-promotional unless the brief requests otherwise.
 - Make every section connect to the previous idea and the next idea. Avoid isolated content islands.
 
@@ -59,6 +61,8 @@ Do not use the same number of bullets, H3s, or paragraphs in every section. Vary
 Do not let more than 3 H2 sections use H3 subsections unless the topic requires component-level explanation. Benefits, features, KPIs, rollout steps, and buying criteria should not all share the same H3-list format.
 
 During final review, scan for repeated abstract phrases such as "operating view", "route history", "service records", "tracking records", "data", "signals", "records", "becomes easier", "managers can", and "teams use". If the same phrase appears 4 or more times, replace later instances with specific operational detail.
+
+During final review, scan for semantic glue overuse. If context, events, alerts, review, workflow, records, data, dashboard, visibility, or signals appear repeatedly, keep accurate necessary uses and replace the rest with specifics such as a fatigue warning, distraction clip, HOS log, route replay, repair ticket, claim file, coaching note, driver scorecard, dispatch decision, or inspection record.
 
 Before finalizing, scan each H2 or H3 section and extract the first 1 to 3 words of every sentence. If the same entity, noun, pronoun, or phrase starts more than two nearby sentences, rewrite those openings with decision context, condition, outcome, contrast, or the operational object.
 
