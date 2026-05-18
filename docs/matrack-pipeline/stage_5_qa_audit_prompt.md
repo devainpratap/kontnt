@@ -423,6 +423,10 @@ If 3+ H2 sections use the same H3-list format, flag as Major pattern risk unless
 
 If 3+ consecutive H2 sections use the same structure, flag as Major pattern risk.
 
+If 3+ H2 sections use exactly the same number of H3s or exactly the
+same number of structured bullets, flag as Major pattern risk unless
+the topic explicitly requires equal-depth treatment.
+
 Auto-fix: Not auto-fixable. Recommend re-run Stage 2 + Stage 4 with section shape budgeting and format rebalancing.
 
 ### P3. Pattern Risk: Repeated Abstract Phrase Density (Major)
@@ -478,6 +482,35 @@ Examples of stronger replacements:
 
 Auto-fix: Not auto-fixable. Recommend re-run Stage 4 with semantic
 glue reduction.
+
+### P5. Pattern Risk: Filler Language Overuse (Major)
+
+Scan the full article for repeated AI-pattern filler language.
+
+Flag repeated use of:
+- clear
+- stronger
+- easier
+- lack of
+- well defined
+- clear understanding
+- built for
+- designed for
+- effective / efficiently
+- use of
+- greater
+- starting
+- choosing
+- common
+- consistent
+- well-phrases
+
+The issue is repetition without specific meaning. Do not flag a useful
+single instance. Flag clusters where the wording becomes a default
+rhythm or replaces concrete cause-effect detail.
+
+Auto-fix: Not auto-fixable. Recommend re-run Stage 4 with filler
+language reduction.
 
 ---
 
@@ -770,7 +803,7 @@ Before outputting, validate:
 ### Audit Completeness Bars
 - [ ] All 17 structural checks (S1–S17) executed
 - [ ] All 15 style checks (Y1–Y12, Y14, Y16, Y17) executed
-- [ ] All 5 pattern-risk checks (P1, P1A, P2, P3, P4) executed
+- [ ] All 6 pattern-risk checks (P1, P1A, P2, P3, P4, P5) executed
 - [ ] All 9 content checks (C1–C9) executed
 - [ ] Auto-fixes applied where allowed
 - [ ] Auto-fixes documented in `auto_fixes_applied`
@@ -835,7 +868,7 @@ Now perform the following sequence:
 
 1. **Read** the Stage 4 article provided as input.
 2. **Phase 1:** Run all 17 structural checks. Record results.
-3. **Phase 2:** Run all 15 style checks and all 5 pattern-risk checks. Record results.
+3. **Phase 2:** Run all 15 style checks and all 6 pattern-risk checks. Record results.
 4. **Phase 3:** Run all 8 content checks. Record results.
 5. **Phase 4:** Apply auto-fixes within allowed scope. Document each fix.
 6. **Phase 5:** Apply final verdict logic. Determine `ready_to_publish`.

@@ -219,6 +219,25 @@ If a piece of information genuinely has uncertainty, either commit with an "appr
 
 For each section in the outline, identify its `structure_type` and follow the matching protocol below.
 
+### Section Structure Selection Rule
+
+Every H2 must use the format that best fits the search intent behind
+that heading:
+
+- Use `prose_three_paragraph` for definitions, concepts, processes,
+  problems, and answers that need smooth explanation.
+- Use `bullet_list` for benefits, features, reasons, signs, steps,
+  mistakes, and checklist-style sections.
+- Use `h3_subsections` only when distinct subtopics need separate
+  explanation.
+- Use tables only when comparison, mapping, pricing, or side-by-side
+  breakdown improves comprehension.
+
+Do not let three or more H2 sections use exactly the same number of
+H3s or bullets unless equal depth is required by the topic. Rebalance
+section depth so the article feels manually structured, not assembled
+from repeated scaffolding.
+
 ### Protocol A: `prose_three_paragraph` (Definition Block — First H2)
 
 The first H2 is always a definition. Follow this exact 3-paragraph rhythm:
@@ -402,6 +421,14 @@ but repeated use should be replaced with concrete operational details:
 fatigue warning, distraction clip, route replay, HOS log, repair ticket,
 claim file, driver scorecard, coaching note, dispatch decision, or
 inspection record.
+
+### Filler Language Control
+
+Watch for repeated AI-pattern terms: clear, stronger, easier, lack of,
+well defined, clear understanding, built for, designed for, effective,
+efficient, use of, greater, starting, choosing, common, consistent,
+and well-phrases. Keep useful instances, but replace repetition with
+specific nouns, verbs, constraints, or cause-effect details.
 
 ### Generic Keyword Casing
 

@@ -21,9 +21,11 @@ export type ArticleStyleIssue = {
     | "h3-sibling-opener-repetition"
     | "h3-echo-density"
     | "repeated-section-shape"
+    | "repeated-section-count-pattern"
     | "repeated-abstract-phrase"
     | "missing-h1-title"
-    | "semantic-glue-overuse";
+    | "semantic-glue-overuse"
+    | "filler-language-overuse";
   section: string;
   message: string;
   evidence: string[];
@@ -110,6 +112,25 @@ const semanticGluePatterns = [
   { label: "alerts", pattern: /\balerts?\b/gi, threshold: 12 },
   { label: "review", pattern: /\breviews?\b|\breviewing\b/gi, threshold: 14 },
   { label: "workflow", pattern: /\bworkflows?\b/gi, threshold: 7 }
+];
+const fillerLanguagePatterns = [
+  { label: "clear", pattern: /\bclear(?:ly)?\b/gi, threshold: 5 },
+  { label: "stronger", pattern: /\bstronger\b/gi, threshold: 4 },
+  { label: "easier", pattern: /\beasier\b/gi, threshold: 4 },
+  { label: "lack of", pattern: /\black of\b/gi, threshold: 3 },
+  { label: "well defined", pattern: /\bwell[-\s]defined\b/gi, threshold: 2 },
+  { label: "clear understanding", pattern: /\bclear understanding\b/gi, threshold: 2 },
+  { label: "built for", pattern: /\bbuilt for\b/gi, threshold: 3 },
+  { label: "designed for", pattern: /\bdesigned for\b/gi, threshold: 3 },
+  { label: "effective", pattern: /\beffective(?:ly)?\b/gi, threshold: 5 },
+  { label: "efficient", pattern: /\befficient(?:ly)?\b/gi, threshold: 5 },
+  { label: "use of", pattern: /\buse of\b/gi, threshold: 5 },
+  { label: "greater", pattern: /\bgreater\b/gi, threshold: 4 },
+  { label: "starting", pattern: /\bstarting\b/gi, threshold: 4 },
+  { label: "choosing", pattern: /\bchoosing\b/gi, threshold: 4 },
+  { label: "common", pattern: /\bcommon\b/gi, threshold: 8 },
+  { label: "consistent", pattern: /\bconsistent(?:ly)?\b/gi, threshold: 5 },
+  { label: "well-", pattern: /\bwell-[a-z]+\b/gi, threshold: 4 }
 ];
 const topicRoleTerms = new Set([
   "broker",
@@ -876,7 +897,9 @@ function addRepeatedSectionShapeIssues(h2Sections: H2Section[], issues: ArticleS
   const articleSections = h2Sections.filter((section) => !/\b(faq|faqs|frequently asked|common questions|final thoughts)\b/i.test(section.heading));
   const shapeRows = articleSections.map((section) => ({
     section,
-    shape: getH2SectionShape(section)
+    shape: getH2SectionShape(section),
+    h3Count: (section.body.match(/^###\s+/gm) ?? []).length,
+    bulletCount: (section.body.match(/^\s*[-*]\s+\*\*[^*]+:\*\*/gm) ?? []).length
   }));
   const h3Rows = shapeRows.filter((row) => row.shape === "h3-list");
 
@@ -902,6 +925,35 @@ function addRepeatedSectionShapeIssues(h2Sections: H2Section[], issues: ArticleS
       break;
     }
   }
+
+  const repeatedCountGroups = [
+    {
+      label: "H3",
+      rows: shapeRows.filter((row) => row.h3Count >= 3),
+      getCount: (row: (typeof shapeRows)[number]) => row.h3Count
+    },
+    {
+      label: "bullet",
+      rows: shapeRows.filter((row) => row.bulletCount >= 4),
+      getCount: (row: (typeof shapeRows)[number]) => row.bulletCount
+    }
+  ];
+
+  repeatedCountGroups.forEach(({ label, rows, getCount }) => {
+    const grouped = new Map<number, typeof rows>();
+    rows.forEach((row) => grouped.set(getCount(row), [...(grouped.get(getCount(row)) ?? []), row]));
+
+    grouped.forEach((groupRows, count) => {
+      if (groupRows.length >= 3) {
+        issues.push({
+          code: "repeated-section-count-pattern",
+          section: "Article Structure",
+          message: `Three or more H2 sections use exactly ${count} ${label}${count === 1 ? "" : "s"}. Vary section depth when reader intent allows it.`,
+          evidence: groupRows.map((row) => row.section.heading).slice(0, 8)
+        });
+      }
+    });
+  });
 }
 
 function addRepeatedAbstractPhraseIssues(markdown: string, issues: ArticleStyleIssue[]) {
@@ -931,6 +983,21 @@ function addSemanticGlueOveruseIssues(markdown: string, issues: ArticleStyleIssu
     }
   });
 }
+
+function addFillerLanguageOveruseIssues(markdown: string, issues: ArticleStyleIssue[]) {
+  fillerLanguagePatterns.forEach(({ label, pattern, threshold }) => {
+    const matches = Array.from(markdown.matchAll(pattern)).map((match) => match[0]);
+    if (matches.length >= threshold) {
+      issues.push({
+        code: "filler-language-overuse",
+        section: "Article Body",
+        message: `The AI-pattern filler term "${label}" appears ${matches.length} times. Keep useful instances, but replace repetitive uses with specific meaning.`,
+        evidence: matches.slice(0, 8)
+      });
+    }
+  });
+}
+
 
 function addBannedPhraseIssues(sections: Section[], issues: ArticleStyleIssue[]) {
   sections.forEach((section) => {
@@ -1180,6 +1247,7 @@ export function auditArticleStyle(markdown: string): ArticleStyleAudit {
   addRepeatedSectionShapeIssues(h2Sections, issues);
   addRepeatedAbstractPhraseIssues(markdown, issues);
   addSemanticGlueOveruseIssues(markdown, issues);
+  addFillerLanguageOveruseIssues(markdown, issues);
 
   return {
     issues,
@@ -1250,8 +1318,10 @@ export function renderArticleStyleRepairPrompt(markdown: string, audit: ArticleS
     "- If the audit flags `h3-echo-density`, rewrite excess H3 openers with function-first, user/action-first, condition-first, outcome-first, or object/data-first phrasing.",
     "- If the audit flags `h3-sibling-opener-repetition`, rewrite sibling H3 openings so three or more do not start with the same word or frame.",
     "- If the audit flags `repeated-section-shape`, rebalance repeated H3-list sections into bullets, numbered steps, compact prose, or tables where reader intent allows.",
+    "- If the audit flags `repeated-section-count-pattern`, vary the section depth so multiple H2 sections do not all use the same number of H3s or bullets unless the topic truly requires it.",
     "- If the audit flags `repeated-abstract-phrase`, replace later repeated abstract phrases with specific operational actions, records, roles, exceptions, or decisions.",
     "- If the audit flags `semantic-glue-overuse`, reduce repeated generic glue terms such as context, events, alerts, review, and workflow by naming the specific signal, file, role, action, or decision instead.",
+    "- If the audit flags `filler-language-overuse`, replace repeated filler terms with precise nouns, verbs, constraints, or cause-effect details.",
     "",
     "Return only the repaired article in Markdown.",
     "",

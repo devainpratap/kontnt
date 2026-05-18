@@ -501,6 +501,43 @@ describe("article style audit", () => {
     assert.ok(audit.issues.some((issue) => issue.code === "repeated-section-shape"));
   });
 
+  it("flags repeated section count patterns", () => {
+    const markdown = [
+      "# Fleet Guide",
+      "",
+      "## What Does Tracking Include?",
+      "",
+      "Tracking systems connect field activity to dispatch decisions.",
+      "",
+      "- **Location Data:** Vehicle movement shows where work happened.",
+      "- **Route Replay:** Historical paths support service checks.",
+      "- **Driver Notes:** Notes explain blocked access or exceptions.",
+      "- **Stop Timing:** Timestamps show arrival and departure details.",
+      "",
+      "## What Benefits Matter?",
+      "",
+      "Fleet teams gain value when operating problems become visible.",
+      "",
+      "- **Service Proof:** Records reduce complaint uncertainty.",
+      "- **Fuel Control:** Idle patterns show avoidable waste.",
+      "- **Repair Timing:** Faults can enter shop planning earlier.",
+      "- **Safety Coaching:** Events support specific conversations.",
+      "",
+      "## Which KPIs Matter?",
+      "",
+      "Useful KPIs connect activity to supervisor decisions.",
+      "",
+      "- **Idle Time:** Idle duration shows fuel waste.",
+      "- **Open Repairs:** Repair status protects route readiness.",
+      "- **Missed Stops:** Complaint trends show service gaps.",
+      "- **Safety Events:** Event trends direct coaching."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "repeated-section-count-pattern"));
+  });
+
   it("flags repeated abstract phrase density", () => {
     const markdown = [
       "---",
@@ -533,6 +570,20 @@ describe("article style audit", () => {
     const audit = auditArticleStyle(markdown);
 
     assert.ok(audit.issues.some((issue) => issue.code === "semantic-glue-overuse"));
+  });
+
+  it("flags repeated filler language overuse", () => {
+    const markdown = [
+      "# Fleet Guide",
+      "",
+      "## What Makes Tracking Useful?",
+      "",
+      "A clear process gives managers clear data and clear reporting. Clear alerts make clear follow-up easier. Clear dashboards create a clear view for clear decisions."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.ok(audit.issues.some((issue) => issue.code === "filler-language-overuse"));
   });
 
   it("renders a repair prompt with the audit findings", () => {

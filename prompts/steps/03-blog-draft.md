@@ -35,6 +35,7 @@ Additional drafting rules:
 - Do not add Key Takeaways unless the approved outline explicitly requires them for a non-Matrack article.
 - Use question-based H2s wherever the approved outline allows it.
 - Choose the best structure for each H2 rather than repeating the same pattern.
+- For every H2, choose one of these structures based on intent: three short two-sentence paragraphs for explanations; one context sentence plus structured bullets for benefits, features, signs, steps, or mistakes; one context sentence plus H3s for distinct subtopics; or a table only when comparison or mapping improves clarity.
 - Rotate H2 opening sentence types across the article: topic-as-subject, operational-outcome-first, operating-context-first, concrete-specific-fact-first, and stakeholder-action-first.
 - Do not let 3 or more H2s open with the same subject plus modal verb pattern, such as "Owner operators should", "Fleet managers can", or "Trucking companies need".
 - No single H2 opener type should appear in more than 40% of the article's H2 openings. Stakeholder-action-first openings should appear no more than 1 to 2 times.
@@ -44,6 +45,7 @@ Additional drafting rules:
 - Vary sentence openings by starting with decision context, condition, outcome, contrast, or the operational object when the topic entity would otherwise repeat.
 - For explanatory H2s, use the three-paragraph logic when natural: direct answer, mechanism, implication or transition.
 - For benefits, features, signs, steps, and mistakes, use one short lead sentence followed by structured bullets.
+- Do not let three or more H2 sections use exactly the same number of bullets or exactly the same number of H3s. Vary depth naturally according to section purpose.
 - For multi-component sections, use H3s. Each non-FAQ H3 must have 2 to 3 sentences: sentence 1 names the H3 topic and function, sentence 2 explains the operational value, and sentence 3 may add a use case or integration detail.
 - H3 heading echo density rule: in any H2 section with 3 or more H3s, no more than half of the H3 opening sentences may begin with the exact H3 heading phrase. Keep the entity clear, but vary some openings with function-first, user/action-first, operational-condition-first, outcome-first, or object/data-first phrasing.
 - For FAQ H3s, answer directly in 2 to 3 self-contained sentences.
@@ -70,6 +72,7 @@ Additional drafting rules:
 - Do not let 3 or more H2 opening sentences share the same generic predicate frame, even when the subject changes. Watch for repeated frames such as "[concept] improves when", "[concept] works by", "[concept] matters because", "[concept] depends on", "[concept] starts with", or "[concept] comes from". Rewrite with outcome-first, condition-first, operational-detail-first, or stakeholder-decision framing.
 - In any H2 with multiple H3s, do not let 3 or more sibling H3 opening sentences start with the same condition word or frame such as "After", "When", "Before", or "During".
 - Avoid using generic glue nouns as the repeated connective tissue of the article. Terms such as context, events, alerts, review, records, data, dashboard, workflow, visibility, and signals are allowed when needed, but repeated use should be replaced with the specific object: fatigue warning, distraction clip, HOS log, repair ticket, route replay, claim file, coaching note, driver scorecard, dispatch decision, or inspection record.
+- Avoid filler-language drift. Do not overuse clear, stronger, easier, lack of, well defined, clear understanding, built for, designed for, effective, efficient, use of, greater, starting, choosing, common, consistent, or well-phrases. Replace repeated uses with specific nouns, verbs, constraints, or cause-effect details.
 - The ideal Matrack-style articles use simple causal flow and concrete operational nouns. When a sentence says something "adds context", "supports review", or "creates workflow", revise it to say who acts, what file or signal they use, and what decision changes.
 - Do not add standalone transition paragraphs after an H3 before the next H2. Place the transition inside the second H3 paragraph or before the H3 list begins.
 

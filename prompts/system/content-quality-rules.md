@@ -8,12 +8,13 @@
 - Keep paragraphs short, but avoid repeated one-sentence paragraphs.
 - Do not invent statistics, quotes, pricing claims, market claims, case studies, or precise percentages.
 - Flag uncertain claims that require verification instead of presenting them as fact.
-- Replace vague phrases such as "helps improve", "can support", "designed for", "built for", "clear understanding", "effective", and "efficient" with specific cause-and-effect language.
+- Replace vague phrases such as "helps improve", "can support", "designed for", "built for", "clear understanding", "effective", "efficient", "stronger", "easier", "lack of", "well-defined", "greater", and "common" with specific cause-and-effect language when they repeat or do not add meaning.
 - Remove editorial leak phrases such as "verify before publishing", "should be verified before publication", "drafting caution", "source-specific verification", or "this should be checked".
 - Remove bridge sentences that reference earlier or later sections. Section headings provide enough transition.
 - Do not use CTAs, exclamation marks, rhetorical questions in body prose, or first-person body prose unless the approved brand section explicitly permits it.
 - Do not start sentences with "the", "a", "that", or "those". During final review, rewrite those openings with a more specific subject, verb-led construction, or context phrase.
 - Avoid overusing filler words and repeated sentence starters such as "this", "it", "these", "they", "when", "although", "by", "for", "while", and "each".
+- Watch for article-wide filler repetition: clear, stronger, easier, lack of, this, it, these, those, they, when, although, by, that, for, well defined, clear understanding, while, built for, designed for, effective, efficient, use of, greater, each, starting, choosing, common, consistent, and well-. Keep useful instances, but do not let these words become the default rhythm.
 - Use the primary entity naturally across the article, but vary the context around it instead of repeating the same phrase mechanically.
 - Keep semantic entities present, but do not let the same entity, noun, pronoun, or phrase dominate sentence openings. Place the entity later in the sentence when context, condition, outcome, contrast, or the operational object creates a more natural opening.
 - Do not treat sentence-opening quality as a banned-word list only. Repeated starts with the main entity, H2 keyword, role name, comparison term, or the same grammatical pattern also create AI rhythm.
@@ -36,11 +37,11 @@ Assign one dominant purpose to each H2 before writing: definition, responsibilit
 
 Before writing each H2, choose the structure that fits the section intent: explanation, comparison, decision support, component breakdown, or FAQ. Do not copy the same H2 rhythm from the previous section unless the reader genuinely benefits from it.
 
-Use a three-paragraph format for definitions, concepts, processes, and explanations. Use 3 short paragraphs with 2 sentences each when the section needs smooth explanation.
+Use a three-paragraph format for definitions, concepts, processes, problems, and answers that need smooth explanation. Use 3 short paragraphs with 2 sentences each, direct answer first, mechanism second, and implication or practical consequence third.
 
-Use one sentence plus structured bullets for benefits, features, reasons, signs, steps, mistakes, or checklist-style sections. Bullet labels should be 2 to 3 words and each bullet must add a specific useful point.
+Use one sentence plus structured bullets for benefits, features, reasons, signs, steps, mistakes, or checklist-style sections. Bullet labels should be 2 to 3 words and each bullet must add a specific useful point. Do not repeat the same bullet count across multiple sections unless the topic truly requires it.
 
-Use one sentence plus H3 subsections when the H2 contains several subtopics that need separate treatment. H3s should be short, natural, and not forced.
+Use one sentence plus H3 subsections when the H2 contains several subtopics that need separate treatment. H3s should be short, natural, ideally 3 to 4 words, and not forced. Do not repeat the same H3 count across multiple sections unless the topic genuinely requires equal coverage.
 
 When a non-FAQ H3 is used in the article body, write a tight 2 to 3 sentence chunk below it. Sentence 1 should name the H3 topic and define what it does. Sentence 2 should explain the operational value, data, function, impact, or decision it enables. Sentence 3 is optional for a specific use case, integration, or detail.
 
@@ -58,6 +59,8 @@ Use a table only for comparison, feature mapping, pricing, pros and cons, or sid
 
 Do not use the same number of bullets, H3s, or paragraphs in every section. Vary section shape based on reader need.
 
+Avoid same-size section scaffolding. If three or more H2 sections all use exactly the same number of H3s or bullets, rebalance one section into prose, fewer bullets, more compact H3s, or a table if comparison genuinely improves clarity.
+
 Do not let more than 3 H2 sections use H3 subsections unless the topic requires component-level explanation. Benefits, features, KPIs, rollout steps, and buying criteria should not all share the same H3-list format.
 
 During final review, scan for repeated abstract phrases such as "operating view", "route history", "service records", "tracking records", "data", "signals", "records", "becomes easier", "managers can", and "teams use". If the same phrase appears 4 or more times, replace later instances with specific operational detail.
@@ -65,6 +68,8 @@ During final review, scan for repeated abstract phrases such as "operating view"
 During final review, scan for semantic glue overuse. If context, events, alerts, review, workflow, records, data, dashboard, visibility, or signals appear repeatedly, keep accurate necessary uses and replace the rest with specifics such as a fatigue warning, distraction clip, HOS log, route replay, repair ticket, claim file, coaching note, driver scorecard, dispatch decision, or inspection record.
 
 Before finalizing, scan each H2 or H3 section and extract the first 1 to 3 words of every sentence. If the same entity, noun, pronoun, or phrase starts more than two nearby sentences, rewrite those openings with decision context, condition, outcome, contrast, or the operational object.
+
+Before finalizing, remove one-sentence paragraph patterns unless a short direct answer, FAQ answer, or table/bullet lead sentence truly needs it. Consecutive one-sentence paragraphs make the article feel assembled rather than edited.
 
 For comparison articles, define both entities independently before comparison tables, legal/compliance sections, decision guidance, or buying guidance. Responsibilities or core features should appear before differences. "Which one should you choose?" belongs after the comparison, and FAQs belong near the end.
 

@@ -65,6 +65,7 @@ Phase 5, structural variation:
 - Comparison tables must use `Comparison Point` as the leftmost column and must not include `Drafting Caution`, `Verification Notes`, `Editorial Flag`, `Notes for Writer`, or `Caveat`.
 - Use tables only when comparison, mapping, or side-by-side evaluation improves clarity.
 - Eliminate repeated numbers of bullets, repeated numbers of H3s, repeated paragraph rhythm, and predictable formatting.
+- If three or more H2 sections use exactly the same number of bullets or exactly the same number of H3s, rebalance at least one section unless equal depth is required by the topic.
 - Component H3s, where used, should follow the two-paragraph H3 rule without padding.
 - Prevent repeated entity-first openings. No H2 or H3 section should have more than two nearby sentences starting with the same entity, noun, pronoun, or phrase.
 - Prevent repeated H2 keyword starts, role-name starts, comparison-term starts, and repeated subject-plus-verb patterns such as "X is", "X helps", "X should", or "X can".
@@ -75,6 +76,7 @@ Phase 6, content execution:
 - Remove bridge sentences that reference previous or upcoming sections. Do not add end-of-section transition sentences.
 - Remove em dashes.
 - Remove or rewrite common AI phrases, especially vague claims such as "helps improve", "can support", "designed for", "built for", "clear understanding", "effective", and "efficient".
+- Remove or rewrite repeated filler words and phrases such as clear, stronger, easier, lack of, well defined, clear understanding, built for, designed for, effective, efficient, use of, greater, starting, choosing, common, consistent, and well-phrases when they repeat across the article.
 - Replace vague claims with direct cause-effect statements.
 - Audit sentence starters across the full article. Rewrite every sentence that begins with "the", "a", "that", or "those".
 - Extract the first 1 to 3 words of sentences in each section. Also check same entity match, same role match, same H2 keyword match, same comparison-term match, and same syntactic pattern. Rewrite repeated nearby starts instead of using random synonyms.
@@ -112,6 +114,7 @@ Phase 7, micro section and authority:
 Final quality filter:
 
 - No repeated structure patterns.
+- No repeated same-size scaffolding where 3 or more sections use exactly the same number of bullets or H3s without a reader-driven reason.
 - No visible pattern of sentences starting with "the", "a", "that", or "those".
 - No H2 or H3 section has more than two nearby sentences starting with the same entity or phrase.
 - No H2 or H3 section has more than two nearby sentences starting with the same H2 keyword, role, comparison term, or opening grammar pattern.
@@ -128,6 +131,7 @@ Final quality filter:
 - No repeated H3-list format across 3 or more consecutive H2 sections when another structure would fit.
 - No repeated abstract phrase appears 4 or more times unless required for accuracy.
 - No filler-heavy sentences.
+- No article-wide filler term cluster dominates the prose.
 - No weak or vague statements.
 - Each section answers its heading immediately.
 - No bridge sentences or editorial process notes remain.

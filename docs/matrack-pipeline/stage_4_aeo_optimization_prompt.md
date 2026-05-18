@@ -485,9 +485,20 @@ with specific operational objects: fatigue warning, distraction clip,
 route replay, HOS log, repair ticket, claim file, driver scorecard,
 coaching note, dispatch decision, or inspection record.
 
+Also scan for filler-language overuse. If clear, stronger, easier,
+lack of, well defined, clear understanding, built for, designed for,
+effective, efficient, use of, greater, starting, choosing, common,
+consistent, or well-phrases repeat across the article, keep useful
+instances and replace the rest with concrete meaning.
+
 ### Global Pattern Pass 2: Section Format Rebalancing
 
 If 3 or more consecutive H2 sections use the same structure, rebalance before final output.
+
+If 3 or more H2 sections use exactly the same number of H3s or exactly
+the same number of bullets, rebalance at least one section unless the
+topic requires equal depth. Change only presentation depth, not
+approved meaning.
 
 Repeated H3-list sections should be converted when appropriate:
 - feature sections may become bullets
