@@ -9,6 +9,7 @@ import {
   createJobSchema,
   exportArticleSchema,
   saveIntakeSchema,
+  workflowSteps,
   type WorkflowStep
 } from "@semantic-seo/shared";
 
@@ -19,10 +20,31 @@ import { readJsonFile, readTextFile, writeJsonFile } from "./jobs/files";
 import { JobRepository } from "./jobs/repository";
 import { ApiError } from "./lib/api-error";
 import { getCodexStatus } from "./generation/codex-provider";
+import { jobRunner } from "./generation/job-runner";
 import { StepRunner } from "./generation/step-runner";
+
+type RunnableStep = Exclude<WorkflowStep, "approve-outline">;
 
 function badRequest(reply: FastifyReply, message: string) {
   return reply.code(400).send({ error: message });
+}
+
+// Fire-and-poll: validate prerequisites cheaply (immediate 4xx), take the
+// in-flight lock, then start the multi-minute Codex work detached and return
+// 202 right away. Completion/failure is observed via job-detail polling because
+// StepRunner persists the step status to the DB.
+async function startStepRun(runner: StepRunner, jobId: string, stepName: RunnableStep, reply: FastifyReply) {
+  // Throws ApiError (400/404) surfaced by the global error handler before we
+  // return 202, so missing intake / semantic map / outline / draft is immediate.
+  await runner.validatePrerequisites(jobId, stepName);
+
+  if (jobRunner.isRunning(jobId, stepName)) {
+    return reply.code(409).send({ error: "Step already running", code: "STEP_ALREADY_RUNNING" });
+  }
+
+  jobRunner.start(jobId, stepName, (signal) => runner.run(jobId, stepName, signal));
+
+  return reply.code(202).send({ status: "running", stepName });
 }
 
 async function getFileSize(path: string) {
@@ -112,12 +134,12 @@ export async function registerRoutes(app: FastifyInstance) {
     };
   });
 
-  app.post("/api/jobs/:jobId/steps/semantic-map", async (request: FastifyRequest<{ Params: { jobId: string } }>) => {
-    return runner.run(request.params.jobId, "semantic-map");
+  app.post("/api/jobs/:jobId/steps/semantic-map", async (request: FastifyRequest<{ Params: { jobId: string } }>, reply) => {
+    return startStepRun(runner, request.params.jobId, "semantic-map", reply);
   });
 
-  app.post("/api/jobs/:jobId/steps/outline", async (request: FastifyRequest<{ Params: { jobId: string } }>) => {
-    return runner.run(request.params.jobId, "outline");
+  app.post("/api/jobs/:jobId/steps/outline", async (request: FastifyRequest<{ Params: { jobId: string } }>, reply) => {
+    return startStepRun(runner, request.params.jobId, "outline", reply);
   });
 
   app.post("/api/jobs/:jobId/steps/approve-outline", async (request: FastifyRequest<{ Params: { jobId: string } }>, reply) => {
@@ -126,15 +148,30 @@ export async function registerRoutes(app: FastifyInstance) {
       return badRequest(reply, parsed.error.issues[0]?.message ?? "Invalid approved outline payload.");
     }
 
+    // Kept synchronous: approving an outline is a fast file write with no Codex
+    // invocation, so there is nothing to fire-and-poll.
     return runner.saveApprovedOutline(request.params.jobId, parsed.data.approvedOutline);
   });
 
-  app.post("/api/jobs/:jobId/steps/draft", async (request: FastifyRequest<{ Params: { jobId: string } }>) => {
-    return runner.run(request.params.jobId, "draft");
+  app.post("/api/jobs/:jobId/steps/draft", async (request: FastifyRequest<{ Params: { jobId: string } }>, reply) => {
+    return startStepRun(runner, request.params.jobId, "draft", reply);
   });
 
-  app.post("/api/jobs/:jobId/steps/final-optimize", async (request: FastifyRequest<{ Params: { jobId: string } }>) => {
-    return runner.run(request.params.jobId, "final-optimize");
+  app.post("/api/jobs/:jobId/steps/final-optimize", async (request: FastifyRequest<{ Params: { jobId: string } }>, reply) => {
+    return startStepRun(runner, request.params.jobId, "final-optimize", reply);
+  });
+
+  app.post("/api/jobs/:jobId/steps/:step/cancel", async (request: FastifyRequest<{ Params: { jobId: string; step: string } }>, reply) => {
+    const { jobId, step } = request.params;
+    if (!(workflowSteps as readonly string[]).includes(step)) {
+      return reply.code(404).send({ error: "Unknown workflow step." });
+    }
+
+    // Abort the in-flight AbortController if present. The aborted runner writes
+    // the step's final status ("failed" / "Cancelled by user") to the DB, which
+    // the frontend observes via polling.
+    const cancelled = jobRunner.cancel(jobId, step);
+    return reply.send({ cancelled });
   });
 
   app.post("/api/jobs/:jobId/export", async (request: FastifyRequest<{ Params: { jobId: string } }>, reply) => {
@@ -164,6 +201,9 @@ export async function registerRoutes(app: FastifyInstance) {
       { type: "approved-outline", label: "Approved outline", category: "output" as const, path: paths.approvedOutlineFile },
       { type: "draft", label: "Article draft", category: "output" as const, path: paths.draftFile },
       { type: "final-optimized", label: "Final optimized article", category: "output" as const, path: paths.finalOptimizedFile },
+      { type: "style-audit-draft", label: "Draft style audit", category: "audit" as const, path: paths.draftStyleAuditFile },
+      { type: "style-audit-final", label: "Final style audit", category: "audit" as const, path: paths.finalStyleAuditFile },
+      { type: "structure-audit-outline", label: "Outline structure audit", category: "audit" as const, path: paths.outlineStructureAuditFile },
       { type: "export-markdown", label: "Markdown export", category: "export" as const, path: paths.markdownExportFile },
       { type: "export-html", label: "HTML export", category: "export" as const, path: paths.htmlExportFile },
       { type: "export-docx", label: "DOCX export", category: "export" as const, path: paths.docxExportFile }
@@ -193,14 +233,20 @@ export async function registerRoutes(app: FastifyInstance) {
       "approved-outline": paths.approvedOutlineFile,
       draft: paths.draftFile,
       "final-optimized": paths.finalOptimizedFile,
+      "style-audit-draft": paths.draftStyleAuditFile,
+      "style-audit-final": paths.finalStyleAuditFile,
+      "structure-audit-outline": paths.outlineStructureAuditFile,
       "export-markdown": paths.markdownExportFile,
       "export-html": paths.htmlExportFile,
       "export-docx": paths.docxExportFile
     };
 
     if (request.params.type.startsWith("handoff:")) {
-      const stepName = request.params.type.replace("handoff:", "") as WorkflowStep;
-      const content = await readTextFile(`${paths.handoffDir}/${stepName}-handoff.md`);
+      const stepName = request.params.type.replace("handoff:", "");
+      if (!(workflowSteps as readonly string[]).includes(stepName)) {
+        return reply.code(404).send({ error: "Handoff not found." });
+      }
+      const content = await readTextFile(`${paths.handoffDir}/${stepName as WorkflowStep}-handoff.md`);
       if (!content) {
         return reply.code(404).send({ error: "Handoff not found." });
       }

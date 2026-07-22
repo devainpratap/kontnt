@@ -55,5 +55,46 @@ services:
     stdin_open: true
     tty: true
 
+  # Production single-port service: builds the web dist into the image and
+  # serves it same-origin alongside the API. Not started by a plain
+  # `docker-compose up` (dev). Run it with:
+  #   docker-compose --profile prod up --build
+  server-prod:
+    profiles:
+      - prod
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    working_dir: /workspace
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3001
+      SERVE_WEB: "true"
+      WORKFLOW_ROOT: /workspace
+      DB_PATH: /workspace/data/workflow.sqlite
+      CODEX_CLI_BIN: codex
+      GENERATION_FALLBACK_MODE: manual
+      # Same-origin in production means no cross-origin access is required.
+      CORS_ALLOWED_ORIGINS: ""
+    volumes:
+      - ${HOME}/.codex:/root/.codex
+      - workspace_data:/workspace/data
+    ports:
+      - "${PROD_PORT:-3001}:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/health').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    init: true
+
 volumes:
   workspace_node_modules:
+  workspace_data:

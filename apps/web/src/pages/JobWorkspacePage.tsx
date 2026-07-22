@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
@@ -8,9 +8,13 @@ import type { ExportFormat, JobArtifact, JobDetail, WorkflowStep } from "@semant
 import { Surface, SurfaceHeader } from "../components/Surface";
 import { StatusPill } from "../components/StatusPill";
 import { WorkflowStepCard } from "../components/WorkflowStepCard";
+import { AdvancedBriefFields } from "../components/AdvancedBriefFields";
+import { ManualHandoffPanel } from "../components/ManualHandoffPanel";
+import { AuditReports } from "../components/AuditReports";
 import { FieldShell, ReadOnlyArea, inputClassName } from "../components/TextField";
 import { api } from "../lib/api";
 import { splitUrlInput, toFormValues, toIntakePayload, type IntakeFormValues } from "../lib/intake";
+import { resolveServerOutline, shouldSeed, type Seed } from "../lib/seeding";
 import { getCurrentStep, getStepRecord, workflowPhases, workflowStepMeta, workflowStepOrder } from "../lib/workflow";
 
 type CompetitorEntry = {
@@ -67,19 +71,37 @@ function getStepContent(job: JobDetail | undefined, stepName: WorkflowStep) {
     return "";
   }
 
+  // Only real generated content belongs in the output boxes. Manual-handoff
+  // prompts get their own distinct panel (see ManualHandoffPanel) so they are
+  // never mistaken for finished output.
   if (stepName === "semantic-map") {
-    return job.files.semanticMap ?? job.files.handoffs[stepName] ?? "";
+    return job.files.semanticMap ?? "";
   }
 
   if (stepName === "outline" || stepName === "approve-outline") {
-    return job.files.approvedOutline ?? job.files.outline ?? job.files.handoffs[stepName] ?? job.files.handoffs.outline ?? "";
+    return job.files.approvedOutline ?? job.files.outline ?? "";
   }
 
   if (stepName === "draft") {
-    return job.files.draft ?? job.files.handoffs[stepName] ?? "";
+    return job.files.draft ?? "";
   }
 
-  return job.files.finalOptimized ?? job.files.handoffs[stepName] ?? "";
+  return job.files.finalOptimized ?? "";
+}
+
+/** The manual-handoff prompt for a step, when Codex was unavailable for it. */
+function getStepHandoff(job: JobDetail | undefined, stepName: WorkflowStep): string | null {
+  if (!job) {
+    return null;
+  }
+
+  const record = job.steps.find((step) => step.stepName === stepName);
+  const handoff = job.files.handoffs[stepName];
+  if (record?.status === "manual-input-required" && handoff && handoff.trim().length > 0) {
+    return handoff;
+  }
+
+  return null;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -183,14 +205,31 @@ export function JobWorkspacePage() {
     defaultValues: toFormValues(null)
   });
 
+  // Seed editable local state (outline draft + intake form) from the server
+  // ONLY when the server content genuinely changes or the job changes — never
+  // on the identity-only object churn produced by every mutation → invalidate →
+  // refetch cycle. Without this guard, saving intake (or any other mutation)
+  // would silently clobber unsaved outline/intake edits. See lib/seeding.ts.
+  const outlineSeedRef = useRef<Seed | null>(null);
+  const intakeSeedRef = useRef<Seed | null>(null);
+
   useEffect(() => {
     if (!jobQuery.data) {
       return;
     }
 
-    intakeForm.reset(toFormValues(jobQuery.data.files.intake));
-    setOutlineDraft(jobQuery.data.files.approvedOutline ?? jobQuery.data.files.outline ?? jobQuery.data.files.handoffs["outline"] ?? "");
-  }, [jobQuery.data, intakeForm]);
+    const serverOutline = resolveServerOutline(jobQuery.data.files);
+    if (shouldSeed(outlineSeedRef.current, jobId, serverOutline)) {
+      setOutlineDraft(serverOutline);
+      outlineSeedRef.current = { jobId, signature: serverOutline };
+    }
+
+    const intakeSignature = JSON.stringify(jobQuery.data.files.intake ?? null);
+    if (shouldSeed(intakeSeedRef.current, jobId, intakeSignature)) {
+      intakeForm.reset(toFormValues(jobQuery.data.files.intake));
+      intakeSeedRef.current = { jobId, signature: intakeSignature };
+    }
+  }, [jobQuery.data, jobId, intakeForm]);
 
   const saveIntakeMutation = useMutation({
     mutationFn: (values: IntakeFormValues) => api.saveIntake(jobId, { intake: toIntakePayload(values) }),
@@ -206,15 +245,40 @@ export function JobWorkspacePage() {
     onError: (error) => setActionMessage(getErrorMessage(error))
   });
 
+  // Fire-and-poll: the POST resolves immediately with a 202 ack. Invalidating
+  // the job query flips the step to "running", which starts the 2500ms
+  // refetchInterval that observes completion/failure from the DB.
   const runStepMutation = useMutation({
     mutationFn: (stepName: RunnableStep) => api.runStep(jobId, stepName),
     onMutate: (stepName) => setActionMessage(`Starting ${workflowStepMeta[stepName].label.toLowerCase()}...`),
     onSuccess: async (result) => {
-      setActionMessage(result.message);
+      setActionMessage(
+        result.status === "already-running"
+          ? `${workflowStepMeta[result.stepName].label} is already running.`
+          : `${workflowStepMeta[result.stepName].label} is running.`
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
         queryClient.invalidateQueries({ queryKey: ["jobs"] }),
         queryClient.invalidateQueries({ queryKey: ["settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["artifacts", jobId] })
+      ]);
+    },
+    onError: (error) => setActionMessage(getErrorMessage(error))
+  });
+
+  const cancelStepMutation = useMutation({
+    mutationFn: (stepName: WorkflowStep) => api.cancelStep(jobId, stepName),
+    onMutate: (stepName) => setActionMessage(`Cancelling ${workflowStepMeta[stepName].label.toLowerCase()}...`),
+    onSuccess: async (result, stepName) => {
+      setActionMessage(
+        result.cancelled
+          ? `Cancelled ${workflowStepMeta[stepName].label.toLowerCase()}.`
+          : "Nothing to cancel — the step may have already finished."
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
+        queryClient.invalidateQueries({ queryKey: ["jobs"] }),
         queryClient.invalidateQueries({ queryKey: ["artifacts", jobId] })
       ]);
     },
@@ -308,6 +372,7 @@ export function JobWorkspacePage() {
   const hasDraft = Boolean(files?.draft);
   const hasFinalOptimized = Boolean(files?.finalOptimized);
   const exportArtifacts = artifacts.filter((artifact) => artifact.category === "export");
+  const auditArtifacts = artifacts.filter((artifact) => artifact.category === "audit");
   const allExportsReady =
     exportArtifacts.length > 0 && exportArtifacts.every((artifact) => artifact.exists);
   const canRunFinalOptimization = hasDraft && !isStepBusy("final-optimize");
@@ -393,6 +458,31 @@ export function JobWorkspacePage() {
     return () => window.clearInterval(interval);
   }, [isBusy, jobQuery.refetch, runningSteps.length]);
 
+  if (jobQuery.isError) {
+    return (
+      <main className="mx-auto flex max-w-2xl flex-col gap-4 px-5 py-16">
+        <div className="grid gap-4 rounded-[28px] border border-rose-200 bg-rose-50/80 p-6">
+          <div className="grid gap-1.5">
+            <Link to="/" className="text-sm font-medium text-emerald-800 hover:text-emerald-950">
+              Back to jobs
+            </Link>
+            <h1 className="text-2xl font-semibold text-stone-900">This article could not be loaded</h1>
+            <p className="text-sm leading-6 text-stone-600">{getErrorMessage(jobQuery.error)}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => jobQuery.refetch()}
+              className="rounded-xl bg-emerald-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto flex max-w-[1500px] flex-col gap-8 px-5 py-8 lg:px-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -407,11 +497,17 @@ export function JobWorkspacePage() {
           </div>
         </div>
 
-        {actionMessage ? (
-          <p className={`rounded-full px-4 py-2 text-sm ${isBusy ? "bg-sky-100 text-sky-900" : "bg-emerald-100 text-emerald-900"}`}>
-            {actionMessage}
-          </p>
-        ) : null}
+        <p
+          role="status"
+          aria-live="polite"
+          className={
+            actionMessage
+              ? `rounded-full px-4 py-2 text-sm ${isBusy ? "bg-sky-100 text-sky-900" : "bg-emerald-100 text-emerald-900"}`
+              : "sr-only"
+          }
+        >
+          {actionMessage}
+        </p>
       </header>
 
       <Surface className="gap-4 p-5">
@@ -446,9 +542,21 @@ export function JobWorkspacePage() {
         </p>
         {activeOperation ? (
           <div className="grid gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-semibold text-sky-900">{activeOperation} is running</p>
-              <StatusPill label="running" compact />
+              <div className="flex items-center gap-2">
+                <StatusPill label="running" compact />
+                {runningSteps[0] ? (
+                  <button
+                    type="button"
+                    disabled={cancelStepMutation.isPending}
+                    onClick={() => cancelStepMutation.mutate(runningSteps[0].stepName)}
+                    className="rounded-xl border border-rose-300 bg-white px-3 py-1.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {cancelStepMutation.isPending ? "Cancelling..." : "Cancel"}
+                  </button>
+                ) : null}
+              </div>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-sky-100">
               <div className="h-full w-2/3 rounded-full bg-sky-500 animate-pulse" />
@@ -483,6 +591,8 @@ export function JobWorkspacePage() {
               <FieldShell label="Top-ranking URLs" hint="Paste one per line, or paste a space-separated SERP list.">
                 <textarea {...intakeForm.register("topRankingUrls")} className={`${inputClassName()} min-h-28 resize-y`} />
               </FieldShell>
+
+              <AdvancedBriefFields register={intakeForm.register} />
 
               <div className="grid gap-3 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
                 <div className="grid gap-1">
@@ -606,6 +716,9 @@ export function JobWorkspacePage() {
                   <StatusPill label={getStepRecord(steps, "semantic-map")?.status ?? "idle"} />
                 </div>
                 <ReadOnlyArea value={getStepContent(jobQuery.data, "semantic-map")} placeholder={workflowStepMeta["semantic-map"].emptyState} />
+                {getStepHandoff(jobQuery.data, "semantic-map") ? (
+                  <ManualHandoffPanel stepLabel={workflowStepMeta["semantic-map"].label} handoff={getStepHandoff(jobQuery.data, "semantic-map")!} />
+                ) : null}
               </section>
 
               <section className="grid gap-2">
@@ -619,6 +732,9 @@ export function JobWorkspacePage() {
                   className={`${inputClassName()} min-h-72 resize-y bg-stone-50 font-mono text-xs leading-6`}
                   placeholder={workflowStepMeta.outline.emptyState}
                 />
+                {getStepHandoff(jobQuery.data, "outline") ? (
+                  <ManualHandoffPanel stepLabel={workflowStepMeta.outline.label} handoff={getStepHandoff(jobQuery.data, "outline")!} />
+                ) : null}
               </section>
 
               <section className="grid gap-2">
@@ -627,6 +743,9 @@ export function JobWorkspacePage() {
                   <StatusPill label={getStepRecord(steps, "draft")?.status ?? "idle"} />
                 </div>
                 <ReadOnlyArea value={getStepContent(jobQuery.data, "draft")} placeholder={workflowStepMeta.draft.emptyState} />
+                {getStepHandoff(jobQuery.data, "draft") ? (
+                  <ManualHandoffPanel stepLabel={workflowStepMeta.draft.label} handoff={getStepHandoff(jobQuery.data, "draft")!} />
+                ) : null}
               </section>
 
               <section className="grid gap-3">
@@ -677,6 +796,9 @@ export function JobWorkspacePage() {
                   </div>
                 </div>
                 <ReadOnlyArea value={getStepContent(jobQuery.data, "final-optimize")} placeholder={workflowStepMeta["final-optimize"].emptyState} />
+                {getStepHandoff(jobQuery.data, "final-optimize") ? (
+                  <ManualHandoffPanel stepLabel={workflowStepMeta["final-optimize"].label} handoff={getStepHandoff(jobQuery.data, "final-optimize")!} />
+                ) : null}
                 {readyArtifacts.some((artifact) => artifact.category === "export") ? (
                   <div className="flex flex-wrap gap-2">
                     {readyArtifacts
@@ -701,6 +823,24 @@ export function JobWorkspacePage() {
                       ))}
                   </div>
                 ) : null}
+              </section>
+
+              <section className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-600">Audit reports</h3>
+                </div>
+                {artifactsQuery.isError ? (
+                  <p className="rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-sm text-rose-800">
+                    Could not load audit reports. {getErrorMessage(artifactsQuery.error)}
+                  </p>
+                ) : auditArtifacts.some((artifact) => artifact.exists) ? (
+                  <AuditReports jobId={jobId} artifacts={auditArtifacts} />
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 px-4 py-4 text-sm leading-6 text-stone-500">
+                    Style and structure audits appear here once the outline, draft, and final optimization steps run. They
+                    show what the quality engine flagged and repaired.
+                  </p>
+                )}
               </section>
             </div>
           </Surface>
@@ -804,6 +944,18 @@ export function JobWorkspacePage() {
             <div className="grid gap-3 text-sm leading-6 text-stone-600">
               {artifactsQuery.isLoading ? (
                 <div className="rounded-2xl border border-stone-200 bg-stone-50/70 px-4 py-3">Loading saved files...</div>
+              ) : null}
+              {artifactsQuery.isError ? (
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-3">
+                  <span className="text-rose-800">Could not load saved files.</span>
+                  <button
+                    type="button"
+                    onClick={() => artifactsQuery.refetch()}
+                    className="rounded-lg border border-rose-300 px-2.5 py-1.5 text-xs font-semibold text-rose-800 transition hover:bg-white"
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : null}
               {artifacts.map((artifact: JobArtifact) => {
                 const exportFormat = exportFormatByArtifactType[artifact.type];

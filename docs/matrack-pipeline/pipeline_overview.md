@@ -1,5 +1,16 @@
 # Matrack Blog Automation Pipeline — Master Handoff Document
 
+> **⚠️ REFERENCE / ASPIRATIONAL DESIGN — NOT THE RUNNING IMPLEMENTATION.** (Updated 2026-07-22 to match implementation.)
+> Everything in `docs/matrack-pipeline/` describes a **5-stage GPT-5, JSON-artifact** pipeline
+> (`research_dossier.json` → `article_outline.json` → draft → 11 AEO transformations → a 35-check
+> QA audit returning `ready_to_publish` with auto re-run routing). **That pipeline was never built.**
+> Its intent was distilled into `prompts/system/matrack-quality-rules.md` plus two **deterministic
+> TypeScript audit engines** (`article-style-audit.ts` and `article-structure-audit.ts`) whose findings
+> are fed back to Codex as repair prompts. The **actual shipped product** is a **4-step Markdown Codex**
+> pipeline: semantic-map → outline → **[human approval gate]** → draft → final-optimize. There is no
+> JSON dossier/outline, no `ready_to_publish` flag, and no LLM-driven QA verdict routing. For the real
+> pipeline see [CLAUDE.md](../../CLAUDE.md). These files are retained as design reference only.
+
 **Version 1.0 | Pipeline complete with 6 artifacts**
 
 This document is the single reference for the Matrack blog automation pipeline. It explains what each artifact does, how they connect, and how to operate the system in production.

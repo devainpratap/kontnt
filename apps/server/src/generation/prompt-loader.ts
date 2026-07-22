@@ -7,6 +7,19 @@ import type { ArticleIntake, CompetitorResearch, WorkflowStep } from "@semantic-
 
 import { appConfig } from "../config";
 import { renderArticleBrief, renderCompetitorContext, renderEntityContext, renderExtractedCompetitorContext } from "../jobs/files";
+import { isFleetTopic } from "./style-audit/topic-scope";
+
+// Placeholder injected in place of the Matrack quality rules for non-fleet topics so
+// the {{MATRACK_QUALITY_RULES}} token still resolves without pushing a fleet/Matrack
+// pitch or capability list onto an unrelated article.
+const GENERIC_QUALITY_NOTE = [
+  "## Topic Scope",
+  "",
+  "This article is not a Matrack, fleet, trucking, telematics, or logistics topic.",
+  "Do not add a vendor pitch section, a Matrack capability list, or fleet-specific",
+  "capabilities. Follow the general content-quality and semantic-SEO rules above and",
+  "keep the article focused on its own subject."
+].join("\n");
 
 const stepTemplateMap: Record<Exclude<WorkflowStep, "approve-outline">, string> = {
   "semantic-map": "01-semantic-analysis.md",
@@ -35,10 +48,16 @@ export async function renderStepPrompt(stepName: Exclude<WorkflowStep, "approve-
   const template = matter(raw).content;
   const rules = await loadSystemRules();
 
+  // Decide fleet scope from the intake-derived signals already present in the context
+  // (article brief carries title + target keyword; entity context carries entities).
+  // Only fleet/trucking/telematics/logistics topics get the Matrack quality rules.
+  const topicSignal = [context.ARTICLE_BRIEF, context.ENTITY_CONTEXT].filter(Boolean).join("\n");
+  const matrackRules = isFleetTopic(topicSignal) ? rules.matrackQuality.trim() : GENERIC_QUALITY_NOTE;
+
   return template
     .replace("{{CONTENT_QUALITY_RULES}}", rules.contentQuality.trim())
     .replace("{{SEMANTIC_SEO_RULES}}", rules.semanticSeo.trim())
-    .replace("{{MATRACK_QUALITY_RULES}}", rules.matrackQuality.trim())
+    .replace("{{MATRACK_QUALITY_RULES}}", matrackRules)
     .replace("{{ARTICLE_BRIEF}}", context.ARTICLE_BRIEF)
     .replace("{{COMPETITOR_CONTEXT}}", context.COMPETITOR_CONTEXT ?? "")
     .replace("{{ENTITY_CONTEXT}}", context.ENTITY_CONTEXT ?? "")

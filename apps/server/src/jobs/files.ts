@@ -17,6 +17,9 @@ export type JobPaths = {
   approvedOutlineFile: string;
   draftFile: string;
   finalOptimizedFile: string;
+  draftStyleAuditFile: string;
+  finalStyleAuditFile: string;
+  outlineStructureAuditFile: string;
   markdownExportFile: string;
   htmlExportFile: string;
   docxExportFile: string;
@@ -37,6 +40,9 @@ export function buildJobPaths(jobPath: string): JobPaths {
     approvedOutlineFile: join(jobPath, "outputs", "approved-outline.md"),
     draftFile: join(jobPath, "outputs", "draft.md"),
     finalOptimizedFile: join(jobPath, "outputs", "final-optimized-blog.md"),
+    draftStyleAuditFile: join(jobPath, "outputs", "draft-style-audit.md"),
+    finalStyleAuditFile: join(jobPath, "outputs", "final-optimize-style-audit.md"),
+    outlineStructureAuditFile: join(jobPath, "outputs", "outline-structure-audit.md"),
     markdownExportFile: join(jobPath, "exports", "final-article.md"),
     htmlExportFile: join(jobPath, "exports", "final-article.html"),
     docxExportFile: join(jobPath, "exports", "final-article.docx")

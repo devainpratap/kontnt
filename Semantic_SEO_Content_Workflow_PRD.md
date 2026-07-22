@@ -110,9 +110,11 @@ After approval, the app generates:
 
 - Full article draft.
 - Final optimized article.
-- SEO checklist.
-- Entity coverage checklist.
-- ChatGPT.com handoff prompt file.
+- Deterministic style audit reports (`draft-style-audit.md`, `final-optimize-style-audit.md`) instead
+  of the originally-planned user-facing SEO/entity-coverage checklist. (Updated 2026-07-22 to match
+  implementation.)
+- A ChatGPT.com handoff prompt file **only when Codex is unavailable or the step fails** (fallback path,
+  not produced on every successful step).
 
 ## 7. System Architecture
 
@@ -142,33 +144,54 @@ Storage:
 - Each article gets its own local folder.
 - Inputs, prompts, logs, and outputs are saved as Markdown/JSON.
 
-Suggested structure:
+Actual implemented structure (Updated 2026-07-22 to match implementation — see
+`apps/server/src/jobs/files.ts` for the authoritative paths):
 
 ```text
 content-workflow/
-  app/
   jobs/
-    article-slug-2026-04-30/
+    <article-slug>-<id8>/
       input/
-        brief.json
-        urls.txt
-        entities.md
-        competitor-notes.md
-      prompts/
+        brief.json                       # intake, written as JSON (not urls.txt/entities.md)
+        competitor-research.json          # extracted competitor research (when run)
+      prompts/                            # snapshots of every rendered prompt + repair prompt
         01-semantic-analysis.md
-        02-outline.md
-        03-draft.md
+        02-outline-generation.md
+        03-blog-draft.md
         04-final-optimization.md
-        chatgpt-handoff.md
+        approved-outline.md
+        outline-structure-repair.md       # written only when the structure audit finds issues
+        draft-style-repair-pass-*.md      # written only when the draft style audit finds issues
+        final-optimize-style-repair-pass-*.md
       outputs/
         semantic-map.md
         outline.md
         approved-outline.md
         draft.md
         final-optimized-blog.md
-        quality-checklist.md
-      run-log.json
+        outline-structure-audit.md        # deterministic audit report (replaces quality-checklist.md)
+        draft-style-audit.md              # deterministic audit report
+        final-optimize-style-audit.md     # deterministic audit report
+      handoffs/
+        <step>-handoff.md                 # ChatGPT.com fallback, written ONLY when Codex is unavailable/fails
+      exports/
+        final-article.md
+        final-article.html
+        final-article.docx
 ```
+
+Notes on the drift from the original suggested layout:
+
+- **No `run-log.json`** — not implemented. Per-step status, timing, and errors live in the SQLite
+  `job_steps` table (including the `error_message` column) and are surfaced via the API/UI; there is
+  no run-log file on disk.
+- **No user-facing `quality-checklist.md`** — replaced by the deterministic `*-style-audit.md` /
+  `outline-structure-audit.md` reports produced by the TypeScript audit engines.
+- **Input is `brief.json` + `competitor-research.json`**, not the earlier `urls.txt` / `entities.md` /
+  `competitor-notes.md` files; those fields are captured inside `brief.json`.
+- **Handoff prompts are a fallback**, written into `handoffs/` only when Codex is unavailable or a step
+  fails — not on every step. Rendered step prompts (and any repair prompts) are always snapshotted into
+  `prompts/`.
 
 ## 8. Backend Requirements
 
@@ -235,7 +258,11 @@ Optional v1.5:
 
 ### 8.5 ChatGPT.com Fallback
 
-For every workflow step, the backend must also generate copy-ready prompts for ChatGPT.com.
+The backend can generate a copy-ready ChatGPT.com prompt for any workflow step. (Updated 2026-07-22 to
+match implementation.) In the shipped product this is a **fallback**, not an always-on artifact: a
+`handoffs/<step>-handoff.md` file is written only when Codex is unavailable/unauthenticated or a step
+fails. The fully-rendered step prompt is always snapshotted into `prompts/` regardless, so it can be
+pasted into ChatGPT.com manually if needed.
 
 The fallback file should include:
 
@@ -338,7 +365,8 @@ Sections:
 
 - Editable outline.
 - Notes/requested changes.
-- Quality checklist.
+- Quality checklist — implemented as the deterministic `outline-structure-audit.md` report rather than a
+  hand-authored checklist. (Updated 2026-07-22 to match implementation.)
 
 Actions:
 
@@ -357,7 +385,9 @@ Sections:
 
 - Draft article.
 - Final optimized article.
-- Quality checklist.
+- Quality checklist — implemented as the deterministic `draft-style-audit.md` /
+  `final-optimize-style-audit.md` reports rather than a hand-authored checklist appended to the article.
+  (Updated 2026-07-22 to match implementation.)
 - Export options.
 
 Actions:
@@ -592,26 +622,20 @@ Input:
 - Semantic map.
 - Quality rules.
 
-Output format:
+Output format (Updated 2026-07-22 to match implementation):
 
 ```markdown
 # Final Optimized Blog
 
-[Optimized article]
-
----
-
-# Quality Checklist
-
-- Search intent alignment:
-- Entity coverage:
-- Section flow:
-- H2 quality:
-- FAQ usefulness:
-- Product mention balance:
-- Claims needing verification:
-- Readability:
+[Optimized article — Markdown only]
 ```
+
+The final-optimization step returns **only the improved article**. The originally-planned in-article
+`# Quality Checklist` block was **dropped**: the final-optimization prompt actively strips editorial and
+verification notes (e.g. "(verify before publishing)") from the published article. Quality signals are
+instead captured out-of-band in the deterministic `final-optimize-style-audit.md` report, and any
+verification notes for uncertain claims live upstream in the semantic map's `## Verification Notes`
+section — never in the final article.
 
 Quality rules:
 
@@ -708,7 +732,9 @@ An article is considered successful when:
 - Product mentions feel natural.
 - FAQs are not generic duplicates.
 - The final article avoids obvious filler.
-- Claims that need verification are flagged.
+- Claims that need verification are identified in the semantic map's `## Verification Notes` (they are
+  deliberately kept OUT of the published article, which is stripped of editorial/verification notes).
+  (Updated 2026-07-22 to match implementation.)
 - The output is ready for human review with minimal cleanup.
 
 ## 16. Error Handling

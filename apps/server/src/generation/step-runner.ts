@@ -18,6 +18,22 @@ const nextJobStatusByStep: Record<WorkflowStep, JobStatus> = {
   "final-optimize": "final-ready"
 };
 
+// Internal sentinel used to unwind the pipeline (including the audit-and-repair
+// loop) cleanly when the caller aborts. Caught in run() and mapped to a
+// persisted "failed" step with a "Cancelled by user" message.
+class StepCancelledError extends Error {
+  constructor() {
+    super("Cancelled by user");
+    this.name = "StepCancelledError";
+  }
+}
+
+function throwIfAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    throw new StepCancelledError();
+  }
+}
+
 function summarizeCodexFailure(stdout: string, stderr: string) {
   const combined = `${stderr}\n${stdout}`.trim();
 
@@ -32,7 +48,47 @@ function summarizeCodexFailure(stdout: string, stderr: string) {
 export class StepRunner {
   constructor(private readonly jobs: JobRepository) {}
 
-  async run(jobId: string, stepName: Exclude<WorkflowStep, "approve-outline">): Promise<StepExecutionResult> {
+  /**
+   * Cheap, synchronous-enough prerequisite check that mirrors the guards in
+   * buildPrompt. Routes call this BEFORE starting the detached run so missing
+   * intake / semantic map / approved outline / draft still yields an immediate
+   * ApiError (4xx) to the HTTP caller instead of failing silently in the
+   * background. buildPrompt keeps its own guards as a defensive backstop.
+   */
+  async validatePrerequisites(jobId: string, stepName: Exclude<WorkflowStep, "approve-outline">): Promise<void> {
+    const detail = await this.jobs.getJobDetail(jobId);
+    const { intake, semanticMap, approvedOutline, draft } = detail.files;
+
+    if (!intake) {
+      throw new ApiError("Save article intake before running this step.", 400, "INTAKE_REQUIRED");
+    }
+
+    if (stepName === "semantic-map") {
+      return;
+    }
+
+    if (!semanticMap) {
+      throw new ApiError("Generate the semantic map before running this step.", 400, "SEMANTIC_MAP_REQUIRED");
+    }
+
+    if (stepName === "outline") {
+      return;
+    }
+
+    if (!approvedOutline) {
+      throw new ApiError("Approve the outline before running this step.", 400, "APPROVED_OUTLINE_REQUIRED");
+    }
+
+    if (stepName === "draft") {
+      return;
+    }
+
+    if (!draft) {
+      throw new ApiError("Generate the draft before final optimization.", 400, "DRAFT_REQUIRED");
+    }
+  }
+
+  async run(jobId: string, stepName: Exclude<WorkflowStep, "approve-outline">, signal?: AbortSignal): Promise<StepExecutionResult> {
     const detail = await this.jobs.getJobDetail(jobId);
     const paths = this.jobs.getJobPaths(jobId);
     const outputPath = {
@@ -62,62 +118,102 @@ export class StepRunner {
     await writeMarkdownFile(promptPath, prompt);
     this.jobs.startStep(jobId, stepName, promptPath, outputPath);
 
-    const codexStatus = await getCodexStatus();
-    if (!codexStatus.available || !codexStatus.authenticated) {
-      const handoff = await renderManualHandoff(stepName, prompt);
-      await writeMarkdownFile(handoffPath, handoff);
-      this.jobs.completeStep(jobId, stepName, "manual-input-required", codexStatus.message);
-      this.jobs.touchJob(jobId, "manual-input-required");
+    try {
+      throwIfAborted(signal);
 
-      return {
-        stepName,
-        status: "manual-input-required",
-        outputPath: null,
-        handoffPath,
-        message: codexStatus.message
-      };
-    }
+      const codexStatus = await getCodexStatus();
+      if (!codexStatus.available || !codexStatus.authenticated) {
+        const handoff = await renderManualHandoff(stepName, prompt);
+        await writeMarkdownFile(handoffPath, handoff);
+        this.jobs.completeStep(jobId, stepName, "manual-input-required", codexStatus.message);
+        this.jobs.touchJob(jobId, "manual-input-required");
 
-    const result = await runCodexStep({
-      cwd: paths.root,
-      outputPath,
-      prompt
-    });
+        return {
+          stepName,
+          status: "manual-input-required",
+          outputPath: null,
+          handoffPath,
+          message: codexStatus.message
+        };
+      }
 
-    if (result.exitCode !== 0) {
-      const fallback = await renderManualHandoff(stepName, prompt);
-      const message = summarizeCodexFailure(result.stdout, result.stderr);
-      await writeMarkdownFile(handoffPath, fallback);
-      const status = isTransientCodexFailure(result) ? "manual-input-required" : "failed";
-      this.jobs.completeStep(jobId, stepName, status, message);
-      this.jobs.touchJob(jobId, status === "manual-input-required" ? "manual-input-required" : "error");
+      throwIfAborted(signal);
 
-      return {
-        stepName,
-        status,
-        outputPath: null,
-        handoffPath,
-        message
-      };
-    }
+      const result = await runCodexStep({
+        cwd: paths.root,
+        outputPath,
+        prompt,
+        signal
+      });
 
-    let successMessage = "Step completed successfully.";
-    const generatedOutput = await readTextFile(outputPath);
-    if (generatedOutput) {
+      // A cancellation that landed mid-Codex returns a non-zero result; surface
+      // it as a clean "failed / Cancelled by user" rather than a manual handoff.
+      throwIfAborted(signal);
+
+      if (result.exitCode !== 0) {
+        const fallback = await renderManualHandoff(stepName, prompt);
+        const message = summarizeCodexFailure(result.stdout, result.stderr);
+        await writeMarkdownFile(handoffPath, fallback);
+        const status = isTransientCodexFailure(result) ? "manual-input-required" : "failed";
+        this.jobs.completeStep(jobId, stepName, status, message);
+        this.jobs.touchJob(jobId, status === "manual-input-required" ? "manual-input-required" : "error");
+
+        return {
+          stepName,
+          status,
+          outputPath: null,
+          handoffPath,
+          message
+        };
+      }
+
+      const generatedOutput = await readTextFile(outputPath);
+      if (!isGeneratedOutputAcceptable(stepName, generatedOutput)) {
+        const fallback = await renderManualHandoff(stepName, prompt);
+        const message = "Codex returned empty or incomplete output.";
+        await writeMarkdownFile(handoffPath, fallback);
+        this.jobs.completeStep(jobId, stepName, "manual-input-required", message);
+        this.jobs.touchJob(jobId, "manual-input-required");
+
+        return {
+          stepName,
+          status: "manual-input-required",
+          outputPath: null,
+          handoffPath,
+          message
+        };
+      }
+
       await writeMarkdownFile(outputPath, sanitizeGeneratedMarkdown(generatedOutput));
-      successMessage = await this.repairPostGenerationIssuesIfNeeded(stepName, detail.files.intake, paths.root, outputPath, paths.outputDir, paths.promptDir);
+      const successMessage = await this.repairPostGenerationIssuesIfNeeded(stepName, detail.files.intake, paths.root, outputPath, paths.outputDir, paths.promptDir, signal);
+
+      this.jobs.completeStep(jobId, stepName, "completed");
+      this.jobs.touchJob(jobId, nextJobStatusByStep[stepName]);
+
+      return {
+        stepName,
+        status: "completed",
+        outputPath,
+        handoffPath: null,
+        message: successMessage
+      };
+    } catch (error) {
+      if (error instanceof StepCancelledError) {
+        const message = "Cancelled by user";
+        this.jobs.completeStep(jobId, stepName, "failed", message);
+        this.jobs.touchJob(jobId, "error");
+
+        return {
+          stepName,
+          status: "failed",
+          outputPath: null,
+          handoffPath: null,
+          message
+        };
+      }
+
+      throw error;
     }
-
-    this.jobs.completeStep(jobId, stepName, "completed");
-    this.jobs.touchJob(jobId, nextJobStatusByStep[stepName]);
-
-    return {
-      stepName,
-      status: "completed",
-      outputPath,
-      handoffPath: null,
-      message: successMessage
-    };
   }
 
   async saveApprovedOutline(jobId: string, approvedOutline: string): Promise<StepExecutionResult> {
@@ -199,7 +295,8 @@ export class StepRunner {
     cwd: string,
     outputPath: string,
     outputDir: string,
-    promptDir: string
+    promptDir: string,
+    signal?: AbortSignal
   ) {
     if (stepName !== "draft" && stepName !== "final-optimize") {
       return "Step completed successfully.";
@@ -223,14 +320,17 @@ export class StepRunner {
     const maxRepairPasses = 2;
 
     for (let pass = 1; pass <= maxRepairPasses; pass += 1) {
+      throwIfAborted(signal);
       const repairPromptPath = `${promptDir}/${stepName}-style-repair-pass-${pass}.md`;
       const repairPrompt = renderArticleStyleRepairPrompt(currentMarkdown, currentAudit);
       await writeMarkdownFile(repairPromptPath, repairPrompt);
       const repairResult = await runCodexStep({
         cwd,
         outputPath,
-        prompt: repairPrompt
+        prompt: repairPrompt,
+        signal
       });
+      throwIfAborted(signal);
 
       if (repairResult.exitCode !== 0) {
         return `Step completed, but style repair pass ${pass} could not run: ${summarizeCodexFailure(repairResult.stdout, repairResult.stderr)}`;
@@ -262,13 +362,14 @@ export class StepRunner {
     cwd: string,
     outputPath: string,
     outputDir: string,
-    promptDir: string
+    promptDir: string,
+    signal?: AbortSignal
   ) {
     if (stepName === "outline" && intake) {
-      return this.repairStructureIssuesIfNeeded(intake, cwd, outputPath, outputDir, promptDir);
+      return this.repairStructureIssuesIfNeeded(intake, cwd, outputPath, outputDir, promptDir, signal);
     }
 
-    return this.repairStyleIssuesIfNeeded(stepName, cwd, outputPath, outputDir, promptDir);
+    return this.repairStyleIssuesIfNeeded(stepName, cwd, outputPath, outputDir, promptDir, signal);
   }
 
   private async repairStructureIssuesIfNeeded(
@@ -276,7 +377,8 @@ export class StepRunner {
     cwd: string,
     outputPath: string,
     outputDir: string,
-    promptDir: string
+    promptDir: string,
+    signal?: AbortSignal
   ) {
     const generated = await readTextFile(outputPath);
     if (!generated) {
@@ -292,13 +394,16 @@ export class StepRunner {
       return "Step completed successfully.";
     }
 
+    throwIfAborted(signal);
     const repairPrompt = renderArticleStructureRepairPrompt(intake, generated, audit);
     await writeMarkdownFile(repairPromptPath, repairPrompt);
     const repairResult = await runCodexStep({
       cwd,
       outputPath,
-      prompt: repairPrompt
+      prompt: repairPrompt,
+      signal
     });
+    throwIfAborted(signal);
 
     if (repairResult.exitCode !== 0) {
       return `Step completed, but the outline structure repair pass could not run: ${summarizeCodexFailure(repairResult.stdout, repairResult.stderr)}`;
@@ -345,6 +450,37 @@ export class StepRunner {
       ...usableSummaries
     ].join("\n\n");
   }
+}
+
+// Guard against Codex exiting 0 but writing empty or truncated output. Article steps
+// (outline/draft/final-optimize) must contain at least one Markdown heading and a
+// minimal amount of prose; the semantic map is structured but shorter, so it only has
+// to be non-trivially long. Thresholds stay conservative to avoid false triggers on
+// legitimately compact output.
+function isGeneratedOutputAcceptable(
+  stepName: Exclude<WorkflowStep, "approve-outline">,
+  output: string | null
+): output is string {
+  if (!output) {
+    return false;
+  }
+
+  const trimmed = output.trim();
+  if (trimmed.length < 40) {
+    return false;
+  }
+
+  if (stepName === "outline" || stepName === "draft" || stepName === "final-optimize") {
+    if (!/^#{1,6}\s+\S/m.test(trimmed)) {
+      return false;
+    }
+
+    if (trimmed.length < 200) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function summarizeStructurePattern(title: string, markdown: string) {

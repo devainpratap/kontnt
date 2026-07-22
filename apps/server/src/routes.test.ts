@@ -198,6 +198,70 @@ describe("core job routes", () => {
     assert.ok(exportedDocxResponse.rawPayload.length > 1000);
   });
 
+  it("rejects handoff path traversal payloads without touching the filesystem", async () => {
+    const job = await createJob();
+
+    const encodedResponse = await app.inject(
+      `/api/jobs/${job.id}/files/${encodeURIComponent("handoff:../../../../etc/passwd")}`
+    );
+    assert.equal(encodedResponse.statusCode, 404);
+    assert.equal(encodedResponse.json().error, "Handoff not found.");
+
+    const plainResponse = await app.inject(`/api/jobs/${job.id}/files/handoff:../../foo`);
+    assert.equal(plainResponse.statusCode, 404);
+    assert.equal(plainResponse.json().error, "Handoff not found.");
+  });
+
+  it("serves valid handoff files by workflow step name", async () => {
+    const job = await createJob();
+    const detailResponse = await app.inject(`/api/jobs/${job.id}`);
+    const detail = detailResponse.json<JobDetail>();
+    const handoffPath = join(detail.job.jobPath, "handoffs", "draft-handoff.md");
+
+    await mkdir(join(detail.job.jobPath, "handoffs"), { recursive: true });
+    await writeFile(handoffPath, "# Draft handoff\n\nReady for review.\n", "utf8");
+
+    const response = await app.inject(`/api/jobs/${job.id}/files/handoff:draft`);
+    assert.equal(response.statusCode, 200);
+    assert.match(response.headers["content-type"]?.toString() ?? "", /text\/markdown/);
+    assert.match(response.body, /Draft handoff/);
+  });
+
+  it("exposes audit reports as artifacts and serves them as markdown", async () => {
+    const job = await createJob();
+    const detailResponse = await app.inject(`/api/jobs/${job.id}`);
+    const detail = detailResponse.json<JobDetail>();
+    const outputsDir = join(detail.job.jobPath, "outputs");
+
+    await mkdir(outputsDir, { recursive: true });
+    await writeFile(join(outputsDir, "draft-style-audit.md"), "# Draft style audit\n", "utf8");
+    await writeFile(join(outputsDir, "final-optimize-style-audit.md"), "# Final style audit\n", "utf8");
+    await writeFile(join(outputsDir, "outline-structure-audit.md"), "# Outline structure audit\n", "utf8");
+
+    const artifactsResponse = await app.inject(`/api/jobs/${job.id}/artifacts`);
+    const artifacts = artifactsResponse.json<JobArtifact[]>();
+
+    const auditContract: Array<{ type: string; label: string; heading: RegExp }> = [
+      { type: "style-audit-draft", label: "Draft style audit", heading: /Draft style audit/ },
+      { type: "style-audit-final", label: "Final style audit", heading: /Final style audit/ },
+      { type: "structure-audit-outline", label: "Outline structure audit", heading: /Outline structure audit/ }
+    ];
+
+    for (const entry of auditContract) {
+      const artifact = artifacts.find((item) => item.type === entry.type);
+      assert.ok(artifact, `expected artifact ${entry.type}`);
+      assert.equal(artifact?.category, "audit");
+      assert.equal(artifact?.label, entry.label);
+      assert.equal(artifact?.exists, true);
+      assert.match(artifact?.url ?? "", new RegExp(`/files/${entry.type}$`));
+
+      const fileResponse = await app.inject(`/api/jobs/${job.id}/files/${entry.type}`);
+      assert.equal(fileResponse.statusCode, 200);
+      assert.match(fileResponse.headers["content-type"]?.toString() ?? "", /text\/markdown/);
+      assert.match(fileResponse.body, entry.heading);
+    }
+  });
+
   it("returns a clear export error until final optimization exists", async () => {
     const job = await createJob();
     const response = await app.inject({
@@ -210,5 +274,77 @@ describe("core job routes", () => {
 
     assert.equal(response.statusCode, 400);
     assert.equal(response.json().code, "FINAL_ARTICLE_REQUIRED");
+  });
+});
+
+describe("fire-and-poll step execution (issue #6)", () => {
+  it("surfaces missing prerequisites as an immediate 4xx before firing", async () => {
+    const job = await createJob();
+
+    // No intake saved yet: prerequisite validation runs in the request, so the
+    // caller gets an immediate 400 rather than a background failure.
+    const semanticMapResponse = await app.inject({
+      method: "POST",
+      url: `/api/jobs/${job.id}/steps/semantic-map`
+    });
+    assert.equal(semanticMapResponse.statusCode, 400);
+    assert.equal(semanticMapResponse.json().code, "INTAKE_REQUIRED");
+
+    // Later steps also validate their own upstream prerequisites.
+    await app.inject({
+      method: "POST",
+      url: `/api/jobs/${job.id}/intake`,
+      payload: { intake }
+    });
+
+    const outlineResponse = await app.inject({
+      method: "POST",
+      url: `/api/jobs/${job.id}/steps/outline`
+    });
+    assert.equal(outlineResponse.statusCode, 400);
+    assert.equal(outlineResponse.json().code, "SEMANTIC_MAP_REQUIRED");
+
+    const draftResponse = await app.inject({
+      method: "POST",
+      url: `/api/jobs/${job.id}/steps/draft`
+    });
+    assert.equal(draftResponse.statusCode, 400);
+    assert.equal(draftResponse.json().code, "SEMANTIC_MAP_REQUIRED");
+  });
+
+  it("returns 202 immediately when prerequisites are satisfied", async () => {
+    const job = await createJob();
+    await app.inject({
+      method: "POST",
+      url: `/api/jobs/${job.id}/intake`,
+      payload: { intake }
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/jobs/${job.id}/steps/semantic-map`
+    });
+
+    // Fire-and-poll: the request returns without awaiting the multi-minute run.
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(response.json(), { status: "running", stepName: "semantic-map" });
+  });
+
+  it("validates the step name and reports nothing to cancel when idle", async () => {
+    const job = await createJob();
+
+    const unknownStep = await app.inject({
+      method: "POST",
+      url: `/api/jobs/${job.id}/steps/not-a-step/cancel`
+    });
+    assert.equal(unknownStep.statusCode, 404);
+    assert.equal(unknownStep.json().error, "Unknown workflow step.");
+
+    const idleCancel = await app.inject({
+      method: "POST",
+      url: `/api/jobs/${job.id}/steps/draft/cancel`
+    });
+    assert.equal(idleCancel.statusCode, 200);
+    assert.deepEqual(idleCancel.json(), { cancelled: false });
   });
 });

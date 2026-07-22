@@ -1,5 +1,12 @@
 # Stage 3 — Drafting Prompt
 
+> **⚠️ REFERENCE / ASPIRATIONAL DESIGN — NOT THE RUNNING IMPLEMENTATION.** (Updated 2026-07-22.)
+> This 5-stage GPT-5 JSON-artifact pipeline was never built. Its intent was distilled into
+> `prompts/system/matrack-quality-rules.md` and the deterministic TypeScript audit engines
+> (`article-style-audit.ts`, `article-structure-audit.ts`). The shipped product is a 4-step Markdown
+> Codex pipeline (semantic-map → outline → [human approval] → draft → final-optimize). See
+> [pipeline_overview.md](./pipeline_overview.md) and [CLAUDE.md](../../CLAUDE.md) for the real system.
+
 **Purpose:** Convert the Stage 2 JSON outline into the complete article in Markdown format. This is the prose-writing stage. No new research, no architectural changes — strict execution against the outline using the Matrack writing voice.
 
 **Pipeline position:** Third stage. Receives Stage 2 JSON outline. Outputs Markdown article (with YAML frontmatter).

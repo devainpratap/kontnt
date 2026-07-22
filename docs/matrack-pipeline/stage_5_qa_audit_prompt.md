@@ -1,5 +1,13 @@
 # Stage 5 — Editorial QA & Audit Prompt
 
+> **⚠️ REFERENCE / ASPIRATIONAL DESIGN — NOT THE RUNNING IMPLEMENTATION.** (Updated 2026-07-22.)
+> This 5-stage GPT-5 JSON-artifact pipeline was never built. In particular, the LLM-driven 35-check
+> QA audit with a `ready_to_publish` flag and auto re-run routing does NOT exist in the product.
+> Quality enforcement ships as deterministic TypeScript audits (`article-style-audit.ts` on draft +
+> final-optimize, `article-structure-audit.ts` on the outline) that write `outputs/*-style-audit.md` /
+> `outputs/outline-structure-audit.md` reports and feed bounded repair passes back to Codex. See
+> [pipeline_overview.md](./pipeline_overview.md) and [CLAUDE.md](../../CLAUDE.md) for the real system.
+
 **Purpose:** Audit the Stage 4 article against the Matrack Style & Quality Rubric, apply safe auto-fixes for deterministic violations, and produce a JSON QA report that determines whether the article is ready to publish or requires re-runs / human review.
 
 **Pipeline position:** Fifth and final stage. Receives Stage 4 Markdown article. Outputs (a) the audited Markdown article and (b) a JSON QA report.

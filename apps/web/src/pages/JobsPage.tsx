@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,9 +13,14 @@ type CreateJobForm = {
   title: string;
 };
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Something went wrong.";
+}
+
 export function JobsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [createError, setCreateError] = useState<string | null>(null);
   const settingsQuery = useQuery({
     queryKey: ["settings"],
     queryFn: api.getSettings
@@ -31,10 +37,12 @@ export function JobsPage() {
 
   const createMutation = useMutation({
     mutationFn: api.createJob,
+    onMutate: () => setCreateError(null),
     onSuccess: async (job) => {
       await queryClient.invalidateQueries({ queryKey: ["jobs"] });
       navigate(`/jobs/${job.id}`);
-    }
+    },
+    onError: (error) => setCreateError(getErrorMessage(error))
   });
 
   return (
@@ -55,10 +63,15 @@ export function JobsPage() {
             <h2 className="text-lg font-semibold text-stone-900">Runtime</h2>
             {settingsQuery.data ? (
               <StatusPill label={settingsQuery.data.generationMode === "codex" ? "codex" : "manual-input-required"} />
+            ) : settingsQuery.isError ? (
+              <StatusPill label="error" />
             ) : null}
           </div>
           <div className="grid gap-2 text-sm text-stone-600">
-            <p>Workspace: {settingsQuery.data?.workspaceRoot ?? "Loading..."}</p>
+            {settingsQuery.isError ? (
+              <p className="text-rose-800">Could not load runtime settings. The API may be offline.</p>
+            ) : null}
+            <p>Workspace: {settingsQuery.data?.workspaceRoot ?? (settingsQuery.isError ? "unavailable" : "Loading...")}</p>
             <p>
               Codex:{" "}
               {settingsQuery.data
@@ -67,7 +80,9 @@ export function JobsPage() {
                     ? "available and authenticated"
                     : "available but not authenticated"
                   : "not found"
-                : "checking"}
+                : settingsQuery.isError
+                  ? "unavailable"
+                  : "checking"}
             </p>
           </div>
         </Surface>
@@ -111,10 +126,17 @@ export function JobsPage() {
 
             <button
               type="submit"
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900"
+              disabled={createMutation.isPending}
+              className="inline-flex items-center justify-center rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {createMutation.isPending ? "Creating..." : "Create job"}
             </button>
+
+            {createError ? (
+              <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2 text-sm leading-6 text-rose-800">
+                {createError}
+              </p>
+            ) : null}
           </form>
         </Surface>
 
@@ -142,7 +164,22 @@ export function JobsPage() {
               </Link>
             ))}
 
-            {!jobsQuery.data?.length ? (
+            {jobsQuery.isLoading ? (
+              <div className="rounded-2xl border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-500">
+                Loading jobs...
+              </div>
+            ) : jobsQuery.isError ? (
+              <div className="grid gap-3 rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-6 text-center">
+                <p className="text-sm text-rose-800">Could not load jobs. {getErrorMessage(jobsQuery.error)}</p>
+                <button
+                  type="button"
+                  onClick={() => jobsQuery.refetch()}
+                  className="mx-auto rounded-xl border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-800 transition hover:bg-white"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : !jobsQuery.data?.length ? (
               <div className="rounded-2xl border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-500">
                 No article jobs yet. Create the first one from the panel on the left.
               </div>

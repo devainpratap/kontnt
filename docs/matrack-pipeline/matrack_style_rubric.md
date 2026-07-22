@@ -1,5 +1,12 @@
 # Matrack Blog Style & Quality Rubric
 
+> **⚠️ REFERENCE / ASPIRATIONAL DESIGN — NOT THE RUNNING IMPLEMENTATION.** (Updated 2026-07-22.)
+> This rubric belongs to a 5-stage GPT-5 JSON-artifact pipeline that was never built. The style/quality
+> rules here were distilled into the shipped `prompts/system/matrack-quality-rules.md` and enforced by
+> deterministic TypeScript audit engines (`article-style-audit.ts`, `article-structure-audit.ts`) inside
+> a 4-step Markdown Codex pipeline. Use this file as design reference; see
+> [pipeline_overview.md](./pipeline_overview.md) and [CLAUDE.md](../../CLAUDE.md) for the real system.
+
 **Version 1.0 | The canonical reference document for the Matrack blog automation pipeline.**
 
 This document encodes the writing standards extracted from Matrack's reference blogs. Every stage of the blog pipeline must reference this rubric. When in doubt, this document is authoritative.

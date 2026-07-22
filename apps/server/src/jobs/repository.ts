@@ -182,4 +182,47 @@ export class JobRepository {
   getFileLabel(jobId: string) {
     return basename(this.getJobOrThrow(jobId).jobPath);
   }
+
+  /**
+   * Boot-time cleanup for steps left "running" when the server died mid-run.
+   * Such rows would otherwise stay "running" forever. Flip them to "failed"
+   * (a valid StepStatus) with an explanatory error message and completedAt,
+   * and nudge each affected job to "error" (a valid JobStatus). Returns a
+   * count of what was reconciled so callers can log it.
+   */
+  reconcileInterruptedSteps(): { steps: number; jobs: number } {
+    const timestamp = nowIso();
+
+    const interrupted = db
+      .select()
+      .from(jobStepsTable)
+      .where(eq(jobStepsTable.status, "running"))
+      .all();
+
+    if (interrupted.length === 0) {
+      return { steps: 0, jobs: 0 };
+    }
+
+    db.update(jobStepsTable)
+      .set({
+        status: "failed",
+        errorMessage: "Interrupted by server restart",
+        completedAt: timestamp
+      })
+      .where(eq(jobStepsTable.status, "running"))
+      .run();
+
+    const affectedJobIds = [...new Set(interrupted.map((step) => step.jobId))];
+    for (const jobId of affectedJobIds) {
+      db.update(jobsTable)
+        .set({
+          status: "error",
+          updatedAt: timestamp
+        })
+        .where(eq(jobsTable.id, jobId))
+        .run();
+    }
+
+    return { steps: interrupted.length, jobs: affectedJobIds.length };
+  }
 }

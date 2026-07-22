@@ -1,5 +1,12 @@
 # Stage 4 — AEO/LLM Optimization Prompt
 
+> **⚠️ REFERENCE / ASPIRATIONAL DESIGN — NOT THE RUNNING IMPLEMENTATION.** (Updated 2026-07-22.)
+> This 5-stage GPT-5 JSON-artifact pipeline was never built. Its intent was distilled into
+> `prompts/system/matrack-quality-rules.md` and the deterministic TypeScript audit engines
+> (`article-style-audit.ts`, `article-structure-audit.ts`). The shipped product is a 4-step Markdown
+> Codex pipeline (semantic-map → outline → [human approval] → draft → final-optimize). See
+> [pipeline_overview.md](./pipeline_overview.md) and [CLAUDE.md](../../CLAUDE.md) for the real system.
+
 **Purpose:** Transform the Stage 3 Markdown article into a chunk-optimized, citation-worthy version specifically engineered for Google Featured Snippets, People Also Ask, and LLM citation engines (ChatGPT, Perplexity, Gemini, Claude).
 
 **Pipeline position:** Fourth stage. Receives Stage 3 Markdown article. Outputs optimized Markdown article.

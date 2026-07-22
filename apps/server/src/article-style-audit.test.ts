@@ -27,7 +27,28 @@ describe("article style audit", () => {
     assert.ok(audit.issues.some((issue) => issue.code === "forbidden-sentence-start" && issue.message.includes("\"the\"")));
   });
 
-  it("requires two to three sentences below each non-FAQ H3", () => {
+  it("flags non-FAQ H3 chunks longer than five sentences", () => {
+    const markdown = [
+      "---",
+      "title: Fleet Guide",
+      "---",
+      "",
+      "## Components",
+      "",
+      "### Telematics",
+      "",
+      "Telematics captures vehicle diagnostics and location data. Maintenance teams use those signals for service planning. Dispatchers use mileage data to schedule service. Finance teams compare repairs against downtime cost. Safety leads flag harsh braking for coaching. Compliance staff archive engine faults for audits."
+    ].join("\n");
+
+    const audit = auditArticleStyle(markdown);
+
+    assert.deepEqual(
+      audit.issues.filter((issue) => issue.code === "h3-sentence-count").map((issue) => issue.section),
+      ["Telematics"]
+    );
+  });
+
+  it("allows non-FAQ H3 chunks of up to five sentences", () => {
     const markdown = [
       "---",
       "title: Fleet Guide",
@@ -42,10 +63,7 @@ describe("article style audit", () => {
 
     const audit = auditArticleStyle(markdown);
 
-    assert.deepEqual(
-      audit.issues.filter((issue) => issue.code === "h3-sentence-count").map((issue) => issue.section),
-      ["Telematics"]
-    );
+    assert.equal(audit.issues.some((issue) => issue.code === "h3-sentence-count"), false);
   });
 
   it("does not flag a varied section with two-sentence H3s", () => {
@@ -100,7 +118,7 @@ describe("article style audit", () => {
       "",
       "## What Are Fleet Management Risks?",
       "",
-      "Now that the basics are clear, risk analysis should begin with maintenance, fuel, driver behavior, route planning, compliance records, and cost controls that stretch beyond a single operational dashboard for growing teams.",
+      "Now that the basics are clear, risk analysis should begin with maintenance, fuel, driver behavior, route planning, compliance records, and cost controls that stretch beyond a single operational dashboard for growing teams that manage many vehicles across several regions every single week.",
       "",
       "Claims should be verified before publication.",
       "",
@@ -184,7 +202,7 @@ describe("article style audit", () => {
     assert.ok(preH2Audit.issues.some((issue) => issue.code === "pre-h2-content"));
   });
 
-  it("flags missing H1 titles when no frontmatter title is present", () => {
+  it("does not require an in-body H1 or flag pre-H2 for a no-frontmatter definition-led article", () => {
     const markdown = [
       "## What Is Driver Monitoring?",
       "",
@@ -193,7 +211,49 @@ describe("article style audit", () => {
 
     const audit = auditArticleStyle(markdown);
 
-    assert.ok(audit.issues.some((issue) => issue.code === "missing-h1-title"));
+    assert.equal(audit.issues.some((issue) => issue.code === "missing-h1-title"), false);
+    assert.equal(audit.issues.some((issue) => issue.code === "pre-h2-content"), false);
+  });
+
+  it("scopes Matrack pitch detectors to fleet topics only", () => {
+    const nonFleet = [
+      "---",
+      "title: Best M.Tech Colleges in India",
+      "---",
+      "",
+      "## What Makes an M.Tech College Worth Choosing?",
+      "",
+      "Placement records, faculty research output, and specialization depth separate strong M.Tech colleges from weaker ones.",
+      "",
+      "## Which Institutes Lead for Computer Science?",
+      "",
+      "The older IITs and IISc lead computer science admissions through research funding and recruiter access.",
+      "",
+      "## Final Thoughts",
+      "",
+      "Choosing a program depends on specialization fit, campus location, and long-term career goals."
+    ].join("\n");
+
+    const fleet = [
+      "---",
+      "title: Fleet Tracking Guide",
+      "---",
+      "",
+      "## What Is Fleet Tracking?",
+      "",
+      "Fleet tracking connects vehicle location, driver activity, and maintenance data for dispatchers.",
+      "",
+      "## What Is the Best Fleet Tracking Solution?",
+      "",
+      "Matrack is the best fleet tracking solution for teams that need GPS tracking and maintenance alerts.",
+      "",
+      "## Final Thoughts",
+      "",
+      "Fleet tracking works best when operational data supports daily decisions."
+    ].join("\n");
+
+    assert.equal(auditArticleStyle(nonFleet).issues.some((issue) => issue.code.startsWith("pitch-")), false);
+    assert.ok(auditArticleStyle(fleet).issues.some((issue) => issue.code.startsWith("pitch-")));
   });
 
   it("flags Matrack pitch structure and missing pricing or flexibility", () => {

@@ -1,5 +1,12 @@
 # Stage 1 — Research & SERP Intelligence Prompt
 
+> **⚠️ REFERENCE / ASPIRATIONAL DESIGN — NOT THE RUNNING IMPLEMENTATION.** (Updated 2026-07-22.)
+> This 5-stage GPT-5 JSON-artifact pipeline was never built. Its intent was distilled into
+> `prompts/system/matrack-quality-rules.md` and the deterministic TypeScript audit engines
+> (`article-style-audit.ts`, `article-structure-audit.ts`). The shipped product is a 4-step Markdown
+> Codex pipeline (semantic-map → outline → [human approval] → draft → final-optimize). See
+> [pipeline_overview.md](./pipeline_overview.md) and [CLAUDE.md](../../CLAUDE.md) for the real system.
+
 **Purpose:** Convert a primary keyword and topic context into a structured research dossier that Stage 2 (Outline) will consume to build the article architecture.
 
 **Pipeline position:** First stage. Receives raw input. Outputs JSON research dossier.

@@ -116,10 +116,12 @@ Each article job must preserve:
 - approved outline
 - draft
 - final optimized article
-- ChatGPT.com handoff prompts
-- run logs and errors
+- ChatGPT.com handoff prompts (fallback path — written only when Codex is unavailable or a step fails)
+- deterministic audit reports (`*-style-audit.md`, `outline-structure-audit.md`)
 
-SQLite stores status and indexing. The article files on disk remain the primary record.
+SQLite stores status and indexing. The article files on disk remain the primary record. Note (2026-07-22):
+there is no `run-log.json` file — per-step status, timing, and errors are stored in the SQLite `job_steps`
+table (incl. `error_message`) and surfaced via the API, not written to a run-log file on disk.
 
 ## Prompt Quality Rules
 
@@ -132,7 +134,9 @@ Every content step should optimize for:
 - clear H2 and H3 structure
 - smooth transitions between sections
 - non-promotional product mentions unless requested otherwise
-- visible verification notes for uncertain claims
+- verification notes for uncertain claims captured in the semantic map's `## Verification Notes`
+  (2026-07-22: these are deliberately kept OUT of the final article — the final-optimization step strips
+  editorial/verification notes from the published output)
 
 ## Safety Rules
 

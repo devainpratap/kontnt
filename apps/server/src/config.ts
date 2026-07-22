@@ -16,6 +16,11 @@ const configSchema = z.object({
       (value) => (value === "workspace-write" || value === "read-only" || value === "danger-full-access" ? value : undefined),
       z.enum(["workspace-write", "read-only", "danger-full-access"]).default("workspace-write")
     ),
+  CODEX_TIMEOUT_MS: z.coerce.number().int().positive().default(300000),
+  CODEX_MAX_OUTPUT_BYTES: z.coerce.number().int().positive().default(5_000_000),
+  CORS_ALLOWED_ORIGINS: z.string().default("http://localhost:5173,http://127.0.0.1:5173"),
+  SERVE_WEB: z
+    .preprocess((value) => (value === "true" || value === "1" ? true : value === "false" || value === "0" ? false : value), z.boolean().default(false)),
   GENERATION_FALLBACK_MODE: z.enum(["manual"]).default("manual")
 });
 
@@ -34,6 +39,13 @@ export const appConfig = {
   codexBin: env.CODEX_CLI_BIN,
   codexModel: env.CODEX_MODEL,
   codexSandbox: env.CODEX_SANDBOX,
+  codexTimeoutMs: env.CODEX_TIMEOUT_MS,
+  codexMaxOutputBytes: env.CODEX_MAX_OUTPUT_BYTES,
+  corsAllowedOrigins: env.CORS_ALLOWED_ORIGINS.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+  serveWeb: env.SERVE_WEB,
+  webDistPath: resolve(serverRoot, "../web/dist"),
   fallbackMode: env.GENERATION_FALLBACK_MODE
 };
 

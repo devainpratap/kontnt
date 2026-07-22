@@ -1,5 +1,12 @@
 # Stage 2 — Outline & Architecture Prompt
 
+> **⚠️ REFERENCE / ASPIRATIONAL DESIGN — NOT THE RUNNING IMPLEMENTATION.** (Updated 2026-07-22.)
+> This 5-stage GPT-5 JSON-artifact pipeline was never built. Its intent was distilled into
+> `prompts/system/matrack-quality-rules.md` and the deterministic TypeScript audit engines
+> (`article-style-audit.ts`, `article-structure-audit.ts`). The shipped product is a 4-step Markdown
+> Codex pipeline (semantic-map → outline → [human approval] → draft → final-optimize). See
+> [pipeline_overview.md](./pipeline_overview.md) and [CLAUDE.md](../../CLAUDE.md) for the real system.
+
 **Purpose:** Convert the Stage 1 research dossier into a complete article blueprint — title, meta description, H2 architecture, section briefs, statistic placements, and entity coverage plan — that Stage 3 (Drafting) will turn into prose.
 
 **Pipeline position:** Second stage. Receives Stage 1 JSON dossier. Outputs JSON outline.

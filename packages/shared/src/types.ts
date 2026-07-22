@@ -42,7 +42,7 @@ export type JobDetail = {
 export type JobArtifact = {
   type: string;
   label: string;
-  category: "input" | "output" | "handoff" | "export";
+  category: "input" | "output" | "handoff" | "export" | "audit";
   exists: boolean;
   sizeBytes: number | null;
   path: string;

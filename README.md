@@ -131,7 +131,8 @@ This repo is scaffolded through the first vertical slice:
 - draft generation trigger
 - final optimization trigger
 - prompt snapshotting
-- manual handoff generation when Codex is unavailable
-- Markdown and HTML exports
+- manual ChatGPT.com handoff generation as a fallback when Codex is unavailable or a step fails
+- Markdown, HTML, and DOCX exports
+- deterministic style/structure audit reports with bounded Codex repair passes
 - direct open and download links for saved artifacts
 - backend route tests for the core job, artifact, and export behavior

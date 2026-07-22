@@ -16,6 +16,12 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 5173
+# Build the production bundle. In the single-port production model the server
+# container serves this dist; this standalone image serves it via `vite preview`.
+RUN npm run build:web
 
-CMD ["npm", "run", "dev", "--workspace", "@semantic-seo/web", "--", "--host", "0.0.0.0", "--port", "5173"]
+EXPOSE 4173
+
+# The dev compose service overrides this with `npm run dev ... --port 5173`.
+# The default (production) command serves the built dist.
+CMD ["npm", "exec", "--workspace", "@semantic-seo/web", "--", "vite", "preview", "--host", "0.0.0.0", "--port", "4173"]

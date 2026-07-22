@@ -25,4 +25,15 @@ describe("Codex provider failure classification", () => {
       false
     );
   });
+
+  it("does not classify an external cancellation as transient (so it is never retried)", () => {
+    assert.equal(
+      isTransientCodexFailure({
+        exitCode: 130,
+        stdout: "",
+        stderr: "Codex step cancelled"
+      }),
+      false
+    );
+  });
 });
