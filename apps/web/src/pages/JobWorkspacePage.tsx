@@ -7,15 +7,16 @@ import type { ExportFormat, JobArtifact, JobDetail, WorkflowStep } from "@semant
 
 import { Surface, SurfaceHeader } from "../components/Surface";
 import { StatusPill } from "../components/StatusPill";
-import { WorkflowStepCard } from "../components/WorkflowStepCard";
+import { WorkflowStepper, type StepperItem } from "../components/WorkflowStepper";
 import { AdvancedBriefFields } from "../components/AdvancedBriefFields";
 import { ManualHandoffPanel } from "../components/ManualHandoffPanel";
 import { AuditReports } from "../components/AuditReports";
 import { FieldShell, ReadOnlyArea, inputClassName } from "../components/TextField";
+import { Button, ButtonLink } from "../components/Button";
 import { api } from "../lib/api";
 import { splitUrlInput, toFormValues, toIntakePayload, type IntakeFormValues } from "../lib/intake";
 import { resolveServerOutline, shouldSeed, type Seed } from "../lib/seeding";
-import { getCurrentStep, getStepRecord, workflowPhases, workflowStepMeta, workflowStepOrder } from "../lib/workflow";
+import { getCurrentStep, getStepRecord, workflowStepMeta, workflowStepOrder } from "../lib/workflow";
 
 type CompetitorEntry = {
   status: "completed" | "failed";
@@ -233,7 +234,7 @@ export function JobWorkspacePage() {
 
   const saveIntakeMutation = useMutation({
     mutationFn: (values: IntakeFormValues) => api.saveIntake(jobId, { intake: toIntakePayload(values) }),
-    onMutate: () => setActionMessage("Saving intake..."),
+    onMutate: () => setActionMessage("Saving intake…"),
     onSuccess: async () => {
       setActionMessage("Intake saved.");
       await Promise.all([
@@ -250,7 +251,7 @@ export function JobWorkspacePage() {
   // refetchInterval that observes completion/failure from the DB.
   const runStepMutation = useMutation({
     mutationFn: (stepName: RunnableStep) => api.runStep(jobId, stepName),
-    onMutate: (stepName) => setActionMessage(`Starting ${workflowStepMeta[stepName].label.toLowerCase()}...`),
+    onMutate: (stepName) => setActionMessage(`Starting ${workflowStepMeta[stepName].label.toLowerCase()}…`),
     onSuccess: async (result) => {
       setActionMessage(
         result.status === "already-running"
@@ -269,7 +270,7 @@ export function JobWorkspacePage() {
 
   const cancelStepMutation = useMutation({
     mutationFn: (stepName: WorkflowStep) => api.cancelStep(jobId, stepName),
-    onMutate: (stepName) => setActionMessage(`Cancelling ${workflowStepMeta[stepName].label.toLowerCase()}...`),
+    onMutate: (stepName) => setActionMessage(`Cancelling ${workflowStepMeta[stepName].label.toLowerCase()}…`),
     onSuccess: async (result, stepName) => {
       setActionMessage(
         result.cancelled
@@ -287,7 +288,7 @@ export function JobWorkspacePage() {
 
   const extractCompetitorsMutation = useMutation({
     mutationFn: () => api.extractCompetitors(jobId),
-    onMutate: () => setActionMessage("Extracting competitor pages..."),
+    onMutate: () => setActionMessage("Extracting competitor pages…"),
     onSuccess: async (result) => {
       setActionMessage(`Extracted ${result.competitorResearch.competitors.length} competitor pages.`);
       await Promise.all([
@@ -301,7 +302,7 @@ export function JobWorkspacePage() {
 
   const approveOutlineMutation = useMutation({
     mutationFn: () => api.approveOutline(jobId, outlineDraft),
-    onMutate: () => setActionMessage("Saving approved outline..."),
+    onMutate: () => setActionMessage("Saving approved outline…"),
     onSuccess: async (result) => {
       setActionMessage(result.message);
       await Promise.all([
@@ -315,7 +316,7 @@ export function JobWorkspacePage() {
 
   const exportArticleMutation = useMutation({
     mutationFn: (format: ExportFormat) => api.exportArticle(jobId, format),
-    onMutate: (format) => setActionMessage(`Exporting ${exportLabels[format]}...`),
+    onMutate: (format) => setActionMessage(`Exporting ${exportLabels[format]}…`),
     onSuccess: async (result) => {
       setActionMessage(`${result.message} ${result.exportPath}`);
       await Promise.all([
@@ -335,7 +336,7 @@ export function JobWorkspacePage() {
       }
       return results;
     },
-    onMutate: () => setActionMessage("Creating all exports..."),
+    onMutate: () => setActionMessage("Creating all exports…"),
     onSuccess: async () => {
       setActionMessage("Markdown, HTML, and DOCX exports created.");
       await Promise.all([
@@ -373,8 +374,7 @@ export function JobWorkspacePage() {
   const hasFinalOptimized = Boolean(files?.finalOptimized);
   const exportArtifacts = artifacts.filter((artifact) => artifact.category === "export");
   const auditArtifacts = artifacts.filter((artifact) => artifact.category === "audit");
-  const allExportsReady =
-    exportArtifacts.length > 0 && exportArtifacts.every((artifact) => artifact.exists);
+  const allExportsReady = exportArtifacts.length > 0 && exportArtifacts.every((artifact) => artifact.exists);
   const canRunFinalOptimization = hasDraft && !isStepBusy("final-optimize");
   const canExport = hasFinalOptimized && !isExportBusy;
   const currentStepActionLabel =
@@ -412,40 +412,6 @@ export function JobWorkspacePage() {
     Boolean(currentStep === "final-optimize" && !hasDraft) ||
     Boolean(currentStep === "approve-outline" && (approveOutlineMutation.isPending || getStepRecord(steps, "approve-outline")?.status === "running")) ||
     Boolean(!currentStep && (!hasFinalOptimized || allExportsReady || isExportBusy));
-  const phaseStatus = useMemo(
-    () => [
-      {
-        ...workflowPhases[0],
-        status: files?.intake?.title ? "completed" : "idle"
-      },
-      {
-        ...workflowPhases[1],
-        status:
-          getStepRecord(steps, "semantic-map")?.status === "completed" || getStepRecord(steps, "outline")?.status === "completed"
-            ? "completed"
-            : getStepRecord(steps, "semantic-map")?.status === "running"
-              ? "running"
-              : "idle"
-      },
-      {
-        ...workflowPhases[2],
-        status: getStepRecord(steps, "approve-outline")?.status ?? "idle"
-      },
-      {
-        ...workflowPhases[3],
-        status:
-          getStepRecord(steps, "final-optimize")?.status === "completed"
-            ? "completed"
-            : getStepRecord(steps, "draft")?.status === "running" || getStepRecord(steps, "final-optimize")?.status === "running"
-              ? "running"
-              : getStepRecord(steps, "draft")?.status === "completed"
-                ? "completed"
-                : "idle"
-      }
-    ],
-    [files?.intake?.title, steps]
-  );
-
   useEffect(() => {
     if (!isBusy || runningSteps.length > 0) {
       return undefined;
@@ -461,39 +427,101 @@ export function JobWorkspacePage() {
   if (jobQuery.isError) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-5 py-16">
-        <div className="grid gap-4 rounded-[28px] border border-rose-200 bg-rose-50/80 p-6">
+        <div className="grid gap-4 rounded-[var(--radius-card)] border border-rose-200 bg-rose-50 p-6 shadow-soft">
           <div className="grid gap-1.5">
-            <Link to="/" className="text-sm font-medium text-emerald-800 hover:text-emerald-950">
-              Back to jobs
+            <Link to="/" className="text-sm font-medium text-brand-700 hover:text-brand-800">
+              ← Back to jobs
             </Link>
-            <h1 className="text-2xl font-semibold text-stone-900">This article could not be loaded</h1>
-            <p className="text-sm leading-6 text-stone-600">{getErrorMessage(jobQuery.error)}</p>
+            <h1 className="font-display text-2xl leading-tight text-ink-900">This article could not be loaded</h1>
+            <p className="text-sm leading-6 text-ink-500">{getErrorMessage(jobQuery.error)}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => jobQuery.refetch()}
-              className="rounded-xl bg-emerald-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900"
-            >
+            <Button variant="primary" onClick={() => jobQuery.refetch()}>
               Retry
-            </button>
+            </Button>
           </div>
         </div>
       </main>
     );
   }
 
+  const stepAction = (stepName: WorkflowStep) => {
+    if (stepName === "approve-outline") {
+      return (
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={approveOutlineMutation.isPending || getStepRecord(steps, "approve-outline")?.status === "running"}
+          onClick={() => approveOutlineMutation.mutate()}
+        >
+          {approveOutlineMutation.isPending ? "Saving…" : "Save approved outline"}
+        </Button>
+      );
+    }
+
+    if (stepName === "final-optimize") {
+      return (
+        <Button variant="secondary" size="sm" disabled={!canRunFinalOptimization} onClick={() => runStepMutation.mutate("final-optimize")}>
+          {isStepBusy("final-optimize") ? "Running…" : "Run optimization"}
+        </Button>
+      );
+    }
+
+    const runnable = stepName as RunnableStep;
+    return (
+      <Button variant="secondary" size="sm" disabled={isStepBusy(runnable)} onClick={() => runStepMutation.mutate(runnable)}>
+        {isStepBusy(runnable) ? "Running…" : "Generate"}
+      </Button>
+    );
+  };
+
+  const stepperItems: StepperItem[] = workflowStepOrder.map((stepName) => {
+    const record = getStepRecord(steps, stepName);
+    const status = record?.status ?? "idle";
+    const isCurrent = currentStep === stepName;
+    const detail =
+      record?.errorMessage ??
+      (record?.completedAt
+        ? `Completed ${formatDateTime(record.completedAt)}`
+        : record?.startedAt
+          ? `Started ${formatDateTime(record.startedAt)}`
+          : undefined);
+
+    return {
+      key: stepName,
+      label: workflowStepMeta[stepName].label,
+      status,
+      isCurrent,
+      detail: detail ?? undefined,
+      action: isCurrent || status === "failed" || status === "manual-input-required" ? stepAction(stepName) : undefined
+    };
+  });
+
+  const exportStepCurrent = !currentStep && hasFinalOptimized && !allExportsReady;
+  stepperItems.push({
+    key: "export",
+    label: "Export article",
+    status: allExportsReady ? "completed" : "idle",
+    isCurrent: exportStepCurrent,
+    detail: allExportsReady ? "All formats exported" : hasFinalOptimized ? "Ready to export" : "After final optimization",
+    action: exportStepCurrent ? (
+      <Button variant="secondary" size="sm" disabled={!canExport} onClick={() => exportAllMutation.mutate()}>
+        {exportAllMutation.isPending ? "Exporting…" : "Export all"}
+      </Button>
+    ) : undefined
+  });
+
   return (
-    <main className="mx-auto flex max-w-[1500px] flex-col gap-8 px-5 py-8 lg:px-8">
+    <main className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 px-5 py-8 lg:px-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid gap-2">
-          <Link to="/" className="text-sm font-medium text-emerald-800 hover:text-emerald-950">
-            Back to jobs
+          <Link to="/" className="text-sm font-medium text-brand-700 hover:text-brand-800">
+            ← Back to jobs
           </Link>
-          <h1 className="text-3xl font-semibold tracking-tight text-stone-900">{job?.title ?? "Loading article..."}</h1>
+          <h1 className="font-display text-3xl leading-tight text-ink-900">{job?.title ?? "Loading article…"}</h1>
           <div className="flex flex-wrap items-center gap-3">
             {job ? <StatusPill label={job.status} /> : null}
-            <span className="text-sm text-stone-500">Job ID: {jobId}</span>
+            <span className="font-mono text-xs text-ink-400">Job ID: {jobId}</span>
           </div>
         </div>
 
@@ -502,7 +530,9 @@ export function JobWorkspacePage() {
           aria-live="polite"
           className={
             actionMessage
-              ? `rounded-full px-4 py-2 text-sm ${isBusy ? "bg-sky-100 text-sky-900" : "bg-emerald-100 text-emerald-900"}`
+              ? `max-w-md rounded-full px-4 py-2 text-sm ring-1 ring-inset ${
+                  isBusy ? "bg-sky-50 text-sky-700 ring-sky-600/20" : "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+                }`
               : "sr-only"
           }
         >
@@ -510,63 +540,49 @@ export function JobWorkspacePage() {
         </p>
       </header>
 
-      <Surface className="gap-4 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="grid gap-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Workflow progress</p>
-            <h2 className="text-lg font-semibold text-stone-900">
-              {completedSteps} of {workflowStepOrder.length} generation steps completed
-            </h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {phaseStatus.map((phase) => (
-              <div key={phase.key} className="flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-2">
-                <span className="text-xs font-medium text-stone-600">{phase.title}</span>
-                <StatusPill label={phase.status} compact />
+      <div className="workspace-grid">
+        {/* Left rail — the pipeline, always visible */}
+        <aside className="workspace-rail grid gap-4">
+          <Surface className="gap-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="grid gap-0.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-600">Workflow</p>
+                <h2 className="font-display text-lg text-ink-900">
+                  {completedSteps} of {workflowStepOrder.length} steps done
+                </h2>
               </div>
-            ))}
+              {isBusy ? <StatusPill label="running" compact /> : null}
+            </div>
+
+            <WorkflowStepper items={stepperItems} />
+
             {currentStepActionLabel ? (
-              <button
-                type="button"
-                disabled={currentStepActionDisabled}
-                onClick={runCurrentStepAction}
-                className="rounded-xl bg-emerald-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isBusy ? "Working..." : currentStepActionLabel}
-              </button>
+              <Button variant="primary" disabled={currentStepActionDisabled} onClick={runCurrentStepAction} className="w-full">
+                {isBusy ? "Working…" : currentStepActionLabel}
+              </Button>
             ) : null}
-          </div>
-        </div>
-        <p className="text-sm leading-6 text-stone-600">
-          This workspace keeps prompt snapshots, outputs, and fallback handoff files together so the article can move phase by phase without leaving the local job folder.
-        </p>
-        {activeOperation ? (
-          <div className="grid gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-sky-900">{activeOperation} is running</p>
-              <div className="flex items-center gap-2">
-                <StatusPill label="running" compact />
-                {runningSteps[0] ? (
-                  <button
-                    type="button"
+
+            {activeOperation && runningSteps[0] ? (
+              <div className="grid gap-2 rounded-[var(--radius-md)] border border-sky-200 bg-sky-50 px-3 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-sky-700">{activeOperation} running</p>
+                  <Button
+                    variant="danger"
+                    size="sm"
                     disabled={cancelStepMutation.isPending}
                     onClick={() => cancelStepMutation.mutate(runningSteps[0].stepName)}
-                    className="rounded-xl border border-rose-300 bg-white px-3 py-1.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {cancelStepMutation.isPending ? "Cancelling..." : "Cancel"}
-                  </button>
-                ) : null}
+                    {cancelStepMutation.isPending ? "Cancelling…" : "Cancel"}
+                  </Button>
+                </div>
+                <div className="progress-track h-1.5" />
               </div>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-sky-100">
-              <div className="h-full w-2/3 rounded-full bg-sky-500 animate-pulse" />
-            </div>
-          </div>
-        ) : null}
-      </Surface>
+            ) : null}
+          </Surface>
+        </aside>
 
-      <div className="workspace-grid">
-        <div className="grid gap-8">
+        {/* Main column */}
+        <div className="grid min-w-0 gap-6">
           <Surface>
             <SurfaceHeader
               eyebrow="Phase 1"
@@ -594,33 +610,30 @@ export function JobWorkspacePage() {
 
               <AdvancedBriefFields register={intakeForm.register} />
 
-              <div className="grid gap-3 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
+              <div className="grid gap-3 rounded-[var(--radius-md)] border border-hairline bg-ink-50 p-4">
                 <div className="grid gap-1">
-                  <h3 className="text-sm font-semibold text-stone-900">Next action</h3>
-                  <p className="text-sm leading-6 text-stone-600">
-                    Save the brief, then generate the semantic map. Audience, intent, entities, attributes, and content angles are inferred automatically.
+                  <h3 className="text-sm font-semibold text-ink-900">Next action</h3>
+                  <p className="text-sm leading-6 text-ink-500">
+                    Save the brief, then generate the semantic map. Audience, intent, entities, attributes, and content
+                    angles are inferred automatically.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    type="submit"
-                    disabled={saveIntakeMutation.isPending}
-                    className="rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {saveIntakeMutation.isPending ? "Saving..." : "Save intake"}
-                  </button>
-                  <button
+                  <Button type="submit" loading={saveIntakeMutation.isPending}>
+                    {saveIntakeMutation.isPending ? "Saving…" : "Save intake"}
+                  </Button>
+                  <Button
                     type="button"
+                    variant="secondary"
                     disabled={saveIntakeMutation.isPending || runStepMutation.isPending}
                     onClick={intakeForm.handleSubmit(async (values) => {
                       await saveIntakeMutation.mutateAsync(values);
-                      setActionMessage("Intake saved. Starting semantic map...");
+                      setActionMessage("Intake saved. Starting semantic map…");
                       await runStepMutation.mutateAsync("semantic-map");
                     })}
-                    className="rounded-xl border border-emerald-700 px-4 py-2.5 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {saveIntakeMutation.isPending || runStepMutation.isPending ? "Working..." : "Save and generate semantic map"}
-                  </button>
+                    {saveIntakeMutation.isPending || runStepMutation.isPending ? "Working…" : "Save and generate semantic map"}
+                  </Button>
                 </div>
               </div>
             </form>
@@ -639,14 +652,13 @@ export function JobWorkspacePage() {
               }
               aside={
                 topUrlCount ? (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
                     disabled={extractCompetitorsMutation.isPending}
                     onClick={() => extractCompetitorsMutation.mutate()}
-                    className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {extractCompetitorsMutation.isPending ? "Extracting..." : "Extract competitors"}
-                  </button>
+                    {extractCompetitorsMutation.isPending ? "Extracting…" : "Extract competitors"}
+                  </Button>
                 ) : null
               }
             />
@@ -654,38 +666,38 @@ export function JobWorkspacePage() {
             {competitorEntries.length ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {competitorEntries.map((entry, index) => (
-                  <section key={`${entry.title}-${index}`} className="grid gap-3 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
+                  <section key={`${entry.title}-${index}`} className="grid gap-3 rounded-[var(--radius-md)] border border-hairline bg-ink-50 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="grid gap-1">
-                        <h3 className="text-sm font-semibold text-stone-900">{entry.title}</h3>
+                        <h3 className="text-sm font-semibold text-ink-900">{entry.title}</h3>
                         {entry.extractionSource ? (
-                          <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
+                          <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-400">
                             Source: {entry.extractionSource.replaceAll("-", " ")}
                           </p>
                         ) : null}
                         {entry.url ? (
-                          <a href={entry.url} target="_blank" rel="noreferrer" className="break-all text-xs text-emerald-800 hover:text-emerald-950">
+                          <a href={entry.url} target="_blank" rel="noreferrer" className="break-all text-xs text-brand-700 hover:text-brand-800">
                             {entry.url}
                           </a>
                         ) : null}
                       </div>
                       <StatusPill label={entry.status} compact />
                     </div>
-                    {entry.metaDescription ? <p className="text-sm leading-6 text-stone-600">{entry.metaDescription}</p> : null}
+                    {entry.metaDescription ? <p className="text-sm leading-6 text-ink-500">{entry.metaDescription}</p> : null}
                     {entry.excerpt ? (
-                      <div className="rounded-xl bg-white px-3 py-3">
-                        <p className="line-clamp-6 text-sm leading-6 text-stone-600">{entry.excerpt}</p>
+                      <div className="rounded-[var(--radius-md)] bg-white px-3 py-3 ring-1 ring-inset ring-hairline">
+                        <p className="line-clamp-6 text-sm leading-6 text-ink-500">{entry.excerpt}</p>
                       </div>
                     ) : null}
                     {entry.errorMessage ? (
-                      <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm leading-6 text-rose-800">{entry.errorMessage}</p>
+                      <p className="rounded-[var(--radius-md)] bg-rose-50 px-3 py-2 text-sm leading-6 text-rose-700">{entry.errorMessage}</p>
                     ) : null}
                     {entry.highlights.length ? (
                       <div className="grid gap-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">Extracted headings</p>
-                        <ul className="grid gap-2 text-sm leading-6 text-stone-600">
+                        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-400">Extracted headings</p>
+                        <ul className="grid gap-2 text-sm leading-6 text-ink-500">
                           {entry.highlights.map((highlight) => (
-                            <li key={highlight} className="rounded-xl bg-white px-3 py-2">
+                            <li key={highlight} className="rounded-[var(--radius-md)] bg-white px-3 py-2 ring-1 ring-inset ring-hairline">
                               {highlight}
                             </li>
                           ))}
@@ -696,7 +708,7 @@ export function JobWorkspacePage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 px-4 py-5 text-sm leading-6 text-stone-500">
+              <div className="rounded-[var(--radius-md)] border border-dashed border-ink-200 bg-ink-50 px-4 py-5 text-sm leading-6 text-ink-500">
                 No structured extraction results yet. Save the intake, add top-ranking URLs, then run extraction from this panel.
               </div>
             )}
@@ -710,10 +722,10 @@ export function JobWorkspacePage() {
             />
 
             <div className="grid gap-6">
-              <section className="grid gap-2">
+              <section id="output-semantic-map" className="grid gap-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-600">Semantic map</h3>
-                  <StatusPill label={getStepRecord(steps, "semantic-map")?.status ?? "idle"} />
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-600">Semantic map</h3>
+                  <StatusPill label={getStepRecord(steps, "semantic-map")?.status ?? "idle"} compact />
                 </div>
                 <ReadOnlyArea value={getStepContent(jobQuery.data, "semantic-map")} placeholder={workflowStepMeta["semantic-map"].emptyState} />
                 {getStepHandoff(jobQuery.data, "semantic-map") ? (
@@ -721,15 +733,15 @@ export function JobWorkspacePage() {
                 ) : null}
               </section>
 
-              <section className="grid gap-2">
+              <section id="output-outline" className="grid gap-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-600">Outline</h3>
-                  <StatusPill label={getStepRecord(steps, "outline")?.status ?? "idle"} />
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-600">Outline</h3>
+                  <StatusPill label={getStepRecord(steps, "outline")?.status ?? "idle"} compact />
                 </div>
                 <textarea
                   value={outlineDraft}
                   onChange={(event) => setOutlineDraft(event.target.value)}
-                  className={`${inputClassName()} min-h-72 resize-y bg-stone-50 font-mono text-xs leading-6`}
+                  className={`${inputClassName()} min-h-72 resize-y bg-ink-50 font-mono text-xs leading-6`}
                   placeholder={workflowStepMeta.outline.emptyState}
                 />
                 {getStepHandoff(jobQuery.data, "outline") ? (
@@ -737,10 +749,10 @@ export function JobWorkspacePage() {
                 ) : null}
               </section>
 
-              <section className="grid gap-2">
+              <section id="output-draft" className="grid gap-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-600">Draft</h3>
-                  <StatusPill label={getStepRecord(steps, "draft")?.status ?? "idle"} />
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-600">Draft</h3>
+                  <StatusPill label={getStepRecord(steps, "draft")?.status ?? "idle"} compact />
                 </div>
                 <ReadOnlyArea value={getStepContent(jobQuery.data, "draft")} placeholder={workflowStepMeta.draft.emptyState} />
                 {getStepHandoff(jobQuery.data, "draft") ? (
@@ -748,51 +760,26 @@ export function JobWorkspacePage() {
                 ) : null}
               </section>
 
-              <section className="grid gap-3">
+              <section id="output-final-optimize" className="grid gap-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-600">Final optimized article</h3>
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-600">Final optimized article</h3>
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusPill label={getStepRecord(steps, "final-optimize")?.status ?? "idle"} />
-                    <button
-                      type="button"
-                      disabled={!canRunFinalOptimization}
-                      onClick={() => runStepMutation.mutate("final-optimize")}
-                      className="rounded-xl bg-emerald-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isStepBusy("final-optimize") ? "Optimizing..." : hasFinalOptimized ? "Re-run optimization" : "Run final optimization"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!canExport}
-                      onClick={() => exportAllMutation.mutate()}
-                      className="rounded-xl border border-emerald-700 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {exportAllMutation.isPending ? "Exporting..." : "Export all"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!canExport}
-                      onClick={() => exportArticleMutation.mutate("markdown")}
-                      className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {exportArticleMutation.isPending ? "Exporting..." : "Export MD"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!canExport}
-                      onClick={() => exportArticleMutation.mutate("html")}
-                      className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {exportArticleMutation.isPending ? "Exporting..." : "Export HTML"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!canExport}
-                      onClick={() => exportArticleMutation.mutate("docx")}
-                      className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {exportArticleMutation.isPending ? "Exporting..." : "Export DOCX"}
-                    </button>
+                    <StatusPill label={getStepRecord(steps, "final-optimize")?.status ?? "idle"} compact />
+                    <Button variant="primary" size="sm" disabled={!canRunFinalOptimization} onClick={() => runStepMutation.mutate("final-optimize")}>
+                      {isStepBusy("final-optimize") ? "Optimizing…" : hasFinalOptimized ? "Re-run optimization" : "Run final optimization"}
+                    </Button>
+                    <Button variant="secondary" size="sm" disabled={!canExport} onClick={() => exportAllMutation.mutate()}>
+                      {exportAllMutation.isPending ? "Exporting…" : "Export all"}
+                    </Button>
+                    <Button variant="ghost" size="sm" disabled={!canExport} onClick={() => exportArticleMutation.mutate("markdown")}>
+                      {exportArticleMutation.isPending ? "Exporting…" : "MD"}
+                    </Button>
+                    <Button variant="ghost" size="sm" disabled={!canExport} onClick={() => exportArticleMutation.mutate("html")}>
+                      {exportArticleMutation.isPending ? "Exporting…" : "HTML"}
+                    </Button>
+                    <Button variant="ghost" size="sm" disabled={!canExport} onClick={() => exportArticleMutation.mutate("docx")}>
+                      {exportArticleMutation.isPending ? "Exporting…" : "DOCX"}
+                    </Button>
                   </div>
                 </div>
                 <ReadOnlyArea value={getStepContent(jobQuery.data, "final-optimize")} placeholder={workflowStepMeta["final-optimize"].emptyState} />
@@ -805,133 +792,35 @@ export function JobWorkspacePage() {
                       .filter((artifact) => artifact.category === "export")
                       .map((artifact) => (
                         <div key={artifact.type} className="flex flex-wrap gap-2">
-                          <a
-                            href={artifact.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-xl bg-stone-100 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:bg-stone-200"
-                          >
+                          <ButtonLink variant="subtle" size="sm" href={artifact.url} target="_blank" rel="noreferrer">
                             Open {artifact.label}
-                          </a>
-                          <a
-                            href={artifact.downloadUrl}
-                            className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white"
-                          >
+                          </ButtonLink>
+                          <ButtonLink variant="ghost" size="sm" href={artifact.downloadUrl}>
                             Download {artifact.label}
-                          </a>
+                          </ButtonLink>
                         </div>
                       ))}
                   </div>
                 ) : null}
               </section>
 
-              <section className="grid gap-2">
+              <section className="grid gap-2 border-t border-hairline pt-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-600">Audit reports</h3>
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-600">Audit reports</h3>
                 </div>
                 {artifactsQuery.isError ? (
-                  <p className="rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-sm text-rose-800">
+                  <p className="rounded-[var(--radius-md)] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     Could not load audit reports. {getErrorMessage(artifactsQuery.error)}
                   </p>
                 ) : auditArtifacts.some((artifact) => artifact.exists) ? (
                   <AuditReports jobId={jobId} artifacts={auditArtifacts} />
                 ) : (
-                  <p className="rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 px-4 py-4 text-sm leading-6 text-stone-500">
+                  <p className="rounded-[var(--radius-md)] border border-dashed border-ink-200 bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-500">
                     Style and structure audits appear here once the outline, draft, and final optimization steps run. They
                     show what the quality engine flagged and repaired.
                   </p>
                 )}
               </section>
-            </div>
-          </Surface>
-        </div>
-
-        <aside className="workspace-sidebar grid gap-6">
-          <Surface>
-            <SurfaceHeader
-              eyebrow="Workflow panel"
-              title="Current path"
-              description={
-                currentStep
-                  ? `The next recommended step is ${workflowStepMeta[currentStep].label.toLowerCase()}.`
-                  : "All workflow steps are complete. The final article is ready to review and export."
-              }
-            />
-
-            <div className="grid gap-3">
-              {workflowStepOrder.map((stepName, index) => {
-                const record = getStepRecord(steps, stepName);
-                const detail =
-                  record?.errorMessage ??
-                  (record?.completedAt
-                    ? `Last completed ${formatDateTime(record.completedAt)}`
-                    : record?.startedAt
-                      ? `Started ${formatDateTime(record.startedAt)}`
-                      : workflowStepMeta[stepName].emptyState);
-
-                return (
-                  <WorkflowStepCard
-                    key={stepName}
-                    index={index + 1}
-                    title={workflowStepMeta[stepName].label}
-                    description={workflowStepMeta[stepName].description}
-                    status={record?.status ?? "idle"}
-                    detail={detail ?? undefined}
-                    isCurrent={currentStep === stepName}
-                  >
-                    {stepName === "semantic-map" ? (
-                      <button
-                        type="button"
-                        disabled={isStepBusy("semantic-map")}
-                        onClick={() => runStepMutation.mutate("semantic-map")}
-                        className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isStepBusy("semantic-map") ? "Running..." : "Generate"}
-                      </button>
-                    ) : null}
-                    {stepName === "outline" ? (
-                      <button
-                        type="button"
-                        disabled={isStepBusy("outline")}
-                        onClick={() => runStepMutation.mutate("outline")}
-                        className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isStepBusy("outline") ? "Running..." : "Generate"}
-                      </button>
-                    ) : null}
-                    {stepName === "approve-outline" ? (
-                      <button
-                        type="button"
-                        disabled={approveOutlineMutation.isPending || getStepRecord(steps, "approve-outline")?.status === "running"}
-                        onClick={() => approveOutlineMutation.mutate()}
-                        className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {approveOutlineMutation.isPending ? "Saving..." : "Save approved outline"}
-                      </button>
-                    ) : null}
-                    {stepName === "draft" ? (
-                      <button
-                        type="button"
-                        disabled={isStepBusy("draft")}
-                        onClick={() => runStepMutation.mutate("draft")}
-                        className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isStepBusy("draft") ? "Running..." : "Generate"}
-                      </button>
-                    ) : null}
-                    {stepName === "final-optimize" ? (
-                      <button
-                        type="button"
-                        disabled={!canRunFinalOptimization}
-                        onClick={() => runStepMutation.mutate("final-optimize")}
-                        className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-emerald-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isStepBusy("final-optimize") ? "Running..." : "Run optimization"}
-                      </button>
-                    ) : null}
-                  </WorkflowStepCard>
-                );
-              })}
             </div>
           </Surface>
 
@@ -941,65 +830,51 @@ export function JobWorkspacePage() {
               title="Saved artifacts"
               description="The article folder remains the source of truth for prompts, generated Markdown, fallback handoff files, and exports."
             />
-            <div className="grid gap-3 text-sm leading-6 text-stone-600">
+            <div className="grid gap-3 text-sm leading-6 text-ink-500 md:grid-cols-2">
               {artifactsQuery.isLoading ? (
-                <div className="rounded-2xl border border-stone-200 bg-stone-50/70 px-4 py-3">Loading saved files...</div>
+                <div className="rounded-[var(--radius-md)] border border-hairline bg-ink-50 px-4 py-3">Loading saved files…</div>
               ) : null}
               {artifactsQuery.isError ? (
-                <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-3">
-                  <span className="text-rose-800">Could not load saved files.</span>
-                  <button
-                    type="button"
-                    onClick={() => artifactsQuery.refetch()}
-                    className="rounded-lg border border-rose-300 px-2.5 py-1.5 text-xs font-semibold text-rose-800 transition hover:bg-white"
-                  >
+                <div className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-rose-200 bg-rose-50 px-4 py-3">
+                  <span className="text-rose-700">Could not load saved files.</span>
+                  <Button variant="danger" size="sm" onClick={() => artifactsQuery.refetch()}>
                     Retry
-                  </button>
+                  </Button>
                 </div>
               ) : null}
               {artifacts.map((artifact: JobArtifact) => {
                 const exportFormat = exportFormatByArtifactType[artifact.type];
                 const isFinalArtifact = artifact.type === "final-optimized";
                 const action = isFinalArtifact ? (
-                  <button
-                    type="button"
-                    disabled={!canRunFinalOptimization}
-                    onClick={() => runStepMutation.mutate("final-optimize")}
-                    className="rounded-lg border border-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isStepBusy("final-optimize") ? "Optimizing..." : artifact.exists ? "Re-run" : "Generate"}
-                  </button>
+                  <Button variant="secondary" size="sm" disabled={!canRunFinalOptimization} onClick={() => runStepMutation.mutate("final-optimize")}>
+                    {isStepBusy("final-optimize") ? "Optimizing…" : artifact.exists ? "Re-run" : "Generate"}
+                  </Button>
                 ) : exportFormat ? (
-                  <button
-                    type="button"
-                    disabled={!canExport}
-                    onClick={() => exportArticleMutation.mutate(exportFormat)}
-                    className="rounded-lg border border-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
+                  <Button variant="secondary" size="sm" disabled={!canExport} onClick={() => exportArticleMutation.mutate(exportFormat)}>
                     {exportArticleMutation.isPending && exportArticleMutation.variables === exportFormat
-                      ? "Exporting..."
+                      ? "Exporting…"
                       : artifact.exists
                         ? "Re-export"
                         : "Create"}
-                  </button>
+                  </Button>
                 ) : null;
 
                 return (
-                  <div key={artifact.type} className="grid gap-2 rounded-2xl border border-stone-200 bg-stone-50/70 px-4 py-3">
+                  <div key={artifact.type} className="grid gap-2 rounded-[var(--radius-md)] border border-hairline bg-ink-50 px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
-                      <span>{artifact.label}</span>
+                      <span className="font-medium text-ink-800">{artifact.label}</span>
                       <StatusPill label={artifact.exists ? "completed" : "idle"} compact />
                     </div>
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">
-                      <span>{artifact.category}</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-400">
+                      <span className="uppercase tracking-[0.1em]">{artifact.category}</span>
                       <div className="flex flex-wrap items-center justify-end gap-2">
                         {artifact.exists ? (
                           <>
-                            <a href={artifact.url} target="_blank" rel="noreferrer" className="font-semibold text-emerald-800 hover:text-emerald-950">
+                            <a href={artifact.url} target="_blank" rel="noreferrer" className="font-semibold text-brand-700 hover:text-brand-800">
                               Open {formatBytes(artifact.sizeBytes)}
                             </a>
-                            <span aria-hidden="true">/</span>
-                            <a href={artifact.downloadUrl} className="font-semibold text-emerald-800 hover:text-emerald-950">
+                            <span aria-hidden="true">·</span>
+                            <a href={artifact.downloadUrl} className="font-semibold text-brand-700 hover:text-brand-800">
                               Download
                             </a>
                           </>
@@ -1014,7 +889,7 @@ export function JobWorkspacePage() {
               })}
             </div>
           </Surface>
-        </aside>
+        </div>
       </div>
     </main>
   );

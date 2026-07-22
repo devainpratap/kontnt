@@ -3,20 +3,39 @@ type StatusPillProps = {
   compact?: boolean;
 };
 
-const statusClasses: Record<string, string> = {
-  codex: "bg-emerald-800 text-white",
-  draft: "bg-stone-200 text-stone-700",
-  "semantic-map-ready": "bg-emerald-100 text-emerald-800",
-  "outline-ready": "bg-teal-100 text-teal-800",
-  "outline-approved": "bg-cyan-100 text-cyan-800",
-  "draft-ready": "bg-blue-100 text-blue-800",
-  "final-ready": "bg-lime-100 text-lime-800",
-  "manual-input-required": "bg-amber-100 text-amber-800",
-  error: "bg-rose-100 text-rose-800",
-  idle: "bg-stone-200 text-stone-700",
-  running: "bg-sky-100 text-sky-800",
-  completed: "bg-emerald-100 text-emerald-800",
-  failed: "bg-rose-100 text-rose-800"
+/*
+ * Five semantic families with subtle inset rings for a clean, legible chip:
+ *   brand   — primary / connected (Codex)
+ *   success — any "ready", approved, or completed step
+ *   progress— running / in-flight
+ *   attention — manual handoff needed
+ *   danger  — error / failed
+ *   neutral — draft / idle / unknown
+ */
+const familyClasses = {
+  brand: "bg-brand-600 text-white",
+  success: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20",
+  progress: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-600/20",
+  attention: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20",
+  danger: "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20",
+  neutral: "bg-ink-100 text-ink-600 ring-1 ring-inset ring-ink-500/15"
+} as const;
+
+const statusFamily: Record<string, keyof typeof familyClasses> = {
+  codex: "brand",
+  claude: "brand",
+  "semantic-map-ready": "success",
+  "outline-ready": "success",
+  "outline-approved": "success",
+  "draft-ready": "success",
+  "final-ready": "success",
+  completed: "success",
+  running: "progress",
+  "manual-input-required": "attention",
+  error: "danger",
+  failed: "danger",
+  draft: "neutral",
+  idle: "neutral"
 };
 
 const displayLabelMap: Record<string, string> = {
@@ -25,14 +44,13 @@ const displayLabelMap: Record<string, string> = {
 
 export function StatusPill({ label, compact = false }: StatusPillProps) {
   const isRunning = label === "running";
+  const family = familyClasses[statusFamily[label] ?? "neutral"];
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-semibold uppercase tracking-[0.08em] ${
-        compact ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs"
-      } ${
-        statusClasses[label] ?? "bg-stone-200 text-stone-700"
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-full font-semibold uppercase tracking-[0.06em] ${
+        compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[11px]"
+      } ${family}`}
     >
       {isRunning ? <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80 animate-pulse" /> : null}
       {(displayLabelMap[label] ?? label).replaceAll("-", " ")}

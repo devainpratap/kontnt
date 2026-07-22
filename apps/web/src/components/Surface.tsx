@@ -20,7 +20,7 @@ export function Surface({ children, className }: SurfaceProps) {
   return (
     <section
       className={joinClassNames(
-        "grid gap-5 rounded-[28px] border border-stone-200 bg-white/88 p-6 shadow-[0_16px_48px_rgba(33,26,18,0.07)]",
+        "grid gap-5 rounded-[var(--radius-card)] border border-hairline bg-white p-6 shadow-soft",
         className
       )}
     >
@@ -33,9 +33,9 @@ export function SurfaceHeader({ eyebrow, title, description, aside }: SurfaceHea
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="grid gap-1.5">
-        {eyebrow ? <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">{eyebrow}</p> : null}
-        <h2 className="text-xl font-semibold text-stone-900">{title}</h2>
-        {description ? <p className="max-w-3xl text-sm leading-6 text-stone-600">{description}</p> : null}
+        {eyebrow ? <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-600">{eyebrow}</p> : null}
+        <h2 className="font-display text-xl leading-tight text-ink-900">{title}</h2>
+        {description ? <p className="max-w-3xl text-sm leading-6 text-ink-500">{description}</p> : null}
       </div>
       {aside ? <div className="flex items-center gap-2">{aside}</div> : null}
     </div>

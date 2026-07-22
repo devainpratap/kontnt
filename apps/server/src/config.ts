@@ -18,6 +18,15 @@ const configSchema = z.object({
     ),
   CODEX_TIMEOUT_MS: z.coerce.number().int().positive().default(300000),
   CODEX_MAX_OUTPUT_BYTES: z.coerce.number().int().positive().default(5_000_000),
+  // "claude" = Claude Code CLI via your Claude subscription (default, no API key);
+  // "claude-api" = Anthropic Messages API (needs ANTHROPIC_API_KEY);
+  // "codex" = Codex CLI.
+  GENERATION_PROVIDER: z.enum(["claude", "claude-api", "codex"]).default("claude"),
+  CLAUDE_CLI_BIN: z.string().default("claude"),
+  ANTHROPIC_MODEL: z.string().default("claude-opus-4-8"),
+  ANTHROPIC_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("high"),
+  ANTHROPIC_MAX_TOKENS: z.coerce.number().int().positive().default(64000),
+  ANTHROPIC_TIMEOUT_MS: z.coerce.number().int().positive().default(600000),
   CORS_ALLOWED_ORIGINS: z.string().default("http://localhost:5173,http://127.0.0.1:5173"),
   SERVE_WEB: z
     .preprocess((value) => (value === "true" || value === "1" ? true : value === "false" || value === "0" ? false : value), z.boolean().default(false)),
@@ -41,6 +50,12 @@ export const appConfig = {
   codexSandbox: env.CODEX_SANDBOX,
   codexTimeoutMs: env.CODEX_TIMEOUT_MS,
   codexMaxOutputBytes: env.CODEX_MAX_OUTPUT_BYTES,
+  generationProvider: env.GENERATION_PROVIDER,
+  claudeCliBin: env.CLAUDE_CLI_BIN,
+  anthropicModel: env.ANTHROPIC_MODEL,
+  anthropicEffort: env.ANTHROPIC_EFFORT,
+  anthropicMaxTokens: env.ANTHROPIC_MAX_TOKENS,
+  anthropicTimeoutMs: env.ANTHROPIC_TIMEOUT_MS,
   corsAllowedOrigins: env.CORS_ALLOWED_ORIGINS.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean),

@@ -8,29 +8,30 @@ type TextFieldProps = {
 
 export function FieldShell({ label, hint, children }: TextFieldProps) {
   return (
-    <label className="grid gap-2">
-      <span className="text-sm font-medium text-stone-800">{label}</span>
+    <label className="grid gap-1.5">
+      <span className="text-[13px] font-medium text-ink-700">{label}</span>
       {children}
-      {hint ? <span className="text-xs text-stone-500">{hint}</span> : null}
+      {hint ? <span className="text-xs leading-5 text-ink-400">{hint}</span> : null}
     </label>
   );
 }
 
 export function inputClassName() {
-  return "w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";
+  return "w-full rounded-[var(--radius-md)] border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 hover:border-ink-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25";
 }
 
-export function textAreaClassName(rows = 5) {
-  return `${inputClassName()} min-h-[${rows * 1.5}rem]`;
+export function textAreaClassName(minRows = 4) {
+  // Tailwind can't compile a dynamic arbitrary class, so map rows -> a fixed min-height utility.
+  const minHeight = minRows <= 3 ? "min-h-20" : minRows <= 5 ? "min-h-28" : "min-h-40";
+  return `${inputClassName()} ${minHeight} resize-y leading-6`;
 }
 
 export function ReadOnlyArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       {...props}
-      className={`${inputClassName()} min-h-56 resize-y bg-stone-50 font-mono text-xs leading-6`}
+      className={`${inputClassName()} min-h-56 resize-y bg-ink-50 font-mono text-xs leading-6 text-ink-700`}
       readOnly
     />
   );
 }
-

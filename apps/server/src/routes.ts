@@ -19,7 +19,7 @@ import { extractCompetitorResearch } from "./extraction/competitor-research";
 import { readJsonFile, readTextFile, writeJsonFile } from "./jobs/files";
 import { JobRepository } from "./jobs/repository";
 import { ApiError } from "./lib/api-error";
-import { getCodexStatus } from "./generation/codex-provider";
+import { generationProviderName, getGenerationStatus } from "./generation/provider";
 import { jobRunner } from "./generation/job-runner";
 import { StepRunner } from "./generation/step-runner";
 
@@ -61,20 +61,21 @@ export async function registerRoutes(app: FastifyInstance) {
   const runner = new StepRunner(jobs);
 
   app.get("/api/health", async () => {
-    const codex = await getCodexStatus();
+    const provider = await getGenerationStatus();
     return {
       ok: true,
-      codex,
+      provider: { name: generationProviderName, ...provider },
       workspaceRoot: appConfig.workspaceRoot
     };
   });
 
   app.get("/api/settings", async () => {
-    const codex = await getCodexStatus();
+    const provider = await getGenerationStatus();
     return appSettingsSchema.parse({
-      generationMode: codex.available && codex.authenticated ? "codex" : appConfig.fallbackMode,
-      codexAvailable: codex.available,
-      codexAuthenticated: codex.authenticated,
+      generationProvider: generationProviderName,
+      generationMode: provider.available && provider.authenticated ? "codex" : appConfig.fallbackMode,
+      codexAvailable: provider.available,
+      codexAuthenticated: provider.authenticated,
       workspaceRoot: appConfig.workspaceRoot,
       jobsRoot: appConfig.jobsRoot
     });

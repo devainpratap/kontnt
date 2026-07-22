@@ -8,7 +8,7 @@ type AdvancedBriefFieldsProps = {
   register: UseFormRegister<IntakeFormValues>;
 };
 
-const textAreaClass = `${inputClassName()} min-h-24 resize-y`;
+const textAreaClass = `${inputClassName()} min-h-24 resize-y leading-6`;
 
 /**
  * The full brief beyond the 3-field happy path. Collapsed by default so the
@@ -19,7 +19,7 @@ export function AdvancedBriefFields({ register }: AdvancedBriefFieldsProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="grid gap-4 rounded-2xl border border-stone-200 bg-white/60 p-4">
+    <div className="grid gap-4 rounded-[var(--radius-card)] border border-hairline bg-white/50 p-4">
       <button
         type="button"
         aria-expanded={expanded}
@@ -27,12 +27,12 @@ export function AdvancedBriefFields({ register }: AdvancedBriefFieldsProps) {
         className="flex items-center justify-between gap-3 text-left"
       >
         <span className="grid gap-0.5">
-          <span className="text-sm font-semibold text-stone-900">Advanced brief (optional)</span>
-          <span className="text-xs leading-5 text-stone-500">
+          <span className="text-sm font-semibold text-ink-900">Advanced brief (optional)</span>
+          <span className="text-xs leading-5 text-ink-500">
             Override what Codex would otherwise infer: audience, intent, entities, tone, links, and CTAs.
           </span>
         </span>
-        <span className="shrink-0 rounded-full border border-stone-300 px-2.5 py-1 text-xs font-semibold text-stone-600">
+        <span className="shrink-0 rounded-full border border-ink-300 px-2.5 py-1 text-xs font-semibold text-ink-600">
           {expanded ? "Hide" : "Show"}
         </span>
       </button>

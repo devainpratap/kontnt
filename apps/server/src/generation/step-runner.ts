@@ -5,7 +5,7 @@ import { JobRepository } from "../jobs/repository";
 import { ApiError } from "../lib/api-error";
 import { auditArticleStructure, renderArticleStructureAuditReport, renderArticleStructureRepairPrompt } from "./article-structure-audit";
 import { auditArticleStyle, renderArticleStyleAuditReport, renderArticleStyleRepairPrompt } from "./article-style-audit";
-import { getCodexStatus, isTransientCodexFailure, runCodexStep } from "./codex-provider";
+import { generationProviderLabel, getGenerationStatus, isTransientGenerationFailure, runGenerationStep } from "./provider";
 import { renderManualHandoff } from "./manual-handoff";
 import { sanitizeGeneratedMarkdown } from "./output-sanitizer";
 import { buildSemanticPromptContext, renderStepPrompt } from "./prompt-loader";
@@ -34,15 +34,21 @@ function throwIfAborted(signal?: AbortSignal) {
   }
 }
 
-function summarizeCodexFailure(stdout: string, stderr: string) {
+function summarizeGenerationFailure(stdout: string, stderr: string) {
   const combined = `${stderr}\n${stdout}`.trim();
 
+  // Codex phrases a quota hit this way; the Claude SDK surfaces it as a 429
+  // rate-limit error. Either way, tell the user it is a usage limit.
   if (combined.includes("You've hit your usage limit")) {
     const match = combined.match(/You've hit your usage limit[^\n]*/);
-    return match?.[0] ?? "Codex usage limit reached.";
+    return match?.[0] ?? `${generationProviderLabel} usage limit reached.`;
   }
 
-  return combined.slice(0, 1200) || "Codex execution failed.";
+  if (/rate.?limit|\b429\b/i.test(combined)) {
+    return `${generationProviderLabel} usage limit reached. Try again shortly.`;
+  }
+
+  return combined.slice(0, 1200) || `${generationProviderLabel} generation failed.`;
 }
 
 export class StepRunner {
@@ -121,11 +127,11 @@ export class StepRunner {
     try {
       throwIfAborted(signal);
 
-      const codexStatus = await getCodexStatus();
-      if (!codexStatus.available || !codexStatus.authenticated) {
+      const providerStatus = await getGenerationStatus();
+      if (!providerStatus.available || !providerStatus.authenticated) {
         const handoff = await renderManualHandoff(stepName, prompt);
         await writeMarkdownFile(handoffPath, handoff);
-        this.jobs.completeStep(jobId, stepName, "manual-input-required", codexStatus.message);
+        this.jobs.completeStep(jobId, stepName, "manual-input-required", providerStatus.message);
         this.jobs.touchJob(jobId, "manual-input-required");
 
         return {
@@ -133,13 +139,13 @@ export class StepRunner {
           status: "manual-input-required",
           outputPath: null,
           handoffPath,
-          message: codexStatus.message
+          message: providerStatus.message
         };
       }
 
       throwIfAborted(signal);
 
-      const result = await runCodexStep({
+      const result = await runGenerationStep({
         cwd: paths.root,
         outputPath,
         prompt,
@@ -152,9 +158,9 @@ export class StepRunner {
 
       if (result.exitCode !== 0) {
         const fallback = await renderManualHandoff(stepName, prompt);
-        const message = summarizeCodexFailure(result.stdout, result.stderr);
+        const message = summarizeGenerationFailure(result.stdout, result.stderr);
         await writeMarkdownFile(handoffPath, fallback);
-        const status = isTransientCodexFailure(result) ? "manual-input-required" : "failed";
+        const status = isTransientGenerationFailure(result) ? "manual-input-required" : "failed";
         this.jobs.completeStep(jobId, stepName, status, message);
         this.jobs.touchJob(jobId, status === "manual-input-required" ? "manual-input-required" : "error");
 
@@ -170,7 +176,7 @@ export class StepRunner {
       const generatedOutput = await readTextFile(outputPath);
       if (!isGeneratedOutputAcceptable(stepName, generatedOutput)) {
         const fallback = await renderManualHandoff(stepName, prompt);
-        const message = "Codex returned empty or incomplete output.";
+        const message = `${generationProviderLabel} returned empty or incomplete output.`;
         await writeMarkdownFile(handoffPath, fallback);
         this.jobs.completeStep(jobId, stepName, "manual-input-required", message);
         this.jobs.touchJob(jobId, "manual-input-required");
@@ -324,7 +330,7 @@ export class StepRunner {
       const repairPromptPath = `${promptDir}/${stepName}-style-repair-pass-${pass}.md`;
       const repairPrompt = renderArticleStyleRepairPrompt(currentMarkdown, currentAudit);
       await writeMarkdownFile(repairPromptPath, repairPrompt);
-      const repairResult = await runCodexStep({
+      const repairResult = await runGenerationStep({
         cwd,
         outputPath,
         prompt: repairPrompt,
@@ -333,7 +339,7 @@ export class StepRunner {
       throwIfAborted(signal);
 
       if (repairResult.exitCode !== 0) {
-        return `Step completed, but style repair pass ${pass} could not run: ${summarizeCodexFailure(repairResult.stdout, repairResult.stderr)}`;
+        return `Step completed, but style repair pass ${pass} could not run: ${summarizeGenerationFailure(repairResult.stdout, repairResult.stderr)}`;
       }
 
       const repaired = await readTextFile(outputPath);
@@ -397,7 +403,7 @@ export class StepRunner {
     throwIfAborted(signal);
     const repairPrompt = renderArticleStructureRepairPrompt(intake, generated, audit);
     await writeMarkdownFile(repairPromptPath, repairPrompt);
-    const repairResult = await runCodexStep({
+    const repairResult = await runGenerationStep({
       cwd,
       outputPath,
       prompt: repairPrompt,
@@ -406,7 +412,7 @@ export class StepRunner {
     throwIfAborted(signal);
 
     if (repairResult.exitCode !== 0) {
-      return `Step completed, but the outline structure repair pass could not run: ${summarizeCodexFailure(repairResult.stdout, repairResult.stderr)}`;
+      return `Step completed, but the outline structure repair pass could not run: ${summarizeGenerationFailure(repairResult.stdout, repairResult.stderr)}`;
     }
 
     const repaired = await readTextFile(outputPath);

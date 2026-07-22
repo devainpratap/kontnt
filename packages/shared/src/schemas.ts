@@ -61,6 +61,10 @@ export const competitorResearchSchema = z.object({
 });
 
 export const appSettingsSchema = z.object({
+  // The active writing engine. Claude is the default; "codex" remains selectable.
+  generationProvider: z.enum(["claude", "codex"]).default("claude"),
+  // Kept as generic engine status. Field names are historical (they predate the
+  // pluggable provider) but now reflect whichever provider is active.
   generationMode: z.enum(["codex", "manual"]),
   codexAvailable: z.boolean(),
   codexAuthenticated: z.boolean(),
