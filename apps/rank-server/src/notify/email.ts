@@ -125,6 +125,29 @@ export async function sendReportEmail(input: ReportEmailInput): Promise<{ messag
   return { messageId: info.messageId };
 }
 
+/**
+ * An Operator escalation email - sent only when something needs the operator.
+ * Plain and direct: the point is to get attention, not to look like a report.
+ */
+export async function sendOperatorEmail(subject: string, bodyMarkdown: string): Promise<{ messageId: string }> {
+  if (!isEmailConfigured()) {
+    throw new Error(emailStatus().message);
+  }
+  const html = `<!doctype html><html><body style="margin:0;background:#f8fafc;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+    <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #fecaca;border-radius:12px;padding:24px">
+      <p style="margin:0 0 12px 0;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#b91c1c">RankOS Operator - needs you</p>
+      ${markdownToHtml(bodyMarkdown)}
+    </div></body></html>`;
+  const info = await getTransporter().sendMail({
+    from: rankConfig.emailFrom,
+    to: rankConfig.emailTo,
+    subject,
+    text: bodyMarkdown,
+    html
+  });
+  return { messageId: info.messageId };
+}
+
 /** A small self-test email, for the "send test now" button. */
 export async function sendTestEmail(): Promise<{ messageId: string }> {
   return sendReportEmail({

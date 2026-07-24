@@ -11,7 +11,9 @@
       "Bash(open -a \"Visual Studio Code\" .env)",
       "Bash(open .env)",
       "Bash(curl -s -X POST http://127.0.0.1:3102/api/notify/email/test)",
-      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const r=JSON.parse\\(d\\);if\\(r.ok\\){console.log\\('  SENT ✓  messageId:',r.messageId\\)}else{console.log\\('  FAILED:',r.error\\)}}\\)\")"
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const r=JSON.parse\\(d\\);if\\(r.ok\\){console.log\\('  SENT ✓  messageId:',r.messageId\\)}else{console.log\\('  FAILED:',r.error\\)}}\\)\")",
+      "Bash(sed -n '/export function getRecentRuns/,/^}/p' apps/rank-server/src/gsc/queries.ts)",
+      "Bash(sed -n '/export function describeBudget/,/^}/p' apps/rank-server/src/serp/usage-ledger.ts)"
     ],
     "additionalDirectories": [
       "/Users/devain/Downloads/Content_Generation/apps/rank-server/src/clients"

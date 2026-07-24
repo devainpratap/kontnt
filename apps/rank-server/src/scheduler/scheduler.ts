@@ -12,6 +12,7 @@ import { getKeywordsWithLastCheck } from "../serp/queries";
 import { runCheckBatch, selectDueKeywords } from "../serp/queue";
 import { RankCheckService } from "../serp/rank-check-service";
 import { isEmailConfigured, sendReportEmail } from "../notify/email";
+import { OperatorService } from "../operator/operator-service";
 
 /**
  * The scheduler turns RankOS from a tool you operate into a system that
@@ -48,6 +49,7 @@ const google = new GoogleAccountRepository();
 const gscSync = new GscSyncService(clients, google);
 const rankChecks = new RankCheckService(clients);
 const insights = new InsightService(clients);
+const operator = new OperatorService();
 
 function nowIso() {
   return new Date().toISOString();
@@ -133,6 +135,27 @@ async function runSerpDue(): Promise<void> {
   record("serp-checks", `${checked} checked, ${blocked} blocked`);
 }
 
+/**
+ * Run the Operator: RankOS supervising itself. Auto-fixes the safe things and
+ * escalates the rest, per OPERATOR_AUTONOMY. Best-effort - a failure here must
+ * not disturb the other scheduled work.
+ */
+async function runOperator(): Promise<void> {
+  if (!rankConfig.operatorEnabled) {
+    record("operator", "disabled");
+    return;
+  }
+  try {
+    const result = await operator.run({ apply: rankConfig.operatorAutonomy === "auto" });
+    record(
+      "operator",
+      `${result.record.healthLevel} - ${result.record.actionsCount} fixed, ${result.record.escalationsCount} escalated`
+    );
+  } catch (error) {
+    record("operator", `failed: ${error instanceof Error ? error.message : "unknown"}`);
+  }
+}
+
 /** Generate the weekly report + brief for every linked client. */
 async function runWeeklyReports(): Promise<void> {
   let made = 0;
@@ -215,13 +238,15 @@ export async function backfillOnBoot(): Promise<void> {
 const SCHEDULE: SchedulerTask[] = [
   { name: "gsc-sync", cron: rankConfig.schedulerGscCron, description: "Sync Search Console for all linked clients" },
   { name: "serp-checks", cron: rankConfig.schedulerSerpCron, description: "Check keywords whose cadence is due" },
-  { name: "weekly-reports", cron: rankConfig.schedulerReportCron, description: "Generate the weekly report and WhatsApp brief" }
+  { name: "weekly-reports", cron: rankConfig.schedulerReportCron, description: "Generate the weekly report and WhatsApp brief" },
+  { name: "operator", cron: rankConfig.operatorCron, description: "Supervise the system: auto-fix safe issues, escalate the rest" }
 ];
 
 const RUNNERS: Record<string, () => Promise<void>> = {
   "gsc-sync": runGscSyncAll,
   "serp-checks": runSerpDue,
-  "weekly-reports": runWeeklyReports
+  "weekly-reports": runWeeklyReports,
+  "operator": runOperator
 };
 
 /** Start all enabled cron tasks. Idempotent - stops any existing tasks first. */

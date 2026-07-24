@@ -348,3 +348,32 @@ export type EmailStatus = {
   to: string | null;
   message: string;
 };
+
+
+// ---------------------------------------------------------------- operator
+
+export type OperatorEscalation = {
+  kind: string;
+  summary: string;
+  recommendedAction: string | null;
+  clientId: string | null;
+};
+
+export type OperatorRun = {
+  id: string;
+  ranAt: string;
+  healthLevel: "ok" | "warn" | "critical";
+  findingsCount: number;
+  actionsCount: number;
+  escalationsCount: number;
+  escalations: OperatorEscalation[];
+  acknowledgedAt: string | null;
+  summary: string;
+  journalPath: string | null;
+};
+
+export type OperatorState = {
+  latest: OperatorRun | null;
+  openEscalations: OperatorRun[];
+  autonomy: "auto" | "recommend";
+};

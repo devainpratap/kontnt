@@ -267,3 +267,18 @@ export async function generateInsightMarkdown(prompt: string, signal?: AbortSign
 export async function generateBriefMarkdown(prompt: string, signal?: AbortSignal): Promise<string> {
   return runWithSystemPrompt(prompt, BRIEF_SYSTEM_PROMPT, signal);
 }
+
+const OPERATOR_SYSTEM_PROMPT = [
+  "You are the operations supervisor for a local SEO tool, writing a short internal log entry.",
+  "You are NOT a coding agent and you take NO actions - fixes and escalations are already decided by code.",
+  "You are given a health snapshot, the findings, and what was auto-fixed. Interpret them: in 2-4 plain",
+  "sentences say how the system is doing and what (if anything) the operator should pay attention to.",
+  "Only use facts you were given; never invent a number or a problem.",
+  "If there is a durable lesson worth remembering across runs, add one final line starting exactly with 'NOTE: '.",
+  "Never use em dashes or en dashes. Respond with only the log entry - no preamble."
+].join(" ");
+
+/** The Operator's reasoning pass: language only, never actions. Best-effort. */
+export async function runOperatorReasoning(prompt: string, signal?: AbortSignal): Promise<string> {
+  return runWithSystemPrompt(prompt, OPERATOR_SYSTEM_PROMPT, signal);
+}

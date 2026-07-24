@@ -92,6 +92,15 @@ client. They are correctness requirements, not polish.
 | Migrations | `apps/server/drizzle` | `apps/rank-server/drizzle` |
 | Shared pkg | `@semantic-seo/shared` | `@rankos/shared` |
 
+## The Operator
+
+RankOS supervises itself via the Operator (`operator/`). It may auto-fix ONLY
+from a hardcoded allowlist (`operator/remediation.ts`) - reversible operational
+actions, never code, money, client-facing sends, or deletion beyond retention.
+The LLM reasoning pass writes language only and is never in the action path.
+Consequential issues escalate to the operator by email. This mirrors the whole
+system's rule: code owns consequential decisions, the model owns words.
+
 ## Build Rules
 
 - Keep the UI operational and plain. This is a work tool.

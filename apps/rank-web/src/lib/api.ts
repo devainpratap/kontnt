@@ -12,6 +12,8 @@ import type {
   KeywordRecord,
   AlertWithContext,
   EmailStatus,
+  OperatorRun,
+  OperatorState,
   ClaudeStatus,
   CompetitorDomain,
   InsightDetail,
@@ -128,5 +130,14 @@ export const api = {
 
   getEmailStatus: () => request<EmailStatus>("/api/notify/email"),
   verifyEmail: () => request<{ ok: boolean; message: string }>("/api/notify/email/verify", { method: "POST" }),
-  sendTestEmail: () => request<{ ok: boolean; messageId: string }>("/api/notify/email/test", { method: "POST" })
+  sendTestEmail: () => request<{ ok: boolean; messageId: string }>("/api/notify/email/test", { method: "POST" }),
+
+  getOperator: () => request<OperatorState>("/api/operator"),
+  listOperatorRuns: () => request<OperatorRun[]>("/api/operator/runs"),
+  getOperatorRun: (runId: string) =>
+    request<{ record: OperatorRun; journal: string | null }>(`/api/operator/runs/${runId}`),
+  getOperatorNotes: () => request<{ notes: string }>("/api/operator/notes"),
+  runOperator: () => request<OperatorRun>("/api/operator/run", { method: "POST" }),
+  acknowledgeOperatorRun: (runId: string) =>
+    request<{ ok: boolean }>(`/api/operator/runs/${runId}/acknowledge`, { method: "POST" })
 };

@@ -29,6 +29,7 @@ import { AlertRepository } from "./alerts/repository";
 import { describeAlert } from "./alerts/rules";
 import { getSchedulerState, runTaskNow } from "./scheduler/scheduler";
 import { emailStatus, sendTestEmail, verifyEmail } from "./notify/email";
+import { OperatorService } from "./operator/operator-service";
 import { rankConfig } from "./config";
 import { listSites } from "./gsc/api-client";
 import { addDays, latestLikelyDataDate, todayInGscZone } from "./gsc/date-utils";
@@ -74,6 +75,7 @@ export async function registerRankRoutes(app: FastifyInstance) {
   const rankChecks = new RankCheckService(clients);
   const insights = new InsightService(clients);
   const alerts = new AlertRepository();
+  const operator = new OperatorService();
 
   app.get("/api/health", async () => ({ ok: true, service: "rankos" }));
 
@@ -598,6 +600,39 @@ export async function registerRankRoutes(app: FastifyInstance) {
     } catch (error) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : "Test email failed." });
     }
+  });
+
+  // --------------------------------------------------------------- operator
+
+  app.get("/api/operator", async () => {
+    const journal = operator.getJournal();
+    return {
+      latest: journal.latestRun(),
+      openEscalations: journal.openEscalations(),
+      autonomy: rankConfig.operatorAutonomy
+    };
+  });
+
+  app.get("/api/operator/runs", async () => operator.getJournal().listRuns(30));
+
+  app.get("/api/operator/runs/:runId", async (request) => {
+    const { runId } = request.params as { runId: string };
+    const journal = operator.getJournal();
+    return { record: journal.getRun(runId), journal: await journal.readJournal(runId) };
+  });
+
+  app.get("/api/operator/notes", async () => ({ notes: await operator.getJournal().readNotes() }));
+
+  /** Run the Operator now. Respects OPERATOR_AUTONOMY (auto vs recommend). */
+  app.post("/api/operator/run", async () => {
+    const result = await operator.run({ apply: rankConfig.operatorAutonomy === "auto" });
+    return result.record;
+  });
+
+  app.post("/api/operator/runs/:runId/acknowledge", async (request) => {
+    const { runId } = request.params as { runId: string };
+    operator.getJournal().acknowledge(runId);
+    return { ok: true };
   });
 
   /** Manual "run now" for any scheduled task, for testing and on-demand runs. */

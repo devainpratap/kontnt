@@ -6,6 +6,7 @@ import { ClientDetailPage } from "./pages/ClientDetailPage";
 import { ClientsPage } from "./pages/ClientsPage";
 import { InsightsPage } from "./pages/InsightsPage";
 import { KeywordsPage } from "./pages/KeywordsPage";
+import { OperatorPage } from "./pages/OperatorPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 export function App() {
@@ -18,6 +19,7 @@ export function App() {
           <Route path="/clients/:clientId" element={<ClientDetailPage />} />
           <Route path="/clients/:clientId/keywords" element={<KeywordsPage />} />
           <Route path="/clients/:clientId/insights" element={<InsightsPage />} />
+          <Route path="/operator" element={<OperatorPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

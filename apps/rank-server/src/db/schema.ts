@@ -330,3 +330,31 @@ export const providerUsageTable = sqliteTable(
     )
   })
 );
+
+/**
+ * One row per Operator run: the index over the on-disk journal.
+ *
+ * The journal Markdown on disk is the record; this table makes runs listable
+ * and lets a run reference what it found and did without re-reading files. The
+ * escalation payload is JSON so the in-app inbox can render each item.
+ */
+export const operatorRunsTable = sqliteTable(
+  "operator_runs",
+  {
+    id: text("id").primaryKey(),
+    ranAt: text("ran_at").notNull(),
+    /** ok | warn | critical - the worst finding severity this run. */
+    healthLevel: text("health_level").notNull(),
+    findingsCount: integer("findings_count").notNull().default(0),
+    actionsCount: integer("actions_count").notNull().default(0),
+    escalationsCount: integer("escalations_count").notNull().default(0),
+    /** Open escalations needing the operator, as JSON, until acknowledged. */
+    escalations: text("escalations").notNull().default("[]"),
+    acknowledgedAt: text("acknowledged_at"),
+    summary: text("summary").notNull().default(""),
+    journalPath: text("journal_path")
+  },
+  (table) => ({
+    ranAtIdx: index("operator_runs_ran_at_idx").on(table.ranAt)
+  })
+);

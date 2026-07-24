@@ -106,6 +106,11 @@ const configSchema = z.object({
   // Set to "adclear" to email only that client for now.
   EMAIL_CLIENTS: z.string().default(""),
 
+  // The Operator: RankOS's supervised operations brain.
+  OPERATOR_ENABLED: booleanish(true),
+  OPERATOR_AUTONOMY: z.enum(["auto", "recommend"]).default("auto"),
+  OPERATOR_CRON: z.string().default("30 5 * * *"),   // 5:30am daily, before syncs
+
   RANK_INSIGHT_MODEL: z.string().default("claude-opus-4-8"),
   CLAUDE_CLI_BIN: z.string().default("claude"),
   RANK_INSIGHT_TIMEOUT_MS: z.coerce.number().int().positive().default(600_000),
@@ -169,6 +174,9 @@ export const rankConfig = {
   emailFrom: env.EMAIL_FROM || env.SMTP_USER,
   emailTo: env.EMAIL_TO,
   emailClients: env.EMAIL_CLIENTS.split(",").map((slug) => slug.trim().toLowerCase()).filter(Boolean),
+  operatorEnabled: env.OPERATOR_ENABLED,
+  operatorAutonomy: env.OPERATOR_AUTONOMY,
+  operatorCron: env.OPERATOR_CRON,
   serpHeadless: env.SERP_HEADLESS,
   serpMaxPages: env.SERP_MAX_PAGES,
   serpMaxChecksPerDay: env.SERP_MAX_CHECKS_PER_DAY,
