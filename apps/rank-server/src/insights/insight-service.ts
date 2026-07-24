@@ -180,21 +180,33 @@ export class InsightService {
     await writeMarkdownFile(statsPath, renderStatsSection(stats));
 
     try {
-      // The detailed report is the anchor artifact and is generated first.
-      const markdown = await generateInsightMarkdown(prompt, options.signal);
+      // Both forms are independent - they derive from the same stats, neither
+      // needs the other's output - so they run concurrently rather than one
+      // after the other, roughly halving wall-clock time. allSettled keeps the
+      // best-effort brief semantics: the detailed report is the anchor, and a
+      // brief failure must not discard it.
+      const [detailedResult, briefResult] = await Promise.allSettled([
+        generateInsightMarkdown(prompt, options.signal),
+        generateBriefMarkdown(briefPrompt, options.signal)
+      ]);
+
+      if (detailedResult.status === "rejected") {
+        throw detailedResult.reason instanceof Error
+          ? detailedResult.reason
+          : new Error("Insight generation failed.");
+      }
+
+      const markdown = detailedResult.value;
       await writeMarkdownFile(outputPath, markdown);
 
-      // The brief is best-effort: a transient failure on this second call must
-      // not discard a good detailed report. On failure the report is still
-      // completed, the brief is left unwritten, and the note explains why.
       let brief: string | null = null;
       let briefNote: string | null = null;
-      try {
-        brief = await generateBriefMarkdown(briefPrompt, options.signal);
+      if (briefResult.status === "fulfilled") {
+        brief = briefResult.value;
         await writeMarkdownFile(briefPath, brief);
-      } catch (briefError) {
+      } else {
         briefNote = `Detailed report ready; team brief could not be generated: ${
-          briefError instanceof Error ? briefError.message : "unknown error"
+          briefResult.reason instanceof Error ? briefResult.reason.message : "unknown error"
         }`;
       }
 
