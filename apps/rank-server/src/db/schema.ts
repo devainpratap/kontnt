@@ -274,6 +274,10 @@ export const insightsTable = sqliteTable(
     periodEnd: text("period_end").notNull(),
     promptPath: text("prompt_path"),
     outputPath: text("output_path"),
+    // A single report generation produces two artifacts from the same computed
+    // stats: the detailed report (outputPath) and the short WhatsApp brief.
+    // Both are files on disk; this indexes the second one.
+    briefPath: text("brief_path"),
     errorMessage: text("error_message"),
     createdAt: text("created_at").notNull(),
     completedAt: text("completed_at")

@@ -170,23 +170,60 @@ function ReportViewer({ insightId }: { insightId: string }) {
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => navigator.clipboard.writeText(data.markdown ?? "")}
-        >
-          Copy Markdown
-        </Button>
-        <span className="text-[12px] text-ink-500">
-          Saved to <span className="font-mono">{data.record.outputPath}</span>
-        </span>
-      </div>
-      <div className="rounded-[var(--radius-md)] border border-hairline bg-white p-5">
-        <Markdown source={data.markdown} />
+    <div className="grid gap-5">
+      {data.brief ? (
+        <div className="grid gap-2 rounded-[var(--radius-md)] border border-brand-200 bg-brand-50/50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-brand-700">
+              Team brief · WhatsApp
+            </span>
+            <CopyButton text={data.brief} label="Copy for WhatsApp" />
+          </div>
+          {/* Preformatted so line breaks survive exactly as they will paste. */}
+          <pre className="whitespace-pre-wrap break-words font-sans text-[13px] leading-6 text-ink-800">
+            {data.brief}
+          </pre>
+        </div>
+      ) : data.record.errorMessage ? (
+        <p className="rounded-[var(--radius-md)] border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+          {data.record.errorMessage}
+        </p>
+      ) : null}
+
+      <div className="grid gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+            Detailed report
+          </span>
+          <CopyButton text={data.markdown} label="Copy Markdown" />
+          <span className="text-[12px] text-ink-400">
+            Saved to <span className="font-mono">{data.record.outputPath}</span>
+          </span>
+        </div>
+        <div className="rounded-[var(--radius-md)] border border-hairline bg-white p-5">
+          <Markdown source={data.markdown} />
+        </div>
       </div>
     </div>
+  );
+}
+
+/** Copy-to-clipboard with a brief confirmation, since these are meant to be pasted. */
+function CopyButton({ text, label }: { text: string | null; label: string }) {
+  const [copied, setCopied] = useState(false);
+  if (!text) return null;
+  return (
+    <Button
+      size="sm"
+      variant={copied ? "secondary" : "primary"}
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      }}
+    >
+      {copied ? "Copied ✓" : label}
+    </Button>
   );
 }
 

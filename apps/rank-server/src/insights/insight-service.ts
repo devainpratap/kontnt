@@ -13,8 +13,8 @@ import { insightsTable } from "../db/schema";
 import { addDays, latestLikelyDataDate } from "../gsc/date-utils";
 import { getCoverage, getTotals } from "../gsc/queries";
 import { ApiError } from "../lib/api-error";
-import { generateInsightMarkdown } from "./claude-runner";
-import { buildInsightPrompt, renderStatsSection } from "./prompt-builder";
+import { generateBriefMarkdown, generateInsightMarkdown } from "./claude-runner";
+import { buildBriefPrompt, buildInsightPrompt, renderStatsSection } from "./prompt-builder";
 import { getPagePeriod, getQueryPageRows, getQueryPeriod } from "./queries";
 import { buildInsightStats, type InsightStats } from "./stats";
 
@@ -35,6 +35,7 @@ function nowIso() {
 export type GeneratedInsight = {
   record: InsightRecord;
   markdown: string;
+  brief: string | null;
 };
 
 type InsightRow = typeof insightsTable.$inferSelect;
@@ -49,6 +50,7 @@ function toRecord(row: InsightRow): InsightRecord {
     periodEnd: row.periodEnd,
     promptPath: row.promptPath,
     outputPath: row.outputPath,
+    briefPath: row.briefPath,
     errorMessage: row.errorMessage,
     createdAt: row.createdAt,
     completedAt: row.completedAt
@@ -79,6 +81,11 @@ export class InsightService {
   async readInsightMarkdown(insightId: string): Promise<string | null> {
     const record = this.getInsightOrThrow(insightId);
     return record.outputPath ? readTextFile(record.outputPath) : null;
+  }
+
+  async readInsightBrief(insightId: string): Promise<string | null> {
+    const record = this.getInsightOrThrow(insightId);
+    return record.briefPath ? readTextFile(record.briefPath) : null;
   }
 
   /** Compute the statistics for a window without calling the model. */
@@ -137,10 +144,15 @@ export class InsightService {
     const id = randomUUID();
     const slug = `${stats.window.startDate}_to_${stats.window.endDate}`;
     const promptPath = join(paths.promptsDir, `${slug}-insight.md`);
+    const briefPromptPath = join(paths.promptsDir, `${slug}-brief.md`);
     const outputPath = join(paths.insightsDir, `${slug}-report.md`);
+    const briefPath = join(paths.insightsDir, `${slug}-brief.md`);
     const statsPath = join(paths.insightsDir, `${slug}-stats.md`);
 
+    // Both prompts derive from the same computed stats, so the detailed report
+    // and the WhatsApp brief can never disagree on a number.
     const prompt = buildInsightPrompt(client, stats);
+    const briefPrompt = buildBriefPrompt(client, stats);
 
     db.insert(insightsTable)
       .values({
@@ -152,6 +164,7 @@ export class InsightService {
         periodEnd: stats.window.endDate,
         promptPath,
         outputPath: null,
+        briefPath: null,
         errorMessage: null,
         createdAt: nowIso(),
         completedAt: null
@@ -159,22 +172,44 @@ export class InsightService {
       .run();
 
     // Written before the model runs: if Claude is unavailable, the analysis
-    // survives and the prompt can be pasted into claude.ai by hand.
+    // survives and the prompts can be pasted into claude.ai by hand.
     await writeMarkdownFile(promptPath, prompt);
-    // The statistics kept separately, so every claim in the report can be
+    await writeMarkdownFile(briefPromptPath, briefPrompt);
+    // The statistics kept separately, so every claim in either form can be
     // checked against the numbers it was derived from.
     await writeMarkdownFile(statsPath, renderStatsSection(stats));
 
     try {
+      // The detailed report is the anchor artifact and is generated first.
       const markdown = await generateInsightMarkdown(prompt, options.signal);
       await writeMarkdownFile(outputPath, markdown);
 
+      // The brief is best-effort: a transient failure on this second call must
+      // not discard a good detailed report. On failure the report is still
+      // completed, the brief is left unwritten, and the note explains why.
+      let brief: string | null = null;
+      let briefNote: string | null = null;
+      try {
+        brief = await generateBriefMarkdown(briefPrompt, options.signal);
+        await writeMarkdownFile(briefPath, brief);
+      } catch (briefError) {
+        briefNote = `Detailed report ready; team brief could not be generated: ${
+          briefError instanceof Error ? briefError.message : "unknown error"
+        }`;
+      }
+
       db.update(insightsTable)
-        .set({ status: "completed", outputPath, completedAt: nowIso(), errorMessage: null })
+        .set({
+          status: "completed",
+          outputPath,
+          briefPath: brief ? briefPath : null,
+          completedAt: nowIso(),
+          errorMessage: briefNote
+        })
         .where(eq(insightsTable.id, id))
         .run();
 
-      return { record: this.getInsightOrThrow(id), markdown };
+      return { record: this.getInsightOrThrow(id), markdown, brief };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Insight generation failed.";
 

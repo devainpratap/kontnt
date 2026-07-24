@@ -43,6 +43,24 @@ const ANALYST_SYSTEM_PROMPT = [
   "Write plainly for a business owner. Be specific and concrete rather than reassuring."
 ].join(" ");
 
+/**
+ * System prompt for the short WhatsApp brief.
+ *
+ * Distinct from the analyst prompt: the brief's whole value is brevity and a
+ * tone that reads well in a group chat. The one shared non-negotiable is the
+ * same as everywhere else - never a number that is not in the data.
+ */
+const BRIEF_SYSTEM_PROMPT = [
+  "You write short, punchy SEO updates for a team WhatsApp group.",
+  "You are NOT a coding agent: do not use tools, do not read or write files, do not run commands.",
+  "You are given pre-computed statistics. They are correct. Never recalculate them, and never state a",
+  "number that is not in the data you were given.",
+  "Write for WhatsApp: short lines, *single-asterisk* bold, no markdown headings, no tables, no pipe characters.",
+  "Lead with wins. Be precise, direct, and genuinely insightful - not a wall of numbers, not empty cheerleading.",
+  "Never emit em dashes or en dashes; use a plain hyphen with spaces instead.",
+  "Respond with ONLY the message - no preamble, no sign-off, no commentary about your process."
+].join(" ");
+
 function createCappedBuffer(maxBytes: number) {
   let value = "";
   let bytes = 0;
@@ -217,10 +235,9 @@ export async function getClaudeStatus(): Promise<{ available: boolean; message: 
   };
 }
 
-/** Generate a report. Returns the Markdown, or throws with the CLI's reason. */
-export async function generateInsightMarkdown(prompt: string, signal?: AbortSignal): Promise<string> {
+async function runWithSystemPrompt(prompt: string, systemPrompt: string, signal?: AbortSignal): Promise<string> {
   const result = await runClaude(
-    ["-p", "--model", rankConfig.insightModel, "--output-format", "text", "--system-prompt", ANALYST_SYSTEM_PROMPT],
+    ["-p", "--model", rankConfig.insightModel, "--output-format", "text", "--system-prompt", systemPrompt],
     { stdin: prompt, signal, timeoutMs: rankConfig.insightTimeoutMs }
   );
 
@@ -239,4 +256,14 @@ export async function generateInsightMarkdown(prompt: string, signal?: AbortSign
   }
 
   return stripEnclosingFence(text);
+}
+
+/** Generate the detailed report. Returns the Markdown, or throws with the CLI's reason. */
+export async function generateInsightMarkdown(prompt: string, signal?: AbortSignal): Promise<string> {
+  return runWithSystemPrompt(prompt, ANALYST_SYSTEM_PROMPT, signal);
+}
+
+/** Generate the short WhatsApp brief. */
+export async function generateBriefMarkdown(prompt: string, signal?: AbortSignal): Promise<string> {
+  return runWithSystemPrompt(prompt, BRIEF_SYSTEM_PROMPT, signal);
 }

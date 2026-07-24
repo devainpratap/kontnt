@@ -15,6 +15,13 @@
       "when": 1784863824885,
       "tag": "0001_living_reaper",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784866609244,
+      "tag": "0002_pale_guardsmen",
+      "breakpoints": true
     }
   ]
 }

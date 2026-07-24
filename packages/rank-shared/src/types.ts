@@ -111,6 +111,8 @@ export type InsightRecord = {
   periodEnd: string;
   promptPath: string | null;
   outputPath: string | null;
+  /** The short WhatsApp brief, produced from the same stats as outputPath. */
+  briefPath: string | null;
   errorMessage: string | null;
   createdAt: string;
   completedAt: string | null;
@@ -311,6 +313,7 @@ export type SerpCheckAck = {
 export type InsightDetail = {
   record: InsightRecord;
   markdown: string | null;
+  brief: string | null;
 };
 
 export type ClaudeStatus = { available: boolean; message: string };

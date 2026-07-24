@@ -534,7 +534,8 @@ export async function registerRankRoutes(app: FastifyInstance) {
     const { insightId } = request.params as { insightId: string };
     return {
       record: insights.getInsightOrThrow(insightId),
-      markdown: await insights.readInsightMarkdown(insightId)
+      markdown: await insights.readInsightMarkdown(insightId),
+      brief: await insights.readInsightBrief(insightId)
     };
   });
 

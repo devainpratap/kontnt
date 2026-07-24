@@ -138,6 +138,54 @@ export function renderStatsSection(stats: InsightStats): string {
 }
 
 /**
+ * The short WhatsApp brief prompt.
+ *
+ * Same statistics as the detailed report - so the two forms can never disagree
+ * on a number - but a completely different shape: a message someone pastes into
+ * a team group and reads in fifteen seconds. Wins first, because that is what
+ * the operator asked for and what keeps a group channel worth reading.
+ *
+ * The formatting rules are WhatsApp-specific (single-asterisk bold, no tables,
+ * no markdown headings) because those are what render in the destination. A
+ * report that arrives full of broken `|` table pipes is worse than no report.
+ */
+export function buildBriefPrompt(client: ClientRecord, stats: InsightStats): string {
+  return [
+    `Write a short WhatsApp update for the team group about **${client.name}**'s SEO this week.`,
+    "",
+    "Here are the pre-computed statistics. They are correct. Interpret them; do not recalculate.",
+    "",
+    "---",
+    "",
+    renderStatsSection(stats),
+    "",
+    "---",
+    "",
+    "## What to write",
+    "",
+    "A single WhatsApp message, 120 to 180 words, that a team lead reads in fifteen seconds. Structure:",
+    "",
+    `1. One opening line naming the client and the period, e.g. *${client.name} - SEO this week*.`,
+    "2. Lead with the wins: the two or three biggest genuine improvements, with the actual numbers.",
+    "3. Then, briefly, the one thing that needs attention - a single line, not a list.",
+    "4. End with the single most useful action for the week.",
+    "",
+    "## Rules",
+    "",
+    "- This is WhatsApp, not a document. Use *single asterisks* for bold. No markdown headings (#), no tables, no pipes.",
+    "- Short lines. A blank line between sections. A little emoji is fine (one per section at most) but do not overdo it.",
+    "- Use only the numbers in the statistics above. Do not calculate anything new. If it is not in the data, do not say it.",
+    "- Lead with what improved. Keep the problem to one line so the message stays upbeat and forward-looking.",
+    "- Plain language a non-specialist teammate understands. No jargon.",
+    "- Never use em dashes or en dashes; use a plain hyphen with spaces.",
+    "- Output only the message. No preamble, no explanation of what you wrote, no sign-off.",
+    ...(client.brandTerms.length > 0
+      ? [`- Branded searches (${client.brandTerms.join(", ")}) are excluded from opportunities; do not present them as SEO wins.`]
+      : [])
+  ].join("\n");
+}
+
+/**
  * The full prompt.
  *
  * The constraints are stated as flat prohibitions rather than preferences,
