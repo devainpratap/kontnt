@@ -67,6 +67,12 @@ const configSchema = z.object({
   // browser driver, which Google actively challenges.
   SERP_API_DELAY_MS: z.coerce.number().int().nonnegative().default(1000),
 
+  // How many times to re-check each keyword and reconcile by majority. 1 = off
+  // (one request per check). Set to 3 to smooth proxy-rotation noise, at 3x the
+  // credit cost. On disagreement the result is stored as unknown, never guessed.
+  SERP_CONSENSUS_RUNS: z.coerce.number().int().min(1).max(9).default(1),
+  SERP_CONSENSUS_DELAY_MS: z.coerce.number().int().nonnegative().default(2000),
+
   RANK_INSIGHT_MODEL: z.string().default("claude-opus-4-8"),
   CLAUDE_CLI_BIN: z.string().default("claude"),
   RANK_INSIGHT_TIMEOUT_MS: z.coerce.number().int().positive().default(600_000),
@@ -112,6 +118,8 @@ export const rankConfig = {
   serpProvider: env.SERP_PROVIDER,
   serpProviderChain: env.SERP_PROVIDER_CHAIN.split(",").map((n) => n.trim()).filter(Boolean),
   serpApiDelayMs: env.SERP_API_DELAY_MS,
+  serpConsensusRuns: env.SERP_CONSENSUS_RUNS,
+  serpConsensusDelayMs: env.SERP_CONSENSUS_DELAY_MS,
   serpHeadless: env.SERP_HEADLESS,
   serpMaxPages: env.SERP_MAX_PAGES,
   serpMaxChecksPerDay: env.SERP_MAX_CHECKS_PER_DAY,

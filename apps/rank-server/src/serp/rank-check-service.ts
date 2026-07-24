@@ -12,6 +12,7 @@ import { rankConfig } from "../config";
 import { db } from "../db/client";
 import { rankChecksTable, serpFeaturesTable, serpResultsTable, syncRunsTable } from "../db/schema";
 import { todayInGscZone } from "../gsc/date-utils";
+import { resolveConsensus, type Reading } from "./consensus";
 import { findClientPosition } from "./parser";
 import { serpProvider } from "./provider";
 import type { ChainResult } from "./provider-chain";
@@ -73,24 +74,30 @@ export class RankCheckService {
     keyword: KeywordRecord,
     clientDomain: string,
     clientPath: string,
-    fetched: SerpFetchResult
+    /** The attempt whose full SERP (top-N, features, raw) is stored. */
+    representative: SerpFetchResult,
+    /**
+     * The reconciled outcome. For a single check this is just that check's
+     * resolution; for a consensus check it is the agreed answer across attempts.
+     * Passing it in keeps persist() ignorant of how the outcome was decided.
+     */
+    resolved: {
+      status: RankCheckStatus;
+      position: number | null;
+      rankingUrl: string | null;
+      source: string;
+      errorMessage: string | null;
+    }
   ): Promise<CheckOutcome> {
-    // When the failover chain answered, attribute the check to the provider
-    // that actually served it rather than to "chain" — a keyword's history must
-    // stay honest about where each reading came from as the chain shifts.
-    const sourceName = (fetched as ChainResult).usedProvider ?? serpProvider.name;
+    const sourceName = resolved.source;
     const checkedAt = nowIso();
     const checkedDate = todayInGscZone();
     const previousPosition = this.lastKnownPosition(keyword.id);
 
-    const match = fetched.status === "ok" ? findClientPosition(fetched.results, clientDomain) : null;
+    const status = resolved.status;
+    const match = resolved.position !== null ? { position: resolved.position, url: resolved.rankingUrl } : null;
 
-    // "ok" from the provider means the page was read. Whether the client is in
-    // it decides between ok and not-found; neither is an error.
-    const status: RankCheckStatus =
-      fetched.status === "ok" ? (match ? "ok" : "not-found") : fetched.status;
-
-    const rawPath = await this.writeSnapshot(clientPath, keyword, checkedAt, fetched, sourceName);
+    const rawPath = await this.writeSnapshot(clientPath, keyword, checkedAt, representative, sourceName);
 
     const checkId = randomUUID();
 
@@ -108,7 +115,7 @@ export class RankCheckService {
           rankingUrl: match ? match.url : null,
           previousPosition,
           rawPath,
-          errorMessage: fetched.errorMessage
+          errorMessage: resolved.errorMessage
         })
         .onConflictDoUpdate({
           target: [rankChecksTable.keywordId, rankChecksTable.checkedDate, rankChecksTable.source],
@@ -119,7 +126,7 @@ export class RankCheckService {
             rankingUrl: match ? match.url : null,
             previousPosition,
             rawPath,
-            errorMessage: fetched.errorMessage
+            errorMessage: resolved.errorMessage
           }
         })
         .run();
@@ -144,7 +151,7 @@ export class RankCheckService {
 
       // The full top-N is stored on every successful check, which is what makes
       // competitor tracking free — the page was already fetched.
-      const top = fetched.results.slice(0, STORED_RESULT_COUNT);
+      const top = representative.results.slice(0, STORED_RESULT_COUNT);
       if (top.length > 0) {
         tx.insert(serpResultsTable)
           .values(
@@ -161,10 +168,10 @@ export class RankCheckService {
           .run();
       }
 
-      if (fetched.features.length > 0) {
+      if (representative.features.length > 0) {
         tx.insert(serpFeaturesTable)
           .values(
-            fetched.features.map((feature) => ({
+            representative.features.map((feature) => ({
               id: randomUUID(),
               rankCheckId: storedId,
               feature,
@@ -182,7 +189,7 @@ export class RankCheckService {
       position: match ? match.position : null,
       previousPosition,
       rankingUrl: match ? match.url : null,
-      errorMessage: fetched.errorMessage
+      errorMessage: resolved.errorMessage
     };
   }
 
@@ -225,10 +232,12 @@ export class RankCheckService {
     }
   }
 
-  /** Fetch and store one keyword. */
-  async checkKeyword(keyword: KeywordRecord, signal?: AbortSignal): Promise<CheckOutcome> {
-    const client = this.clients.getClientOrThrow(keyword.clientId);
-
+  /** One fetch, resolved into a single reading against the client domain. */
+  private async fetchOne(
+    keyword: KeywordRecord,
+    clientDomain: string,
+    signal?: AbortSignal
+  ): Promise<{ fetched: SerpFetchResult; reading: Reading }> {
     const fetched = await serpProvider.fetch(
       {
         keyword: keyword.phrase,
@@ -236,12 +245,108 @@ export class RankCheckService {
         device: keyword.device,
         location: keyword.location,
         // Stop paginating once the client is located.
-        stopWhenDomainFound: client.primaryDomain
+        stopWhenDomainFound: clientDomain
       },
       signal
     );
 
-    return this.persist(keyword, client.primaryDomain, client.clientPath, fetched);
+    const source = (fetched as ChainResult).usedProvider ?? serpProvider.name;
+    const match = fetched.status === "ok" ? findClientPosition(fetched.results, clientDomain) : null;
+    // "ok" from the provider means the page was read; whether the client is in
+    // it decides ok vs not-found.
+    const readingStatus = fetched.status === "ok" ? (match ? "ok" : "not-found") : fetched.status;
+
+    return {
+      fetched,
+      reading: { status: readingStatus, position: match ? match.position : null, source }
+    };
+  }
+
+  /**
+   * Fetch and store one keyword.
+   *
+   * When SERP_CONSENSUS_RUNS > 1 the keyword is fetched several times and the
+   * majority answer is stored, so proxy-rotation noise (measured live as a
+   * 10/6/10 wobble on the same keyword) is smoothed away. On genuine
+   * disagreement the outcome is `blocked` - unknown, never a guessed position.
+   *
+   * A single run (the default) behaves exactly as before: one fetch, one
+   * reading, stored directly.
+   */
+  async checkKeyword(
+    keyword: KeywordRecord,
+    signal?: AbortSignal,
+    runsOverride?: number
+  ): Promise<CheckOutcome> {
+    const client = this.clients.getClientOrThrow(keyword.clientId);
+    const runs = Math.max(1, runsOverride ?? rankConfig.serpConsensusRuns);
+
+    const attempts: Array<{ fetched: SerpFetchResult; reading: Reading }> = [];
+
+    for (let attempt = 0; attempt < runs; attempt += 1) {
+      if (signal?.aborted) {
+        break;
+      }
+      attempts.push(await this.fetchOne(keyword, client.primaryDomain, signal));
+
+      // A short gap between consensus attempts so they are more likely to
+      // sample different proxies - back-to-back requests can hit the same one
+      // and defeat the point.
+      if (attempt < runs - 1 && !signal?.aborted) {
+        await new Promise((resolve) => setTimeout(resolve, rankConfig.serpConsensusDelayMs));
+      }
+    }
+
+    const consensus = resolveConsensus(attempts.map((a) => a.reading));
+
+    // Store the SERP from the attempt nearest the agreed position, so the saved
+    // top-10 matches the reading we kept.
+    const representative =
+      attempts.find(
+        (a) => a.reading.status === consensus.status && a.reading.position === consensus.position
+      )?.fetched ??
+      attempts.find((a) => a.reading.status === "ok")?.fetched ??
+      attempts[attempts.length - 1]?.fetched;
+
+    if (!representative) {
+      // Cancelled before any attempt ran.
+      return {
+        keywordId: keyword.id,
+        phrase: keyword.phrase,
+        status: "error",
+        position: null,
+        previousPosition: this.lastKnownPosition(keyword.id),
+        rankingUrl: null,
+        errorMessage: "Cancelled before any check ran."
+      };
+    }
+
+    // The ranking URL comes from the representative attempt at the agreed
+    // position, so it matches the stored top-10.
+    const rankingUrl =
+      consensus.status === "ok" && representative.status === "ok"
+        ? findClientPosition(representative.results, client.primaryDomain)?.url ?? null
+        : null;
+
+    // When consensus was applied, note the agreement so a low-confidence
+    // reading is inspectable rather than silent.
+    const consensusNote =
+      runs > 1
+        ? `Consensus of ${consensus.agreement.attempts}: ${consensus.agreement.okCount} ok, ` +
+          `${consensus.agreement.notFoundCount} not-found, ${consensus.agreement.unknownCount} unknown` +
+          (consensus.agreement.spread > 0 ? ` (spread ${consensus.agreement.spread})` : "")
+        : null;
+
+    return this.persist(keyword, client.primaryDomain, client.clientPath, representative, {
+      status: consensus.status,
+      position: consensus.position,
+      rankingUrl,
+      source: consensus.source ?? (representative as ChainResult).usedProvider ?? serpProvider.name,
+      errorMessage:
+        consensus.status === "ok" || consensus.status === "not-found"
+          ? consensusNote
+          : representative.errorMessage ?? consensusNote
+    });
   }
 
   startRun(clientId: string): string {
