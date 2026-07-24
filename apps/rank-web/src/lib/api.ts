@@ -11,6 +11,7 @@ import type {
   ImportKeywordsResult,
   KeywordRecord,
   AlertWithContext,
+  EmailStatus,
   ClaudeStatus,
   CompetitorDomain,
   InsightDetail,
@@ -123,5 +124,9 @@ export const api = {
 
   getScheduler: () => request<SchedulerState>("/api/scheduler"),
   runScheduledTask: (task: string) =>
-    request<{ status: string; task: string }>(`/api/scheduler/run/${task}`, { method: "POST" })
+    request<{ status: string; task: string }>(`/api/scheduler/run/${task}`, { method: "POST" }),
+
+  getEmailStatus: () => request<EmailStatus>("/api/notify/email"),
+  verifyEmail: () => request<{ ok: boolean; message: string }>("/api/notify/email/verify", { method: "POST" }),
+  sendTestEmail: () => request<{ ok: boolean; messageId: string }>("/api/notify/email/test", { method: "POST" })
 };

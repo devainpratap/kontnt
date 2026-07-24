@@ -44,7 +44,8 @@ Fixed unless the user explicitly changes them:
   copied, not imported, so RankOS work can never break ContentOS
 - all statistics are computed deterministically in TypeScript; Claude only
   narrates a pre-computed table and never sees raw rows
-- no email/SMTP, no PDF generation, no backlink data, no site auditing in v1
+- email delivery of the weekly report IS in scope (added at user request); no PDF
+  generation, no backlink data, no site auditing in v1
 
 ## Correctness Rules (non-negotiable)
 

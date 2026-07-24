@@ -28,6 +28,7 @@ import { InsightService } from "./insights/insight-service";
 import { AlertRepository } from "./alerts/repository";
 import { describeAlert } from "./alerts/rules";
 import { getSchedulerState, runTaskNow } from "./scheduler/scheduler";
+import { emailStatus, sendTestEmail, verifyEmail } from "./notify/email";
 import { rankConfig } from "./config";
 import { listSites } from "./gsc/api-client";
 import { addDays, latestLikelyDataDate, todayInGscZone } from "./gsc/date-utils";
@@ -582,6 +583,22 @@ export async function registerRankRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------- scheduler
 
   app.get("/api/scheduler", async () => getSchedulerState());
+
+  // ------------------------------------------------------------------ email
+
+  app.get("/api/notify/email", async () => emailStatus());
+
+  app.post("/api/notify/email/verify", async () => verifyEmail());
+
+  /** Send a real test email now, so delivery can be confirmed before Monday. */
+  app.post("/api/notify/email/test", async (_request, reply) => {
+    try {
+      const result = await sendTestEmail();
+      return { ok: true, messageId: result.messageId };
+    } catch (error) {
+      return reply.code(400).send({ error: error instanceof Error ? error.message : "Test email failed." });
+    }
+  });
 
   /** Manual "run now" for any scheduled task, for testing and on-demand runs. */
   app.post("/api/scheduler/run/:task", async (request, reply) => {

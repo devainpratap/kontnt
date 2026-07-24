@@ -23,6 +23,7 @@ export function SettingsPage() {
   const settings = useQuery({ queryKey: ["settings"], queryFn: api.getSettings });
   const status = useQuery({ queryKey: ["google-status"], queryFn: api.getGoogleStatus });
   const scheduler = useQuery({ queryKey: ["scheduler"], queryFn: api.getScheduler });
+  const email = useQuery({ queryKey: ["email-status"], queryFn: api.getEmailStatus });
 
   // Returning from the OAuth round trip: refresh state, then drop the query
   // params so a reload does not replay the banner.
@@ -51,6 +52,8 @@ export function SettingsPage() {
       await queryClient.invalidateQueries({ queryKey: ["settings"] });
     }
   });
+
+  const sendTest = useMutation({ mutationFn: api.sendTestEmail });
 
   const google = status.data;
 
@@ -199,6 +202,45 @@ export function SettingsPage() {
               is up. Missed Search Console days are backfilled automatically on the next start; missed live rank checks
               are not recoverable, so a keyword simply shows its true last-checked age.
             </p>
+          </div>
+        ) : null}
+      </Surface>
+
+      <Surface>
+        <SurfaceHeader
+          eyebrow="Automation"
+          title="Weekly report email"
+          description="The detailed report and the copy-ready WhatsApp brief are emailed to you when the weekly report runs. Forward the brief to your team group."
+          aside={
+            email.data ? (
+              <StatusPill tone={email.data.enabled && email.data.configured ? "good" : "warn"}>
+                {email.data.enabled && email.data.configured ? "On" : "Off"}
+              </StatusPill>
+            ) : null
+          }
+        />
+        {email.data ? (
+          <div className="grid gap-3">
+            <p className="text-[13px] text-ink-600">{email.data.message}</p>
+            {email.data.configured ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  loading={sendTest.isPending}
+                  onClick={() => sendTest.mutate()}
+                >
+                  Send a test email now
+                </Button>
+                {sendTest.isSuccess ? <StatusPill tone="good">Sent - check your inbox</StatusPill> : null}
+                {sendTest.isError ? (
+                  <span className="text-[13px] text-rose-700">{(sendTest.error as Error).message}</span>
+                ) : null}
+              </div>
+            ) : (
+              <p className="rounded-[var(--radius-md)] border border-hairline bg-ink-50 px-3 py-2 font-mono text-[12px] leading-5 text-ink-600">
+                Set in .env: EMAIL_ENABLED=true, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_TO
+              </p>
+            )}
           </div>
         ) : null}
       </Surface>

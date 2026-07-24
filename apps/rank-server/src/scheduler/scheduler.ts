@@ -11,6 +11,7 @@ import { InsightService } from "../insights/insight-service";
 import { getKeywordsWithLastCheck } from "../serp/queries";
 import { runCheckBatch, selectDueKeywords } from "../serp/queue";
 import { RankCheckService } from "../serp/rank-check-service";
+import { isEmailConfigured, sendReportEmail } from "../notify/email";
 
 /**
  * The scheduler turns RankOS from a tool you operate into a system that
@@ -136,12 +137,37 @@ async function runSerpDue(): Promise<void> {
 async function runWeeklyReports(): Promise<void> {
   let made = 0;
   let skipped = 0;
+  let emailed = 0;
 
   for (const client of activeClients()) {
     const started = runLock.start(client.id, "insight", async () => {
       try {
-        await insights.generate(client.id, { days: 7, kind: "weekly-report" });
+        const result = await insights.generate(client.id, { days: 7, kind: "weekly-report" });
         made += 1;
+
+        // Deliver by email as the final step, so "fixed repetitive time" is
+        // simply the report cron. Best-effort: an email failure must not fail
+        // the generation - the report is already saved to disk. The allowlist
+        // (EMAIL_CLIENTS) scopes which clients are emailed; empty means all.
+        const emailThisClient =
+          rankConfig.emailClients.length === 0 || rankConfig.emailClients.includes(client.slug.toLowerCase());
+        if (rankConfig.emailEnabled && isEmailConfigured() && emailThisClient) {
+          try {
+            await sendReportEmail({
+              clientName: client.name,
+              period: `${result.record.periodStart} to ${result.record.periodEnd}`,
+              reportMarkdown: result.markdown,
+              brief: result.brief,
+              attachments: [
+                { filename: "report.md", content: result.markdown },
+                ...(result.brief ? [{ filename: "whatsapp-brief.md", content: result.brief }] : [])
+              ]
+            });
+            emailed += 1;
+          } catch (emailError) {
+            console.error(`[scheduler] report email failed for ${client.name}:`, emailError instanceof Error ? emailError.message : emailError);
+          }
+        }
       } catch {
         // No data, or Claude unavailable - the prompt is saved for manual use.
         skipped += 1;
@@ -152,7 +178,7 @@ async function runWeeklyReports(): Promise<void> {
     }
   }
 
-  record("weekly-reports", `${made} generated, ${skipped} skipped`);
+  record("weekly-reports", `${made} generated, ${skipped} skipped, ${emailed} emailed`);
 }
 
 /**

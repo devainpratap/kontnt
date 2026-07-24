@@ -7,7 +7,11 @@
       "Bash(node --env-file=.env --import tsx -e ' *)",
       "Bash(node -e \"const D=require\\('better-sqlite3'\\);const db=new D\\('data/rank.sqlite',{readonly:true}\\);db.prepare\\('SELECT provider,used FROM provider_usage'\\).all\\(\\).forEach\\(r=>console.log\\('  '+r.provider+': '+r.used\\)\\)\")",
       "Bash(curl -s http://127.0.0.1:3102/api/insights/status)",
-      "Bash(cd /Users/devain/Downloads/Content_Generation *)"
+      "Bash(cd /Users/devain/Downloads/Content_Generation *)",
+      "Bash(open -a \"Visual Studio Code\" .env)",
+      "Bash(open .env)",
+      "Bash(curl -s -X POST http://127.0.0.1:3102/api/notify/email/test)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const r=JSON.parse\\(d\\);if\\(r.ok\\){console.log\\('  SENT ✓  messageId:',r.messageId\\)}else{console.log\\('  FAILED:',r.error\\)}}\\)\")"
     ],
     "additionalDirectories": [
       "/Users/devain/Downloads/Content_Generation/apps/rank-server/src/clients"

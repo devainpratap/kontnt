@@ -338,3 +338,13 @@ export type SchedulerState = {
   tasks: SchedulerTaskState[];
   lastRuns: Record<string, { at: string; summary: string }>;
 };
+
+
+// ------------------------------------------------------------------- email
+
+export type EmailStatus = {
+  enabled: boolean;
+  configured: boolean;
+  to: string | null;
+  message: string;
+};

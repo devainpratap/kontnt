@@ -90,6 +90,22 @@ const configSchema = z.object({
   SCHEDULER_SERP_CRON: z.string().default("0 3 * * *"),     // 3am daily (due keywords only)
   SCHEDULER_REPORT_CRON: z.string().default("0 8 * * 1"),   // 8am Monday
 
+  // Email delivery of the weekly report + WhatsApp brief. Sent as the final
+  // step of the weekly-reports scheduler task, so "fixed repetitive time" =
+  // SCHEDULER_REPORT_CRON. Any SMTP works (Gmail/Workspace app password, or a
+  // transactional service's SMTP endpoint).
+  EMAIL_ENABLED: booleanish(false),
+  SMTP_HOST: z.string().default(""),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: booleanish(false),
+  SMTP_USER: z.string().default(""),
+  SMTP_PASS: z.string().default(""),
+  EMAIL_FROM: z.string().default(""),
+  EMAIL_TO: z.string().default(""),
+  // Comma-separated client slugs to email. Empty = every active client.
+  // Set to "adclear" to email only that client for now.
+  EMAIL_CLIENTS: z.string().default(""),
+
   RANK_INSIGHT_MODEL: z.string().default("claude-opus-4-8"),
   CLAUDE_CLI_BIN: z.string().default("claude"),
   RANK_INSIGHT_TIMEOUT_MS: z.coerce.number().int().positive().default(600_000),
@@ -144,6 +160,15 @@ export const rankConfig = {
   schedulerGscCron: env.SCHEDULER_GSC_CRON,
   schedulerSerpCron: env.SCHEDULER_SERP_CRON,
   schedulerReportCron: env.SCHEDULER_REPORT_CRON,
+  emailEnabled: env.EMAIL_ENABLED,
+  smtpHost: env.SMTP_HOST,
+  smtpPort: env.SMTP_PORT,
+  smtpSecure: env.SMTP_SECURE,
+  smtpUser: env.SMTP_USER,
+  smtpPass: env.SMTP_PASS.replace(/\s/g, ""),
+  emailFrom: env.EMAIL_FROM || env.SMTP_USER,
+  emailTo: env.EMAIL_TO,
+  emailClients: env.EMAIL_CLIENTS.split(",").map((slug) => slug.trim().toLowerCase()).filter(Boolean),
   serpHeadless: env.SERP_HEADLESS,
   serpMaxPages: env.SERP_MAX_PAGES,
   serpMaxChecksPerDay: env.SERP_MAX_CHECKS_PER_DAY,
