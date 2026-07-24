@@ -5,7 +5,12 @@
       "Bash(npm install *)",
       "Bash(node --import tsx --test apps/rank-server/src/serp/queue.test.ts)",
       "Bash(node --env-file=.env --import tsx -e ' *)",
-      "Bash(node -e \"const D=require\\('better-sqlite3'\\);const db=new D\\('data/rank.sqlite',{readonly:true}\\);db.prepare\\('SELECT provider,used FROM provider_usage'\\).all\\(\\).forEach\\(r=>console.log\\('  '+r.provider+': '+r.used\\)\\)\")"
+      "Bash(node -e \"const D=require\\('better-sqlite3'\\);const db=new D\\('data/rank.sqlite',{readonly:true}\\);db.prepare\\('SELECT provider,used FROM provider_usage'\\).all\\(\\).forEach\\(r=>console.log\\('  '+r.provider+': '+r.used\\)\\)\")",
+      "Bash(curl -s http://127.0.0.1:3102/api/insights/status)",
+      "Bash(cd /Users/devain/Downloads/Content_Generation *)"
+    ],
+    "additionalDirectories": [
+      "/Users/devain/Downloads/Content_Generation/apps/rank-server/src/clients"
     ]
   }
 }

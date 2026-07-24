@@ -60,6 +60,40 @@ function toRecord(row: InsightRow): InsightRecord {
 export class InsightService {
   constructor(private readonly clients = new ClientRepository()) {}
 
+  /**
+   * Boot-time cleanup for reports left "running" when the server died mid-
+   * generation (a crash, or a restart during the minute a report takes).
+   *
+   * Such a row would otherwise stay "running" forever, and the UI polls it and
+   * keeps the generate button stuck in a loading state indefinitely. The
+   * prompt was written to disk before generation, so the analysis is not lost -
+   * but the row is marked "failed" (regenerating is one click) rather than
+   * pretending it is still in progress. Mirrors reconcileInterruptedRuns() for
+   * sync runs. Returns the count reconciled.
+   */
+  reconcileInterruptedInsights(): number {
+    const interrupted = db
+      .select({ id: insightsTable.id })
+      .from(insightsTable)
+      .where(eq(insightsTable.status, "running"))
+      .all();
+
+    if (interrupted.length === 0) {
+      return 0;
+    }
+
+    db.update(insightsTable)
+      .set({
+        status: "failed",
+        errorMessage: "Interrupted by a server restart. Generate the report again.",
+        completedAt: nowIso()
+      })
+      .where(eq(insightsTable.status, "running"))
+      .run();
+
+    return interrupted.length;
+  }
+
   listInsights(clientId: string): InsightRecord[] {
     return db
       .select()

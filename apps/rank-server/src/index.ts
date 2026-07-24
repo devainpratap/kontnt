@@ -2,6 +2,7 @@ import { createRankServer } from "./app";
 import { ClientRepository } from "./clients/repository";
 import { ensureRankDirs, rankConfig } from "./config";
 import { initializeRankDatabase } from "./db/client";
+import { InsightService } from "./insights/insight-service";
 import { backfillOnBoot, startScheduler } from "./scheduler/scheduler";
 
 async function main() {
@@ -13,6 +14,13 @@ async function main() {
   const reconciled = new ClientRepository().reconcileInterruptedRuns();
   if (reconciled > 0) {
     console.warn(`Reconciled ${reconciled} interrupted sync run(s) after restart`);
+  }
+
+  // Same for reports interrupted mid-generation - otherwise a stuck "running"
+  // insight makes the UI poll forever and keeps the generate button spinning.
+  const reconciledInsights = new InsightService().reconcileInterruptedInsights();
+  if (reconciledInsights > 0) {
+    console.warn(`Reconciled ${reconciledInsights} interrupted report(s) after restart`);
   }
 
   const app = await createRankServer();
