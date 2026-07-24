@@ -1,0 +1,30 @@
+{
+  "name": "@rankos/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env --import tsx src/index.ts",
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test src/*.test.ts src/*/*.test.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@fastify/static": "^8.0.4",
+    "@rankos/shared": "file:../../packages/rank-shared",
+    "better-sqlite3": "^13.0.1",
+    "cheerio": "^1.2.0",
+    "drizzle-orm": "^0.43.1",
+    "fastify": "^5.2.1",
+    "playwright-core": "^1.61.1",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.15.3",
+    "drizzle-kit": "^0.31.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

@@ -17,3 +17,10 @@ data/*
 
 jobs/*
 !jobs/.gitkeep
+
+clients/*
+!clients/.gitkeep
+
+# Runtime export artifacts (bundles, zips) — not source.
+exports/
+browser-profile/

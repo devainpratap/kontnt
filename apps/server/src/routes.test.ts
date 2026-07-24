@@ -207,9 +207,12 @@ describe("core job routes", () => {
     assert.equal(encodedResponse.statusCode, 404);
     assert.equal(encodedResponse.json().error, "Handoff not found.");
 
+    // Unencoded traversal is collapsed by URL normalisation before the request
+    // reaches Fastify, so the server sees a plain (unknown) file type rather
+    // than a handoff. Either way it must 404 without touching the filesystem.
     const plainResponse = await app.inject(`/api/jobs/${job.id}/files/handoff:../../foo`);
     assert.equal(plainResponse.statusCode, 404);
-    assert.equal(plainResponse.json().error, "Handoff not found.");
+    assert.equal(plainResponse.json().error, "Unsupported file type.");
   });
 
   it("serves valid handoff files by workflow step name", async () => {
