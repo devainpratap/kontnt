@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  MIN_REPORTABLE_IMPRESSIONS,
   buildMovements,
   pickCannibalisation,
   pickDecayingPages,
@@ -96,12 +97,37 @@ describe("pickWinners / pickLosers", () => {
     });
     assert.equal(pickWinners(many, 5).length, 5);
   });
+
+  it("excludes a fluke-volume win below the noise floor", () => {
+    // The motivating real case: "real estate digital marketing agency" had 4
+    // impressions and 1 click at position 1.0. That is stray, personalised
+    // noise, not a ranking, and must not be reported as a win.
+    const movements = buildMovements({
+      current: [q("fluke", 1, 4, 1), q("real win", 5, 400, 6)],
+      previous: [q("fluke", 0, 0, 0), q("real win", 1, 380, 8)]
+    });
+
+    const winners = pickWinners(movements);
+    assert.deepEqual(winners.map((w) => w.query), ["real win"]);
+    assert.ok(MIN_REPORTABLE_IMPRESSIONS > 4);
+  });
 });
 
 describe("pickNewQueries", () => {
   it("finds queries with no prior impressions at all", () => {
     const movements = buildMovements({ current: [q("fresh", 8, 200, 6)], previous: [] });
     assert.deepEqual(pickNewQueries(movements).map((m) => m.query), ["fresh"]);
+  });
+
+  it("excludes a genuinely new query that only had a handful of impressions", () => {
+    // Same fluke, via the new-query path: 4 impressions is not a new ranking.
+    const movements = buildMovements({ current: [q("real estate dma", 1, 4, 1)], previous: [] });
+    assert.deepEqual(pickNewQueries(movements), []);
+  });
+
+  it("keeps a genuinely new query with real impression volume", () => {
+    const movements = buildMovements({ current: [q("education dma", 4, 260, 12)], previous: [] });
+    assert.deepEqual(pickNewQueries(movements).map((m) => m.query), ["education dma"]);
   });
 
   it("excludes a query that had impressions before and merely started converting", () => {

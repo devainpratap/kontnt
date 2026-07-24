@@ -165,18 +165,31 @@ export function buildMovements(pair: PeriodPair): Movement[] {
   return movements;
 }
 
-/** Biggest click gains, largest first. Only genuine gains qualify. */
-export function pickWinners(movements: Movement[], limit = 10): Movement[] {
+/**
+ * Minimum impressions for a query to be reportable as a win or a loss.
+ *
+ * Below this, a movement is noise, not a result. Real example that motivated
+ * the floor: a query with 4 impressions in a month and 1 click landed at
+ * "position 1.0" and was reported as a new win - but 4 impressions is a handful
+ * of stray, personalised appearances, not a ranking. Reporting it as an
+ * achievement misleads the client, so trivial-volume queries are filtered out
+ * of the movement lists entirely. The full data still lives in the stats file
+ * for anyone who wants it.
+ */
+export const MIN_REPORTABLE_IMPRESSIONS = 10;
+
+/** Biggest click gains, largest first. Sub-threshold blips are excluded. */
+export function pickWinners(movements: Movement[], limit = 10, minImpressions = MIN_REPORTABLE_IMPRESSIONS): Movement[] {
   return movements
-    .filter((movement) => movement.clickDelta > 0)
+    .filter((movement) => movement.clickDelta > 0 && movement.impressions >= minImpressions)
     .sort((a, b) => b.clickDelta - a.clickDelta)
     .slice(0, limit);
 }
 
-/** Biggest click losses, largest first. */
-export function pickLosers(movements: Movement[], limit = 10): Movement[] {
+/** Biggest click losses, largest first. A query must have had real volume to "lose". */
+export function pickLosers(movements: Movement[], limit = 10, minImpressions = MIN_REPORTABLE_IMPRESSIONS): Movement[] {
   return movements
-    .filter((movement) => movement.clickDelta < 0)
+    .filter((movement) => movement.clickDelta < 0 && movement.previousImpressions >= minImpressions)
     .sort((a, b) => a.clickDelta - b.clickDelta)
     .slice(0, limit);
 }
@@ -184,21 +197,31 @@ export function pickLosers(movements: Movement[], limit = 10): Movement[] {
 /**
  * Queries earning clicks now that earned none before.
  *
- * Requires prior impressions to be zero too — a query that had impressions but
- * no clicks is not "new", it just started converting, which is a different
- * story.
+ * Requires prior impressions to be zero (genuinely new, not just newly
+ * converting) AND enough current impressions to be a real pattern rather than a
+ * few fluke appearances - see MIN_REPORTABLE_IMPRESSIONS.
  */
-export function pickNewQueries(movements: Movement[], limit = 10): Movement[] {
+export function pickNewQueries(movements: Movement[], limit = 10, minImpressions = MIN_REPORTABLE_IMPRESSIONS): Movement[] {
   return movements
-    .filter((movement) => movement.previousImpressions === 0 && movement.impressions > 0 && movement.clicks > 0)
+    .filter(
+      (movement) =>
+        movement.previousImpressions === 0 &&
+        movement.impressions >= minImpressions &&
+        movement.clicks > 0
+    )
     .sort((a, b) => b.clicks - a.clicks)
     .slice(0, limit);
 }
 
-/** Queries that had clicks last period and have none now. */
-export function pickLostQueries(movements: Movement[], limit = 10): Movement[] {
+/** Queries that had clicks last period and have none now, above the noise floor. */
+export function pickLostQueries(movements: Movement[], limit = 10, minImpressions = MIN_REPORTABLE_IMPRESSIONS): Movement[] {
   return movements
-    .filter((movement) => movement.previousClicks > 0 && movement.clicks === 0)
+    .filter(
+      (movement) =>
+        movement.previousClicks > 0 &&
+        movement.clicks === 0 &&
+        movement.previousImpressions >= minImpressions
+    )
     .sort((a, b) => b.previousClicks - a.previousClicks)
     .slice(0, limit);
 }
