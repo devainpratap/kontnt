@@ -10,6 +10,7 @@ import type {
   ImportKeywordsInput,
   ImportKeywordsResult,
   KeywordRecord,
+  AlertWithContext,
   ClaudeStatus,
   CompetitorDomain,
   InsightDetail,
@@ -17,6 +18,7 @@ import type {
   KeywordHistory,
   KeywordSuggestionResponse,
   KeywordWithStatus,
+  SchedulerState,
   SerpCheckAck,
   SerpStatus,
   RankAppSettings,
@@ -110,5 +112,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ days })
     }),
-  getInsight: (insightId: string) => request<InsightDetail>(`/api/insights/${insightId}`)
+  getInsight: (insightId: string) => request<InsightDetail>(`/api/insights/${insightId}`),
+
+  listAlerts: (clientId: string, all = false) =>
+    request<AlertWithContext[]>(`/api/clients/${clientId}/alerts${all ? "?all=true" : ""}`),
+  acknowledgeAlert: (alertId: string) =>
+    request<{ ok: boolean }>(`/api/alerts/${alertId}/acknowledge`, { method: "POST" }),
+  acknowledgeAllAlerts: (clientId: string) =>
+    request<{ acknowledged: number }>(`/api/clients/${clientId}/alerts/acknowledge-all`, { method: "POST" }),
+
+  getScheduler: () => request<SchedulerState>("/api/scheduler"),
+  runScheduledTask: (task: string) =>
+    request<{ status: string; task: string }>(`/api/scheduler/run/${task}`, { method: "POST" })
 };

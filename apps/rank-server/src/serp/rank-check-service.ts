@@ -12,6 +12,8 @@ import { rankConfig } from "../config";
 import { db } from "../db/client";
 import { rankChecksTable, serpFeaturesTable, serpResultsTable, syncRunsTable } from "../db/schema";
 import { todayInGscZone } from "../gsc/date-utils";
+import { AlertRepository } from "../alerts/repository";
+import { evaluateTransition, toReading, type Reading as AlertReading } from "../alerts/rules";
 import { resolveConsensus, type Reading } from "./consensus";
 import { findClientPosition } from "./parser";
 import { serpProvider } from "./provider";
@@ -44,7 +46,65 @@ function nowIso() {
 }
 
 export class RankCheckService {
-  constructor(private readonly clients = new ClientRepository()) {}
+  constructor(
+    private readonly clients = new ClientRepository(),
+    private readonly alerts = new AlertRepository()
+  ) {}
+
+  /**
+   * The last real reading (ok or not-found) from a day *before* today.
+   *
+   * Alerts compare today's reading against this baseline, so a same-day re-run
+   * compares against the same prior-day observation and de-dupes cleanly rather
+   * than comparing against itself. Blocked/errored checks are excluded - an
+   * alert must be anchored to a real prior observation, never to an unknown.
+   */
+  private previousReadingBeforeToday(keywordId: string): AlertReading | null {
+    const row = db
+      .select({ status: rankChecksTable.status, position: rankChecksTable.position })
+      .from(rankChecksTable)
+      .where(
+        and(
+          eq(rankChecksTable.keywordId, keywordId),
+          sql`${rankChecksTable.status} IN ('ok','not-found')`,
+          sql`${rankChecksTable.checkedDate} < ${todayInGscZone()}`
+        )
+      )
+      .orderBy(desc(rankChecksTable.checkedAt))
+      .limit(1)
+      .get();
+
+    return row ? toReading(row.status, row.position) : null;
+  }
+
+  /**
+   * Raise alerts for a completed check.
+   *
+   * Deliberately best-effort and last: alerting must never fail or slow a rank
+   * check. If the current reading is unknown, or there is no prior baseline,
+   * nothing is raised - the same never-alert-on-unknown rule the engine enforces.
+   */
+  private evaluateAlerts(keyword: KeywordRecord, outcome: CheckOutcome): void {
+    if (!rankConfig.alertsEnabled) {
+      return;
+    }
+    try {
+      const current = toReading(outcome.status, outcome.position);
+      if (current.kind === "unknown") {
+        return;
+      }
+      const previous = this.previousReadingBeforeToday(keyword.id);
+      if (!previous) {
+        return;
+      }
+      const proposals = evaluateTransition(previous, current, { largeMove: rankConfig.alertLargeMove });
+      if (proposals.length > 0) {
+        this.alerts.recordForKeyword(keyword.clientId, keyword.id, proposals);
+      }
+    } catch {
+      // An alerting failure must not affect the stored check.
+    }
+  }
 
   /**
    * The most recent *known* position for a keyword.
@@ -337,7 +397,7 @@ export class RankCheckService {
           (consensus.agreement.spread > 0 ? ` (spread ${consensus.agreement.spread})` : "")
         : null;
 
-    return this.persist(keyword, client.primaryDomain, client.clientPath, representative, {
+    const outcome = await this.persist(keyword, client.primaryDomain, client.clientPath, representative, {
       status: consensus.status,
       position: consensus.position,
       rankingUrl,
@@ -347,6 +407,10 @@ export class RankCheckService {
           ? consensusNote
           : representative.errorMessage ?? consensusNote
     });
+
+    // Raise alerts last and best-effort, so nothing here can affect the check.
+    this.evaluateAlerts(keyword, outcome);
+    return outcome;
   }
 
   startRun(clientId: string): string {

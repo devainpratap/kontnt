@@ -24,6 +24,9 @@ import {
 import { RankCheckService } from "./serp/rank-check-service";
 import { getClaudeStatus } from "./insights/claude-runner";
 import { InsightService } from "./insights/insight-service";
+import { AlertRepository } from "./alerts/repository";
+import { describeAlert } from "./alerts/rules";
+import { getSchedulerState, runTaskNow } from "./scheduler/scheduler";
 import { rankConfig } from "./config";
 import { listSites } from "./gsc/api-client";
 import { addDays, latestLikelyDataDate, todayInGscZone } from "./gsc/date-utils";
@@ -68,6 +71,7 @@ export async function registerRankRoutes(app: FastifyInstance) {
   const sync = new GscSyncService(clients, google);
   const rankChecks = new RankCheckService(clients);
   const insights = new InsightService(clients);
+  const alerts = new AlertRepository();
 
   app.get("/api/health", async () => ({ ok: true, service: "rankos" }));
 
@@ -548,5 +552,48 @@ export async function registerRankRoutes(app: FastifyInstance) {
     const since = addDays(todayInGscZone(), -Math.min(Math.max(days, 1), 365));
 
     return { since, domains: getShareOfSerp(clientId, since) };
+  });
+
+  // ----------------------------------------------------------------- alerts
+
+  app.get("/api/clients/:clientId/alerts", async (request) => {
+    const { clientId } = request.params as { clientId: string };
+    clients.getClientOrThrow(clientId);
+    const includeAcknowledged = (request.query as { all?: string })?.all === "true";
+
+    // Attach a human-readable line so the UI does not re-derive phrasing.
+    return alerts.listWithKeyword(clientId, { includeAcknowledged }).map((alert) => ({
+      ...alert,
+      description: describeAlert(alert.kind, alert.payload, alert.phrase ?? undefined)
+    }));
+  });
+
+  app.post("/api/alerts/:alertId/acknowledge", async (request) => {
+    const { alertId } = request.params as { alertId: string };
+    alerts.acknowledge(alertId);
+    return { ok: true };
+  });
+
+  app.post("/api/clients/:clientId/alerts/acknowledge-all", async (request) => {
+    const { clientId } = request.params as { clientId: string };
+    clients.getClientOrThrow(clientId);
+    return { acknowledged: alerts.acknowledgeAll(clientId) };
+  });
+
+  // -------------------------------------------------------------- scheduler
+
+  app.get("/api/scheduler", async () => getSchedulerState());
+
+  /** Manual "run now" for any scheduled task, for testing and on-demand runs. */
+  app.post("/api/scheduler/run/:task", async (request, reply) => {
+    const { task } = request.params as { task: string };
+    try {
+      // Fire-and-forget: the task takes the same in-flight locks and can run
+      // for minutes, so return immediately rather than holding the request.
+      void runTaskNow(task);
+      return reply.code(202).send({ status: "running", task });
+    } catch (error) {
+      return reply.code(400).send({ error: error instanceof Error ? error.message : "Unknown task." });
+    }
   });
 }

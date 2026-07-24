@@ -73,6 +73,18 @@ const configSchema = z.object({
   SERP_CONSENSUS_RUNS: z.coerce.number().int().min(1).max(9).default(1),
   SERP_CONSENSUS_DELAY_MS: z.coerce.number().int().nonnegative().default(2000),
 
+  // Alerts on rank movement. Evaluated after each check against the last real
+  // reading from a prior day; never raised on a blocked/unknown check.
+  ALERTS_ENABLED: booleanish(true),
+  ALERT_LARGE_MOVE: z.coerce.number().int().positive().default(5),
+
+  // Scheduler (node-cron). Runs only while the server is up. Times are
+  // Asia/Kolkata. Set a cron to empty to disable that task.
+  SCHEDULER_ENABLED: booleanish(true),
+  SCHEDULER_GSC_CRON: z.string().default("0 6 * * *"),      // 6am daily
+  SCHEDULER_SERP_CRON: z.string().default("0 3 * * *"),     // 3am daily (due keywords only)
+  SCHEDULER_REPORT_CRON: z.string().default("0 8 * * 1"),   // 8am Monday
+
   RANK_INSIGHT_MODEL: z.string().default("claude-opus-4-8"),
   CLAUDE_CLI_BIN: z.string().default("claude"),
   RANK_INSIGHT_TIMEOUT_MS: z.coerce.number().int().positive().default(600_000),
@@ -120,6 +132,12 @@ export const rankConfig = {
   serpApiDelayMs: env.SERP_API_DELAY_MS,
   serpConsensusRuns: env.SERP_CONSENSUS_RUNS,
   serpConsensusDelayMs: env.SERP_CONSENSUS_DELAY_MS,
+  alertsEnabled: env.ALERTS_ENABLED,
+  alertLargeMove: env.ALERT_LARGE_MOVE,
+  schedulerEnabled: env.SCHEDULER_ENABLED,
+  schedulerGscCron: env.SCHEDULER_GSC_CRON,
+  schedulerSerpCron: env.SCHEDULER_SERP_CRON,
+  schedulerReportCron: env.SCHEDULER_REPORT_CRON,
   serpHeadless: env.SERP_HEADLESS,
   serpMaxPages: env.SERP_MAX_PAGES,
   serpMaxChecksPerDay: env.SERP_MAX_CHECKS_PER_DAY,

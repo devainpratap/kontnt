@@ -22,6 +22,7 @@ export function SettingsPage() {
 
   const settings = useQuery({ queryKey: ["settings"], queryFn: api.getSettings });
   const status = useQuery({ queryKey: ["google-status"], queryFn: api.getGoogleStatus });
+  const scheduler = useQuery({ queryKey: ["scheduler"], queryFn: api.getScheduler });
 
   // Returning from the OAuth round trip: refresh state, then drop the query
   // params so a reload does not replay the banner.
@@ -161,6 +162,44 @@ export function SettingsPage() {
               <span className="break-all font-mono text-[12px] text-ink-600">{settings.data.clientsRoot}</span>
             </div>
           </>
+        ) : null}
+      </Surface>
+
+      <Surface>
+        <SurfaceHeader
+          eyebrow="Automation"
+          title="Scheduler"
+          description="RankOS maintains itself while this server is running. Times are Asia/Kolkata."
+          aside={
+            scheduler.data ? (
+              <StatusPill tone={scheduler.data.enabled ? "good" : "warn"}>
+                {scheduler.data.enabled ? "Enabled" : "Disabled"}
+              </StatusPill>
+            ) : null
+          }
+        />
+        {scheduler.data ? (
+          <div className="grid gap-2">
+            {scheduler.data.tasks.map((task) => {
+              const last = scheduler.data?.lastRuns[task.name];
+              return (
+                <div key={task.name} className="grid gap-1 rounded-[var(--radius-md)] border border-hairline p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-ink-800">{task.description}</span>
+                    <span className="font-mono text-[12px] text-ink-500">{task.nextNote}</span>
+                  </div>
+                  <span className="text-[12px] text-ink-500">
+                    {last ? `Last run ${formatRelativeTime(last.at)}: ${last.summary}` : "Not run yet this session"}
+                  </span>
+                </div>
+              );
+            })}
+            <p className="text-[12px] leading-5 text-ink-400">
+              The scheduler runs inside this local server, so it only fires while your machine is awake and the server
+              is up. Missed Search Console days are backfilled automatically on the next start; missed live rank checks
+              are not recoverable, so a keyword simply shows its true last-checked age.
+            </p>
+          </div>
         ) : null}
       </Surface>
 

@@ -317,3 +317,24 @@ export type InsightDetail = {
 };
 
 export type ClaudeStatus = { available: boolean; message: string };
+
+
+// ------------------------------------------------------------------ alerts
+
+export type AlertWithContext = AlertRecord & {
+  phrase: string | null;
+  description: string;
+};
+
+export type SchedulerTaskState = {
+  name: string;
+  cron: string;
+  description: string;
+  nextNote: string;
+};
+
+export type SchedulerState = {
+  enabled: boolean;
+  tasks: SchedulerTaskState[];
+  lastRuns: Record<string, { at: string; summary: string }>;
+};

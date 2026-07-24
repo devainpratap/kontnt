@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 
 import type { GscSite } from "@rankos/shared";
 
+import { AlertsInbox } from "../components/AlertsInbox";
 import { Button } from "../components/Button";
 import { KpiRow } from "../components/KpiRow";
 import { StatusPill } from "../components/StatusPill";
@@ -154,6 +155,7 @@ export function ClientDetailPage() {
 
   return (
     <div className="grid gap-6">
+      <AlertsInbox clientId={record.id} />
       <Surface>
         <SurfaceHeader
           eyebrow="Client"
