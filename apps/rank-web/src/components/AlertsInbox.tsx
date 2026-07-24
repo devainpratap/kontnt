@@ -38,10 +38,22 @@ export function AlertsInbox({ clientId }: { clientId: string }) {
 
   const rows = alerts.data ?? [];
 
-  // The inbox is only shown when there is something to act on, so it never
-  // adds empty chrome to a healthy client's page.
+  // Always visible, so the feature is discoverable and its healthy state is
+  // legible - an empty inbox reads as "all clear", not "missing".
   if (rows.length === 0) {
-    return null;
+    return (
+      <Surface>
+        <SurfaceHeader
+          eyebrow="Automatic monitoring"
+          title="Alerts"
+          description="Rank-movement alerts appear here - entered or dropped out of the top 3, fell off page one, or moved sharply. Blocked or failed checks never raise one."
+          aside={<StatusPill tone="good">All clear</StatusPill>}
+        />
+        <p className="text-[13px] text-ink-500">
+          No alerts right now. New ones are raised automatically after each rank check.
+        </p>
+      </Surface>
+    );
   }
 
   return (

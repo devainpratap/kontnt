@@ -80,64 +80,99 @@ export const serpApiProvider: SerpProvider = {
 
   async fetch(query: SerpQuery, signal?: AbortSignal): Promise<SerpFetchResult> {
     if (!rankConfig.serpApiKey) {
-      return {
-        status: "error",
-        results: [],
-        features: [],
-        raw: null,
-        errorMessage: "SERPAPI_API_KEY is not set."
-      };
+      return { status: "error", results: [], features: [], raw: null, errorMessage: "SERPAPI_API_KEY is not set." };
     }
 
-    const params = new URLSearchParams({
-      engine: "google",
-      q: query.keyword,
-      gl: query.country,
-      hl: "en",
-      device: query.device,
-      api_key: rankConfig.serpApiKey
-    });
-
-    if (query.location) {
-      params.set("location", query.location);
-    }
+    // Google deprecated the `num` parameter in 2025, so depth comes from `start`
+    // pagination - the same as the browser driver. Each page is one fast API
+    // call (~1s) rather than a ~10s proxied page load, and early exit means a
+    // keyword ranking on page one costs a single request.
+    const collected: SerpResultItem[] = [];
+    const features = new Set<SerpFeature>();
+    let lastStatus: number | null = null;
 
     try {
-      const response = await fetch(`${ENDPOINT}?${params.toString()}`, { signal });
-      const payload = (await response.json().catch(() => ({}))) as SerpApiResponse;
+      for (let pageIndex = 0; pageIndex < rankConfig.serpMaxPages; pageIndex += 1) {
+        if (signal?.aborted) {
+          break;
+        }
 
-      if (!response.ok || payload.error) {
-        // 429 means the hourly or monthly cap is hit — recoverable by moving to
-        // the next provider, so it is an error the chain can act on, not a block.
-        return {
-          status: "error",
-          results: [],
-          features: [],
-          raw: payload,
-          errorMessage: payload.error ?? `SerpApi HTTP ${response.status}.`
-        };
+        const params = new URLSearchParams({
+          engine: "google",
+          q: query.keyword,
+          gl: query.country,
+          hl: "en",
+          device: query.device,
+          start: String(pageIndex * 10),
+          api_key: rankConfig.serpApiKey
+        });
+        if (query.location) {
+          params.set("location", query.location);
+        }
+
+        const response = await fetch(`${ENDPOINT}?${params.toString()}`, { signal });
+        lastStatus = response.status;
+        const payload = (await response.json().catch(() => ({}))) as SerpApiResponse;
+
+        if (!response.ok || payload.error) {
+          // 429 = the hourly/monthly cap is hit. Recoverable by failing over to
+          // the next provider, so it is an error the chain acts on, not a block.
+          // If earlier pages already found the client, keep that result.
+          if (collected.length > 0) {
+            break;
+          }
+          return {
+            status: "error",
+            results: [],
+            features: [],
+            raw: payload,
+            errorMessage: payload.error ?? `SerpApi HTTP ${response.status}.`
+          };
+        }
+
+        const pageResults = mapSerpApiResults(payload);
+        for (const feature of mapSerpApiFeatures(payload)) {
+          features.add(feature);
+        }
+
+        // Renumber into one continuous ranking across pages.
+        for (const item of pageResults) {
+          collected.push({ ...item, position: collected.length + 1 });
+        }
+
+        if (pageResults.length === 0) {
+          break; // Google returned nothing further.
+        }
+
+        if (
+          query.stopWhenDomainFound &&
+          collected.some(
+            (item) =>
+              item.domain === query.stopWhenDomainFound ||
+              item.domain.endsWith(`.${query.stopWhenDomainFound}`)
+          )
+        ) {
+          break; // Client located - deeper pages would cost credits for nothing.
+        }
       }
 
-      const results = mapSerpApiResults(payload);
-
-      if (results.length === 0) {
-        // An empty organic array from a successful call means the response was
-        // not what we expect, not that a hundred sites vanished. Unknown, never
-        // "ranks nowhere".
+      if (collected.length === 0) {
+        // A successful call with no organic results is unexpected, not proof
+        // that nothing ranks. Unknown, never "ranks nowhere".
         return {
           status: "blocked",
           results: [],
           features: [],
-          raw: payload,
+          raw: { httpStatus: lastStatus },
           errorMessage: "SerpApi returned no organic results."
         };
       }
 
       return {
         status: "ok",
-        results,
-        features: mapSerpApiFeatures(payload),
-        raw: { resultCount: results.length, status: payload.search_metadata?.status ?? null },
+        results: collected,
+        features: [...features],
+        raw: { resultCount: collected.length, pages: Math.ceil(collected.length / 10) },
         errorMessage: null
       };
     } catch (error) {

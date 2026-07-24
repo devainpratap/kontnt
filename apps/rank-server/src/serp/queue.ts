@@ -1,7 +1,7 @@
 import type { KeywordRecord } from "@rankos/shared";
 
 import { rankConfig } from "../config";
-import { interCheckDelayMs } from "./provider";
+import { checkConcurrency, interCheckDelayMs } from "./provider";
 import { RankCheckService, type CheckOutcome } from "./rank-check-service";
 
 /**
@@ -65,26 +65,44 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
  */
 const CONSECUTIVE_BLOCK_LIMIT = 3;
 
-export async function runCheckBatch(
+type BatchOptions = {
+  signal?: AbortSignal;
+  onProgress?: (progress: BatchProgress) => void;
+  /** Skip the inter-check delay. Tests only — never in normal operation. */
+  noDelay?: boolean;
+  /** Overrides the provider-derived concurrency. Tests pass 1 for serial order. */
+  concurrency?: number;
+};
+
+function emptyProgress(total: number): BatchProgress {
+  return { total, completed: 0, ok: 0, blocked: 0, failed: 0, stoppedReason: null, outcomes: [] };
+}
+
+function tally(progress: BatchProgress, outcome: CheckOutcome): void {
+  progress.outcomes.push(outcome);
+  progress.completed += 1;
+  if (outcome.status === "ok" || outcome.status === "not-found") {
+    progress.ok += 1;
+  } else if (outcome.status === "blocked") {
+    progress.blocked += 1;
+  } else {
+    progress.failed += 1;
+  }
+}
+
+/**
+ * Run a batch, one keyword at a time.
+ *
+ * This is the local-browser path: serialised with a long randomised gap, and it
+ * stops early on a run of consecutive blocks because that means Google has
+ * started challenging the IP and continuing only deepens the block.
+ */
+async function runSerial(
   keywords: KeywordRecord[],
   service: RankCheckService,
-  options: {
-    signal?: AbortSignal;
-    onProgress?: (progress: BatchProgress) => void;
-    /** Skip the inter-check delay. Tests only — never in normal operation. */
-    noDelay?: boolean;
-  } = {}
+  options: BatchOptions
 ): Promise<BatchProgress> {
-  const progress: BatchProgress = {
-    total: keywords.length,
-    completed: 0,
-    ok: 0,
-    blocked: 0,
-    failed: 0,
-    stoppedReason: null,
-    outcomes: []
-  };
-
+  const progress = emptyProgress(keywords.length);
   let consecutiveBlocks = 0;
 
   for (const [index, keyword] of keywords.entries()) {
@@ -92,29 +110,14 @@ export async function runCheckBatch(
       progress.stoppedReason = "Cancelled.";
       break;
     }
-
-    // Re-checked every iteration rather than once up front, so a batch started
-    // near the cap stops at the right point.
     if (service.remainingToday() <= 0) {
       progress.stoppedReason = `Daily cap of ${rankConfig.serpMaxChecksPerDay} checks reached. Remaining keywords were not checked.`;
       break;
     }
 
     const outcome = await service.checkKeyword(keyword, options.signal);
-    progress.outcomes.push(outcome);
-    progress.completed += 1;
-
-    if (outcome.status === "ok" || outcome.status === "not-found") {
-      progress.ok += 1;
-      consecutiveBlocks = 0;
-    } else if (outcome.status === "blocked") {
-      progress.blocked += 1;
-      consecutiveBlocks += 1;
-    } else {
-      progress.failed += 1;
-      consecutiveBlocks = 0;
-    }
-
+    tally(progress, outcome);
+    consecutiveBlocks = outcome.status === "blocked" ? consecutiveBlocks + 1 : 0;
     options.onProgress?.({ ...progress, outcomes: [...progress.outcomes] });
 
     if (consecutiveBlocks >= CONSECUTIVE_BLOCK_LIMIT) {
@@ -131,6 +134,76 @@ export async function runCheckBatch(
   }
 
   return progress;
+}
+
+/**
+ * Run a batch as a worker pool.
+ *
+ * This is the API path. There is no per-IP block risk, so the one-at-a-time
+ * throttle is pure wasted wall-clock: `concurrency` workers pull from a shared
+ * cursor, turning a 42-keyword batch from minutes into well under one. The
+ * consecutive-block early stop does not apply here - a failing provider is
+ * already handled by the failover chain, not by backing off an IP.
+ */
+async function runConcurrent(
+  keywords: KeywordRecord[],
+  service: RankCheckService,
+  options: BatchOptions,
+  concurrency: number
+): Promise<BatchProgress> {
+  const progress = emptyProgress(keywords.length);
+  let cursor = 0;
+  let stopped = false;
+
+  async function worker(): Promise<void> {
+    // `const index = cursor++` is atomic here: there is no await between the
+    // read and the increment, and JS is single-threaded, so two workers can
+    // never claim the same keyword.
+    while (!stopped) {
+      if (options.signal?.aborted) {
+        progress.stoppedReason = "Cancelled.";
+        stopped = true;
+        break;
+      }
+      if (service.remainingToday() <= 0) {
+        progress.stoppedReason = `Daily cap of ${rankConfig.serpMaxChecksPerDay} checks reached. Remaining keywords were not checked.`;
+        stopped = true;
+        break;
+      }
+
+      const index = cursor++;
+      if (index >= keywords.length) {
+        break;
+      }
+
+      const outcome = await service.checkKeyword(keywords[index], options.signal);
+      tally(progress, outcome);
+      options.onProgress?.({ ...progress, outcomes: [...progress.outcomes] });
+    }
+  }
+
+  const workerCount = Math.min(concurrency, keywords.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  return progress;
+}
+
+/**
+ * Check a batch of keywords.
+ *
+ * Serial for the local browser (block avoidance), concurrent for API providers
+ * (no block risk, so no reason to wait). The daily cap, cancellation, and
+ * progress reporting behave the same either way.
+ */
+export async function runCheckBatch(
+  keywords: KeywordRecord[],
+  service: RankCheckService,
+  options: BatchOptions = {}
+): Promise<BatchProgress> {
+  const concurrency = options.concurrency ?? checkConcurrency();
+  return concurrency <= 1
+    ? runSerial(keywords, service, options)
+    : runConcurrent(keywords, service, options, concurrency);
 }
 
 /**

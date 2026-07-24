@@ -69,3 +69,27 @@ export function interCheckDelayMs(): { min: number; max: number } {
   }
   return { min: rankConfig.serpApiDelayMs, max: rankConfig.serpApiDelayMs * 2 };
 }
+
+/**
+ * How many checks may run at once.
+ *
+ * The local browser must stay serial (1) or Google blocks it; API providers
+ * run as a pool. This is the single biggest lever on how long a batch takes.
+ */
+export function checkConcurrency(): number {
+  return rankConfig.serpProvider === "local" ? 1 : rankConfig.serpConcurrency;
+}
+
+/** Rough fetch time per keyword, for an honest batch-duration estimate. */
+const PER_FETCH_ESTIMATE_MS = rankConfig.serpProvider === "local" ? 9000 : 4000;
+
+/**
+ * Honest estimate of how long a batch of `count` keywords will take, using the
+ * active provider's real pacing and concurrency - not the browser throttle.
+ */
+export function estimateBatchMinutes(count: number): number {
+  const { min, max } = interCheckDelayMs();
+  const perKeyword = (min + max) / 2 + PER_FETCH_ESTIMATE_MS;
+  const waves = Math.ceil(count / checkConcurrency());
+  return Math.max(1, Math.ceil((waves * perKeyword) / 60_000));
+}

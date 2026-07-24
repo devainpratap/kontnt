@@ -14,6 +14,7 @@ import { DEFAULT_OPPORTUNITY_OPTIONS, buildSuggestions } from "./keywords/opport
 import { KeywordRepository } from "./keywords/repository";
 import { activeChain, serpProvider } from "./serp/provider";
 import { runCheckBatch, selectDueKeywords } from "./serp/queue";
+import { estimateBatchMinutes } from "./serp/provider";
 import {
   getCheckHealth,
   getKeywordsWithLastCheck,
@@ -440,9 +441,7 @@ export async function registerRankRoutes(app: FastifyInstance) {
       status: "running",
       queued: targets.length,
       remainingToday: remaining,
-      estimatedMinutes: Math.ceil(
-        (targets.length * ((rankConfig.serpMinDelayMs + rankConfig.serpMaxDelayMs) / 2)) / 60_000
-      )
+      estimatedMinutes: estimateBatchMinutes(targets.length)
     });
   });
 

@@ -34,7 +34,7 @@ const configSchema = z.object({
   SERP_PROVIDER: z
     .enum(["chain", "local", "scrapingrobot", "serpapi", "dataforseo", "serper"])
     .default("chain"),
-  SERP_PROVIDER_CHAIN: z.string().default("scrapingrobot,serpapi,dataforseo"),
+  SERP_PROVIDER_CHAIN: z.string().default("serpapi,scrapingrobot,dataforseo"),
   // Headless Chrome is blocked by Google on the first request — measured, not
   // assumed. Headed works reliably, at the cost of a visible browser window.
   SERP_HEADLESS: booleanish(false),
@@ -66,6 +66,11 @@ const configSchema = z.object({
   // API providers need no anti-block pacing; the long delay exists only for the
   // browser driver, which Google actively challenges.
   SERP_API_DELAY_MS: z.coerce.number().int().nonnegative().default(1000),
+  // How many API checks to run at once. The one-at-a-time throttle exists only
+  // to keep the local browser from being blocked; API providers have no such
+  // limit, so a pool cuts a 42-keyword batch from minutes to well under one.
+  // Forced to 1 for the local browser regardless of this value.
+  SERP_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(5),
 
   // How many times to re-check each keyword and reconcile by majority. 1 = off
   // (one request per check). Set to 3 to smooth proxy-rotation noise, at 3x the
@@ -130,6 +135,7 @@ export const rankConfig = {
   serpProvider: env.SERP_PROVIDER,
   serpProviderChain: env.SERP_PROVIDER_CHAIN.split(",").map((n) => n.trim()).filter(Boolean),
   serpApiDelayMs: env.SERP_API_DELAY_MS,
+  serpConcurrency: env.SERP_CONCURRENCY,
   serpConsensusRuns: env.SERP_CONSENSUS_RUNS,
   serpConsensusDelayMs: env.SERP_CONSENSUS_DELAY_MS,
   alertsEnabled: env.ALERTS_ENABLED,

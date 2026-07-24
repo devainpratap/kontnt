@@ -52,7 +52,7 @@ function fakeService(script: Array<CheckOutcome["status"]>, remaining = 999): Ra
 describe("runCheckBatch", () => {
   it("checks every keyword and tallies outcomes", async () => {
     const keywords = [keyword({ id: "a" }), keyword({ id: "b" }), keyword({ id: "c" })];
-    const progress = await runCheckBatch(keywords, fakeService(["ok", "ok", "not-found"]), { noDelay: true });
+    const progress = await runCheckBatch(keywords, fakeService(["ok", "ok", "not-found"]), { noDelay: true, concurrency: 1 });
 
     assert.equal(progress.total, 3);
     assert.equal(progress.completed, 3);
@@ -63,9 +63,7 @@ describe("runCheckBatch", () => {
   });
 
   it("counts blocked checks separately from real readings", async () => {
-    const progress = await runCheckBatch([keyword({ id: "a" }), keyword({ id: "b" })], fakeService(["ok", "blocked"]), {
-      noDelay: true
-    });
+    const progress = await runCheckBatch([keyword({ id: "a" }), keyword({ id: "b" })], fakeService(["ok", "blocked"]), { noDelay: true, concurrency: 1 });
 
     assert.equal(progress.ok, 1);
     assert.equal(progress.blocked, 1);
@@ -73,9 +71,7 @@ describe("runCheckBatch", () => {
 
   it("stops after three consecutive blocks rather than burning the day's budget", async () => {
     const keywords = Array.from({ length: 10 }, (_, index) => keyword({ id: `k${index}` }));
-    const progress = await runCheckBatch(keywords, fakeService(["blocked", "blocked", "blocked"]), {
-      noDelay: true
-    });
+    const progress = await runCheckBatch(keywords, fakeService(["blocked", "blocked", "blocked"]), { noDelay: true, concurrency: 1 });
 
     assert.equal(progress.completed, 3);
     assert.match(progress.stoppedReason ?? "", /consecutive blocked/i);
@@ -88,7 +84,7 @@ describe("runCheckBatch", () => {
     const progress = await runCheckBatch(
       keywords,
       fakeService(["blocked", "ok", "blocked", "ok", "blocked", "ok"]),
-      { noDelay: true }
+      { noDelay: true, concurrency: 1 }
     );
 
     assert.equal(progress.completed, 6);
@@ -97,7 +93,7 @@ describe("runCheckBatch", () => {
 
   it("stops at the daily cap and says which keywords were skipped", async () => {
     const keywords = Array.from({ length: 10 }, (_, index) => keyword({ id: `k${index}` }));
-    const progress = await runCheckBatch(keywords, fakeService(["ok"], 4), { noDelay: true });
+    const progress = await runCheckBatch(keywords, fakeService(["ok"], 4), { noDelay: true, concurrency: 1 });
 
     assert.equal(progress.completed, 4);
     assert.match(progress.stoppedReason ?? "", /daily cap/i);
@@ -118,7 +114,7 @@ describe("runCheckBatch", () => {
       return original(target);
     };
 
-    const progress = await runCheckBatch(keywords, service, { noDelay: true, signal: controller.signal });
+    const progress = await runCheckBatch(keywords, service, { noDelay: true, concurrency: 1, signal: controller.signal });
     assert.equal(progress.stoppedReason, "Cancelled.");
     assert.ok(progress.completed < 5);
   });
@@ -127,6 +123,7 @@ describe("runCheckBatch", () => {
     const updates: number[] = [];
     await runCheckBatch([keyword({ id: "a" }), keyword({ id: "b" })], fakeService(["ok", "ok"]), {
       noDelay: true,
+      concurrency: 1,
       onProgress: (progress) => updates.push(progress.completed)
     });
 
@@ -134,7 +131,7 @@ describe("runCheckBatch", () => {
   });
 
   it("handles an empty batch", async () => {
-    const progress = await runCheckBatch([], fakeService([]), { noDelay: true });
+    const progress = await runCheckBatch([], fakeService([]), { noDelay: true, concurrency: 1 });
     assert.equal(progress.total, 0);
     assert.equal(progress.completed, 0);
   });
@@ -184,5 +181,64 @@ describe("selectDueKeywords", () => {
       now
     );
     assert.equal(due.length, 1);
+  });
+});
+
+describe("runCheckBatch — concurrent (API) mode", () => {
+  it("checks every keyword when run as a pool", async () => {
+    const keywords = Array.from({ length: 20 }, (_, index) => keyword({ id: `c${index}` }));
+    const progress = await runCheckBatch(keywords, fakeService(Array(20).fill("ok")), {
+      noDelay: true,
+      concurrency: 5
+    });
+
+    assert.equal(progress.completed, 20);
+    assert.equal(progress.ok, 20);
+    // Every keyword recorded exactly once - no double-claim across workers.
+    const ids = new Set(progress.outcomes.map((o) => o.keywordId));
+    assert.equal(ids.size, 20);
+  });
+
+  it("never runs more workers than keywords", async () => {
+    const progress = await runCheckBatch([keyword({ id: "solo" })], fakeService(["ok"]), {
+      noDelay: true,
+      concurrency: 8
+    });
+    assert.equal(progress.completed, 1);
+  });
+
+  it("stops near the daily cap under concurrency", async () => {
+    // Overshoot by less than the worker count is acceptable; the cap is a soft
+    // guard, not an exact ceiling.
+    const keywords = Array.from({ length: 30 }, (_, index) => keyword({ id: `cap${index}` }));
+    const progress = await runCheckBatch(keywords, fakeService(Array(30).fill("ok"), 10), {
+      noDelay: true,
+      concurrency: 4
+    });
+
+    assert.ok(progress.completed >= 10 && progress.completed <= 14, `completed ${progress.completed}`);
+    assert.match(progress.stoppedReason ?? "", /daily cap/i);
+  });
+
+  it("stops when cancelled mid-pool", async () => {
+    const controller = new AbortController();
+    const keywords = Array.from({ length: 20 }, (_, index) => keyword({ id: `x${index}` }));
+
+    const service = fakeService(Array(20).fill("ok"));
+    const original = service.checkKeyword.bind(service);
+    let calls = 0;
+    service.checkKeyword = async (target: KeywordRecord) => {
+      calls += 1;
+      if (calls === 3) controller.abort();
+      return original(target);
+    };
+
+    const progress = await runCheckBatch(keywords, service, {
+      noDelay: true,
+      concurrency: 4,
+      signal: controller.signal
+    });
+    assert.equal(progress.stoppedReason, "Cancelled.");
+    assert.ok(progress.completed < 20);
   });
 });
