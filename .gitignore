@@ -24,3 +24,5 @@ clients/*
 # Runtime export artifacts (bundles, zips) — not source.
 exports/
 browser-profile/
+
+.claude/settings.local.json
