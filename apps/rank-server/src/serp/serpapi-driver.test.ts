@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { mapSerpApiFeatures, mapSerpApiResults } from "./serpapi-driver";
+import { buildSerpApiParams, googleDomainForCountry, mapSerpApiFeatures, mapSerpApiResults } from "./serpapi-driver";
 import { extractHtmlPayload } from "./scrapingrobot-driver";
 
 describe("mapSerpApiResults", () => {
@@ -85,6 +85,50 @@ describe("mapSerpApiFeatures", () => {
 
   it("returns nothing for a plain SERP", () => {
     assert.deepEqual(mapSerpApiFeatures({ organic_results: [] }), []);
+  });
+});
+
+describe("googleDomainForCountry", () => {
+  it("maps a country to its Google ccTLD so the SERP is localized", () => {
+    assert.equal(googleDomainForCountry("in"), "google.co.in");
+    assert.equal(googleDomainForCountry("us"), "google.com");
+    assert.equal(googleDomainForCountry("gb"), "google.co.uk");
+    assert.equal(googleDomainForCountry("uk"), "google.co.uk");
+  });
+
+  it("is case-insensitive", () => {
+    assert.equal(googleDomainForCountry("IN"), "google.co.in");
+  });
+
+  it("falls back to google.com for an unknown country", () => {
+    assert.equal(googleDomainForCountry("zz"), "google.com");
+  });
+});
+
+describe("buildSerpApiParams", () => {
+  const base = { keyword: "digital marketing noida", country: "in", device: "desktop" as const, location: null };
+
+  it("localizes to the country (google_domain + gl) and forces a fresh, uncached fetch", () => {
+    const p = buildSerpApiParams(base, 0, "KEY");
+    assert.equal(p.get("engine"), "google");
+    assert.equal(p.get("q"), "digital marketing noida");
+    assert.equal(p.get("google_domain"), "google.co.in");
+    assert.equal(p.get("gl"), "in");
+    assert.equal(p.get("hl"), "en");
+    assert.equal(p.get("device"), "desktop");
+    assert.equal(p.get("no_cache"), "true");
+    assert.equal(p.get("start"), "0");
+    assert.equal(p.get("api_key"), "KEY");
+  });
+
+  it("omits location when unset and includes it when present", () => {
+    assert.equal(buildSerpApiParams(base, 0, "KEY").has("location"), false);
+    const withLoc = buildSerpApiParams({ ...base, location: "Noida,Uttar Pradesh,India" }, 0, "KEY");
+    assert.equal(withLoc.get("location"), "Noida,Uttar Pradesh,India");
+  });
+
+  it("paginates via start in tens", () => {
+    assert.equal(buildSerpApiParams(base, 2, "KEY").get("start"), "20");
   });
 });
 

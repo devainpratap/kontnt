@@ -7,6 +7,8 @@ import type {
   InsightStatus,
   RankCheckSource,
   RankCheckStatus,
+  SchedulerRunStatus,
+  SchedulerTrigger,
   SyncRunKind,
   SyncRunStatus
 } from "./schemas";
@@ -18,6 +20,8 @@ export type ClientRecord = {
   primaryDomain: string;
   gscProperty: string | null;
   gscPropertyType: GscPropertyType | null;
+  /** Primary market as a canonical location (e.g. "Noida,Uttar Pradesh,India"); the default vantage for this client's keyword checks. */
+  marketLocation: string | null;
   brandTerms: string[];
   notes: string;
   clientPath: string;
@@ -336,7 +340,22 @@ export type SchedulerTaskState = {
 export type SchedulerState = {
   enabled: boolean;
   tasks: SchedulerTaskState[];
-  lastRuns: Record<string, { at: string; summary: string }>;
+  /**
+   * Most recent run per task, seeded from the persisted scheduler_runs table so
+   * it survives a restart. `trigger` distinguishes an on-time `cron` fire from a
+   * `boot`/`heartbeat` recovery of a run that would otherwise have been missed.
+   */
+  lastRuns: Record<string, { at: string; summary: string; trigger?: SchedulerTrigger }>;
+};
+
+/** One persisted scheduled-task run - the durable record behind lastRuns. */
+export type SchedulerRun = {
+  id: string;
+  taskName: string;
+  ranAt: string;
+  trigger: SchedulerTrigger;
+  status: SchedulerRunStatus;
+  summary: string;
 };
 
 

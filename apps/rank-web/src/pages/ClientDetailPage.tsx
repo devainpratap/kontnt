@@ -98,6 +98,62 @@ function PropertyPicker({ clientId, current }: { clientId: string; current: stri
   );
 }
 
+/** Set the client's primary market - the vantage every keyword is checked from. */
+function MarketPicker({ clientId, current }: { clientId: string; current: string | null }) {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(current ?? "");
+
+  const save = useMutation({
+    mutationFn: (marketLocation: string | null) => api.updateClient(clientId, { marketLocation }),
+    onSuccess: async () => {
+      // Changing the market re-vantages this client's keyword checks.
+      await queryClient.invalidateQueries({ queryKey: ["client", clientId] });
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+      await queryClient.invalidateQueries({ queryKey: ["keywords", clientId] });
+      setEditing(false);
+    }
+  });
+
+  if (!editing) {
+    return (
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() => {
+          setValue(current ?? "");
+          setEditing(true);
+        }}
+      >
+        {current ? "Change market" : "Set market"}
+      </Button>
+    );
+  }
+
+  return (
+    <div className="grid gap-2">
+      <input
+        className="rounded-[var(--radius-md)] border border-hairline px-3 py-2 text-[13px]"
+        placeholder="Noida,Uttar Pradesh,India"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+      />
+      <div className="flex items-center gap-2">
+        <Button size="sm" loading={save.isPending} onClick={() => save.mutate(value.trim() || null)}>
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+          Cancel
+        </Button>
+      </div>
+      {save.isError ? <p className="text-[13px] text-rose-700">{(save.error as Error).message}</p> : null}
+      <p className="text-[12px] text-ink-500">
+        Rank checks run from here (Google localizes by city). Saving re-derives this client's keyword locations.
+      </p>
+    </div>
+  );
+}
+
 export function ClientDetailPage() {
   const { clientId = "" } = useParams();
   const queryClient = useQueryClient();
@@ -191,6 +247,12 @@ export function ClientDetailPage() {
             <span className="text-[12px] uppercase tracking-wide text-ink-500">Search Console property</span>
             <span className="break-all text-sm text-ink-800">{record.gscProperty ?? "Not linked"}</span>
             <PropertyPicker clientId={record.id} current={record.gscProperty} />
+          </div>
+
+          <div className="grid gap-2">
+            <span className="text-[12px] uppercase tracking-wide text-ink-500">Primary market (rank vantage)</span>
+            <span className="break-all text-sm text-ink-800">{record.marketLocation ?? "Country-level (not set)"}</span>
+            <MarketPicker clientId={record.id} current={record.marketLocation} />
           </div>
 
           <div className="grid gap-2">

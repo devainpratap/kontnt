@@ -1,5 +1,7 @@
 import cron, { type ScheduledTask } from "node-cron";
 
+import type { SchedulerRunStatus, SchedulerTrigger } from "@rankos/shared";
+
 import { ClientRepository } from "../clients/repository";
 import { rankConfig } from "../config";
 import { latestLikelyDataDate } from "../gsc/date-utils";
@@ -13,6 +15,9 @@ import { runCheckBatch, selectDueKeywords } from "../serp/queue";
 import { RankCheckService } from "../serp/rank-check-service";
 import { isEmailConfigured, sendReportEmail } from "../notify/email";
 import { OperatorService } from "../operator/operator-service";
+import { catchUpMissedRuns } from "./catch-up";
+import { mostRecentScheduledFire } from "./cron-window";
+import { latestRunPerTask, recordSchedulerRun } from "./scheduler-runs";
 
 /**
  * The scheduler turns RankOS from a tool you operate into a system that
@@ -38,11 +43,10 @@ export type SchedulerTask = {
 export type SchedulerState = {
   enabled: boolean;
   tasks: Array<SchedulerTask & { nextNote: string }>;
-  lastRuns: Record<string, { at: string; summary: string }>;
+  lastRuns: Record<string, { at: string; summary: string; trigger?: SchedulerTrigger }>;
 };
 
 const tasks: ScheduledTask[] = [];
-const lastRuns: Record<string, { at: string; summary: string }> = {};
 
 const clients = new ClientRepository();
 const google = new GoogleAccountRepository();
@@ -51,13 +55,22 @@ const rankChecks = new RankCheckService(clients);
 const insights = new InsightService(clients);
 const operator = new OperatorService();
 
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function record(name: string, summary: string) {
-  lastRuns[name] = { at: nowIso(), summary };
-  console.log(`[scheduler] ${name}: ${summary}`);
+/**
+ * Record a run to the console and to the persisted scheduler_runs table, which
+ * survives restarts (backing the Settings "last run" display) and lets
+ * missed-run recovery tell whether a task has run since its last scheduled fire.
+ * Every runner calls this in all its exit paths, so "did this task run?" always
+ * has an answer. `trigger` marks an on-time `cron` fire vs a `boot`/`heartbeat`
+ * recovery vs a `manual` run.
+ */
+function record(
+  name: string,
+  summary: string,
+  options: { trigger?: SchedulerTrigger; status?: SchedulerRunStatus } = {}
+) {
+  const trigger = options.trigger ?? "cron";
+  recordSchedulerRun({ taskName: name, trigger, status: options.status ?? "ok", summary });
+  console.log(`[scheduler] ${name} (${trigger}): ${summary}`);
 }
 
 /** Clients with a linked property, the only ones any task can act on. */
@@ -71,9 +84,9 @@ function activeClients() {
  * Serial rather than parallel so one client's quota backoff cannot stall the
  * others, and so the shared in-flight lock is respected per client.
  */
-async function runGscSyncAll(): Promise<void> {
+async function runGscSyncAll(trigger: SchedulerTrigger = "cron"): Promise<void> {
   if (!google.isConnected()) {
-    record("gsc-sync", "skipped - Google not connected");
+    record("gsc-sync", "skipped - Google not connected", { trigger, status: "skipped" });
     return;
   }
 
@@ -91,7 +104,10 @@ async function runGscSyncAll(): Promise<void> {
       failed += 1;
     }
   }
-  record("gsc-sync", `${ok} synced, ${failed} failed`);
+  record("gsc-sync", `${ok} synced, ${failed} failed`, {
+    trigger,
+    status: failed > 0 && ok === 0 ? "failed" : "ok"
+  });
 }
 
 /**
@@ -100,13 +116,13 @@ async function runGscSyncAll(): Promise<void> {
  * Due-ness comes from each keyword's cadence, so this is safe to run daily: only
  * keywords whose interval has elapsed are actually fetched.
  */
-async function runSerpDue(): Promise<void> {
+async function runSerpDue(trigger: SchedulerTrigger = "cron"): Promise<void> {
   let checked = 0;
   let blocked = 0;
 
   for (const client of activeClients()) {
     if (rankChecks.remainingToday() <= 0) {
-      record("serp-checks", `stopped at daily cap; ${checked} checked`);
+      record("serp-checks", `stopped at daily cap; ${checked} checked`, { trigger });
       return;
     }
 
@@ -132,7 +148,7 @@ async function runSerpDue(): Promise<void> {
     }
   }
 
-  record("serp-checks", `${checked} checked, ${blocked} blocked`);
+  record("serp-checks", `${checked} checked, ${blocked} blocked`, { trigger });
 }
 
 /**
@@ -140,29 +156,48 @@ async function runSerpDue(): Promise<void> {
  * escalates the rest, per OPERATOR_AUTONOMY. Best-effort - a failure here must
  * not disturb the other scheduled work.
  */
-async function runOperator(): Promise<void> {
+async function runOperator(trigger: SchedulerTrigger = "cron"): Promise<void> {
   if (!rankConfig.operatorEnabled) {
-    record("operator", "disabled");
+    record("operator", "disabled", { trigger, status: "skipped" });
     return;
   }
   try {
     const result = await operator.run({ apply: rankConfig.operatorAutonomy === "auto" });
     record(
       "operator",
-      `${result.record.healthLevel} - ${result.record.actionsCount} fixed, ${result.record.escalationsCount} escalated`
+      `${result.record.healthLevel} - ${result.record.actionsCount} fixed, ${result.record.escalationsCount} escalated`,
+      { trigger }
     );
   } catch (error) {
-    record("operator", `failed: ${error instanceof Error ? error.message : "unknown"}`);
+    record("operator", `failed: ${error instanceof Error ? error.message : "unknown"}`, {
+      trigger,
+      status: "failed"
+    });
   }
 }
 
 /** Generate the weekly report + brief for every linked client. */
-async function runWeeklyReports(): Promise<void> {
+async function runWeeklyReports(trigger: SchedulerTrigger = "cron"): Promise<void> {
   let made = 0;
   let skipped = 0;
   let emailed = 0;
 
+  // Produce at most one report per scheduled cycle. The cutoff is this cycle's
+  // most recent report fire, so a report already produced this cycle - by the
+  // on-time cron, a boot/heartbeat recovery, or (on first deploy) one that
+  // pre-dates run history - is not re-sent, while a due report is never
+  // suppressed by an unrelated manual run earlier in the cycle. Falls back to a
+  // 6-day window only if the report cron is unset/invalid.
+  const now = new Date();
+  const reportFire = mostRecentScheduledFire(rankConfig.schedulerReportCron, now);
+  const producedSince = reportFire ?? new Date(now.getTime() - 6 * 86_400_000);
+
   for (const client of activeClients()) {
+    if (insights.hasCompletedReportSince(client.id, "weekly-report", producedSince)) {
+      skipped += 1;
+      continue;
+    }
+
     const started = runLock.start(client.id, "insight", async () => {
       try {
         const result = await insights.generate(client.id, { days: 7, kind: "weekly-report" });
@@ -201,7 +236,7 @@ async function runWeeklyReports(): Promise<void> {
     }
   }
 
-  record("weekly-reports", `${made} generated, ${skipped} skipped, ${emailed} emailed`);
+  record("weekly-reports", `${made} generated, ${skipped} skipped, ${emailed} emailed`, { trigger });
 }
 
 /**
@@ -232,7 +267,7 @@ export async function backfillOnBoot(): Promise<void> {
       await runLock.drain();
     }
   }
-  record("boot-backfill", "gap check complete");
+  record("boot-backfill", "gap check complete", { trigger: "boot" });
 }
 
 const SCHEDULE: SchedulerTask[] = [
@@ -242,7 +277,7 @@ const SCHEDULE: SchedulerTask[] = [
   { name: "operator", cron: rankConfig.operatorCron, description: "Supervise the system: auto-fix safe issues, escalate the rest" }
 ];
 
-const RUNNERS: Record<string, () => Promise<void>> = {
+const RUNNERS: Record<string, (trigger: SchedulerTrigger) => Promise<void>> = {
   "gsc-sync": runGscSyncAll,
   "serp-checks": runSerpDue,
   "weekly-reports": runWeeklyReports,
@@ -267,13 +302,43 @@ export function startScheduler(): void {
     const scheduled = cron.schedule(
       task.cron,
       () => {
-        runner().catch((error) => console.error(`[scheduler] ${task.name} threw:`, error?.message ?? error));
+        runner("cron").catch((error) => console.error(`[scheduler] ${task.name} threw:`, error?.message ?? error));
       },
       { timezone: "Asia/Kolkata" }
     );
     tasks.push(scheduled);
     console.log(`[scheduler] ${task.name} scheduled: ${task.cron}`);
   }
+
+  // Missed-run recovery heartbeat: hourly, it re-checks whether any task slept
+  // through its scheduled fire (the machine was asleep and later woke without a
+  // restart) and catches it up. Boot covers the machine-was-off case; this
+  // covers wake-without-restart. Idempotent, so a quiet hour does nothing.
+  if (
+    rankConfig.schedulerCatchupEnabled &&
+    rankConfig.schedulerCatchupCron &&
+    cron.validate(rankConfig.schedulerCatchupCron)
+  ) {
+    const heartbeat = cron.schedule(
+      rankConfig.schedulerCatchupCron,
+      () => {
+        catchUpMissedRuns({ now: new Date(), trigger: "heartbeat", schedule: SCHEDULE, runners: RUNNERS }).catch(
+          (error) => console.error("[scheduler] catch-up heartbeat threw:", error?.message ?? error)
+        );
+      },
+      { timezone: "Asia/Kolkata" }
+    );
+    tasks.push(heartbeat);
+    console.log(`[scheduler] catch-up heartbeat scheduled: ${rankConfig.schedulerCatchupCron}`);
+  }
+}
+
+/**
+ * Recover any run missed while the machine was off. Called once on boot, after
+ * the server is listening and the GSC gap backfill has run. Best-effort.
+ */
+export async function runBootCatchUp(): Promise<void> {
+  await catchUpMissedRuns({ now: new Date(), trigger: "boot", schedule: SCHEDULE, runners: RUNNERS });
 }
 
 export function stopScheduler(): void {
@@ -289,7 +354,8 @@ export function getSchedulerState(): SchedulerState {
       ...task,
       nextNote: task.cron && cron.validate(task.cron) ? `Cron: ${task.cron} (Asia/Kolkata)` : "disabled"
     })),
-    lastRuns
+    // Read from the persisted table, so history survives a restart.
+    lastRuns: latestRunPerTask()
   };
 }
 
@@ -299,5 +365,5 @@ export async function runTaskNow(name: string): Promise<void> {
   if (!runner) {
     throw new Error(`Unknown scheduled task: ${name}`);
   }
-  await runner();
+  await runner("manual");
 }

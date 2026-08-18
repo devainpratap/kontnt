@@ -3,7 +3,7 @@ import { ClientRepository } from "./clients/repository";
 import { ensureRankDirs, rankConfig } from "./config";
 import { initializeRankDatabase } from "./db/client";
 import { InsightService } from "./insights/insight-service";
-import { backfillOnBoot, startScheduler } from "./scheduler/scheduler";
+import { backfillOnBoot, runBootCatchUp, startScheduler } from "./scheduler/scheduler";
 
 async function main() {
   await ensureRankDirs();
@@ -26,11 +26,15 @@ async function main() {
   const app = await createRankServer();
   await app.listen({ host: rankConfig.host, port: rankConfig.port });
 
-  // Start the scheduler and fill any GSC gap from downtime, after the server is
-  // listening so a slow backfill never delays readiness. Failures here must not
-  // take the server down - it is still fully usable manually.
+  // Start the scheduler and, after the server is listening (so nothing delays
+  // readiness), heal downtime: first fill any GSC gap, then recover any run that
+  // was missed while the machine was off - the missed Monday report above all.
+  // Sequential so a recovered report reads freshly-synced data; best-effort, as
+  // the app is still fully usable manually if this fails.
   startScheduler();
-  backfillOnBoot().catch((error) => console.error("[scheduler] boot backfill failed:", error?.message ?? error));
+  backfillOnBoot()
+    .then(() => runBootCatchUp())
+    .catch((error) => console.error("[scheduler] boot recovery failed:", error?.message ?? error));
 }
 
 main().catch((error) => {

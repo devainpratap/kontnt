@@ -9,6 +9,8 @@ import type {
   InsightStatus,
   RankCheckSource,
   RankCheckStatus,
+  SchedulerRunStatus,
+  SchedulerTrigger,
   SyncRunKind,
   SyncRunStatus
 } from "@rankos/shared";
@@ -34,6 +36,11 @@ export const clientsTable = sqliteTable(
     primaryDomain: text("primary_domain").notNull(),
     gscProperty: text("gsc_property"),
     gscPropertyType: text("gsc_property_type").$type<GscPropertyType>(),
+    // The client's primary market as a SerpApi/DataForSeo canonical location
+    // (e.g. "Noida,Uttar Pradesh,India"). Google localizes by city, so this is
+    // the default vantage every keyword without its own place is checked from -
+    // the difference between a real local rank and a misleading national one.
+    marketLocation: text("market_location"),
     // JSON array of branded queries excluded from opportunity analysis.
     brandTerms: text("brand_terms").notNull().default("[]"),
     notes: text("notes").notNull().default(""),
@@ -356,5 +363,31 @@ export const operatorRunsTable = sqliteTable(
   },
   (table) => ({
     ranAtIdx: index("operator_runs_ran_at_idx").on(table.ranAt)
+  })
+);
+
+/**
+ * One row per scheduled-task run.
+ *
+ * The scheduler's `lastRuns` was in-memory only, so a restart erased all history
+ * and RankOS could not tell whether a run had been missed. This table is the
+ * durable record: it survives restarts (backing the Settings "last run"
+ * display), and it lets missed-run recovery ask "did this task actually run
+ * since its last scheduled fire?" - the check that turns a slept-through cron
+ * into a caught-up one. `trigger` marks whether a run was the normal `cron`
+ * fire or a `boot`/`heartbeat` recovery.
+ */
+export const schedulerRunsTable = sqliteTable(
+  "scheduler_runs",
+  {
+    id: text("id").primaryKey(),
+    taskName: text("task_name").notNull(),
+    ranAt: text("ran_at").notNull(),
+    trigger: text("trigger").$type<SchedulerTrigger>().notNull().default("cron"),
+    status: text("status").$type<SchedulerRunStatus>().notNull().default("ok"),
+    summary: text("summary").notNull().default("")
+  },
+  (table) => ({
+    taskRanAtIdx: index("scheduler_runs_task_ran_at_idx").on(table.taskName, table.ranAt)
   })
 );

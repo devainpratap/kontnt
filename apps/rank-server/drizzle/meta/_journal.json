@@ -29,6 +29,20 @@
       "when": 1784897088820,
       "tag": "0003_bouncy_penance",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1785112983557,
+      "tag": "0004_fair_sentinels",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1785120435990,
+      "tag": "0005_naive_warhawk",
+      "breakpoints": true
     }
   ]
 }

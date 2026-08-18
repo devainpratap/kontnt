@@ -111,7 +111,14 @@ export async function registerRankRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return badRequest(reply, parsed.error.issues[0]?.message ?? "Invalid client payload.");
     }
-    return clients.updateClient(clientId, parsed.data);
+    const before = clients.getClientOrThrow(clientId);
+    const updated = await clients.updateClient(clientId, parsed.data);
+    // Changing the client's market changes the vantage every keyword is checked
+    // from, so re-derive their locations to match (force: overrides included).
+    if (parsed.data.marketLocation !== undefined && before.marketLocation !== updated.marketLocation) {
+      keywords.rederiveLocations(clientId, { force: true });
+    }
+    return updated;
   });
 
   // ----------------------------------------------------------- google oauth
@@ -325,6 +332,7 @@ export async function registerRankRoutes(app: FastifyInstance) {
       tags?: string[];
       cadence?: "daily" | "weekly" | "paused";
       isActive?: boolean;
+      location?: string | null;
     };
     return keywords.updateKeyword(keywordId, body);
   });

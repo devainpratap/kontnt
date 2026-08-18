@@ -62,6 +62,16 @@ export const insightStatuses = ["pending", "running", "completed", "manual-input
 export const checkCadences = ["daily", "weekly", "paused"] as const;
 
 /**
+ * How a scheduled-task run was triggered. `cron` is the normal on-time fire;
+ * `boot`/`heartbeat` are missed-run recoveries (machine was off, or asleep and
+ * later woke); `manual` is a hand-triggered "run now".
+ */
+export const schedulerTriggers = ["cron", "boot", "heartbeat", "manual"] as const;
+
+/** Outcome of a scheduled-task run, as recorded in scheduler_runs. */
+export const schedulerRunStatuses = ["ok", "skipped", "failed"] as const;
+
+/**
  * Google Search Console reports dates in Pacific Time. Every date in this
  * system is a `YYYY-MM-DD` string interpreted in this zone; storing local
  * `Date` objects creates off-by-one duplicate rows that are painful to debug.

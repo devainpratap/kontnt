@@ -11,8 +11,9 @@ import type {
 } from "@rankos/shared";
 
 import { db } from "../db/client";
-import { gscDailyTable, keywordsTable, rankChecksTable } from "../db/schema";
+import { clientsTable, gscDailyTable, keywordsTable, rankChecksTable } from "../db/schema";
 import { ApiError } from "../lib/api-error";
+import { resolveKeywordLocation } from "./location";
 import { parseKeywordImport } from "./parse-import";
 import { countCompetingPages, type CandidateRow } from "./opportunity";
 
@@ -53,6 +54,16 @@ export function normalisePhrase(value: string): string {
 }
 
 export class KeywordRepository {
+  /** The client's primary-market location - the default vantage for its keywords. */
+  private clientMarket(clientId: string): string | null {
+    const row = db
+      .select({ marketLocation: clientsTable.marketLocation })
+      .from(clientsTable)
+      .where(eq(clientsTable.id, clientId))
+      .get();
+    return row?.marketLocation ?? null;
+  }
+
   listKeywords(clientId: string): KeywordRecord[] {
     return db
       .select()
@@ -145,6 +156,9 @@ export class KeywordRepository {
 
   createKeyword(clientId: string, input: CreateKeywordInput): KeywordRecord {
     const phrase = normalisePhrase(input.phrase);
+    // Derive the search location: explicit -> place in phrase -> client market ->
+    // country. See resolveKeywordLocation.
+    const location = resolveKeywordLocation(phrase, input.country, input.location, this.clientMarket(clientId));
     const existing = db
       .select()
       .from(keywordsTable)
@@ -157,7 +171,7 @@ export class KeywordRepository {
         )
       )
       .all()
-      .find((row) => (row.location ?? null) === (input.location ?? null));
+      .find((row) => (row.location ?? null) === location);
 
     if (existing) {
       throw new ApiError("That keyword is already tracked for this market.", 409, "KEYWORD_EXISTS");
@@ -171,7 +185,7 @@ export class KeywordRepository {
         phrase,
         country: input.country,
         device: input.device,
-        location: input.location ?? null,
+        location,
         targetUrl: input.targetUrl ?? null,
         tags: JSON.stringify(input.tags),
         cadence: input.cadence,
@@ -205,11 +219,15 @@ export class KeywordRepository {
     );
 
     const timestamp = nowIso();
+    const market = this.clientMarket(clientId);
     const toInsert: Array<typeof keywordsTable.$inferInsert> = [];
     let duplicates = 0;
 
     for (const row of parsed.rows) {
-      const key = `${row.phrase}|${defaults.country}|${defaults.device}|${defaults.location ?? ""}`;
+      // Each row gets its own location: an explicit import-wide location, else
+      // the local city named in the phrase, else the client's market.
+      const location = resolveKeywordLocation(row.phrase, defaults.country, defaults.location, market);
+      const key = `${row.phrase}|${defaults.country}|${defaults.device}|${location ?? ""}`;
       if (existing.has(key)) {
         duplicates += 1;
         continue;
@@ -222,7 +240,7 @@ export class KeywordRepository {
         phrase: row.phrase,
         country: defaults.country,
         device: defaults.device,
-        location: defaults.location ?? null,
+        location,
         targetUrl: row.targetUrl,
         tags: JSON.stringify(defaults.tags),
         cadence: defaults.cadence,
@@ -245,7 +263,7 @@ export class KeywordRepository {
 
   updateKeyword(
     keywordId: string,
-    patch: Partial<Pick<KeywordRecord, "targetUrl" | "tags" | "cadence" | "isActive">>
+    patch: Partial<Pick<KeywordRecord, "targetUrl" | "tags" | "cadence" | "isActive" | "location">>
   ): KeywordRecord {
     this.getKeywordOrThrow(keywordId);
 
@@ -254,12 +272,60 @@ export class KeywordRepository {
     if (patch.tags !== undefined) values.tags = JSON.stringify(patch.tags);
     if (patch.cadence !== undefined) values.cadence = patch.cadence;
     if (patch.isActive !== undefined) values.isActive = patch.isActive;
+    // A hand-set location is the override resolveKeywordLocation always respects.
+    if (patch.location !== undefined) values.location = patch.location;
 
     if (Object.keys(values).length > 0) {
       db.update(keywordsTable).set(values).where(eq(keywordsTable.id, keywordId)).run();
     }
 
     return this.getKeywordOrThrow(keywordId);
+  }
+
+  /**
+   * Backfill/refresh keyword locations, deriving each from the phrase (local
+   * city) or the client's market, else the country. By default only fills
+   * keywords that have no location; `force` re-derives every keyword (e.g. after
+   * changing a client's market) - which also overwrites manual overrides, so use
+   * it deliberately. Returns the number of keywords updated. Scoped to one
+   * client, or all clients when omitted.
+   */
+  rederiveLocations(clientId?: string, options: { force?: boolean } = {}): number {
+    const query = db
+      .select({
+        id: keywordsTable.id,
+        clientId: keywordsTable.clientId,
+        phrase: keywordsTable.phrase,
+        country: keywordsTable.country,
+        location: keywordsTable.location
+      })
+      .from(keywordsTable);
+    const rows = (clientId ? query.where(eq(keywordsTable.clientId, clientId)) : query).all();
+
+    // One market lookup per client, reused across all its keywords.
+    const marketByClient = new Map<string, string | null>();
+    const marketFor = (id: string): string | null => {
+      if (!marketByClient.has(id)) {
+        marketByClient.set(id, this.clientMarket(id));
+      }
+      return marketByClient.get(id) ?? null;
+    };
+
+    let updated = 0;
+    db.transaction((tx) => {
+      for (const row of rows) {
+        if (!options.force && row.location && row.location.trim()) {
+          continue; // already set - leave it unless forcing
+        }
+        const resolved = resolveKeywordLocation(row.phrase, row.country, null, marketFor(row.clientId));
+        if (!resolved || resolved === row.location) {
+          continue; // nothing to change
+        }
+        tx.update(keywordsTable).set({ location: resolved }).where(eq(keywordsTable.id, row.id)).run();
+        updated += 1;
+      }
+    });
+    return updated;
   }
 
   /**

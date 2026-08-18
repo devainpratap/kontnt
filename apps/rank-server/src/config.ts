@@ -90,6 +90,14 @@ const configSchema = z.object({
   SCHEDULER_SERP_CRON: z.string().default("0 3 * * *"),     // 3am daily (due keywords only)
   SCHEDULER_REPORT_CRON: z.string().default("0 8 * * 1"),   // 8am Monday
 
+  // Missed-run recovery. node-cron only fires while the process is up, so a run
+  // scheduled for a time the machine was asleep/off is otherwise lost. When
+  // enabled, RankOS recovers missed runs on boot and on this cadence (hourly by
+  // default) - the fix for "the Mac was asleep at 8am so Monday's report never
+  // went out". Idempotent, so it is safe to run often.
+  SCHEDULER_CATCHUP_ENABLED: booleanish(true),
+  SCHEDULER_CATCHUP_CRON: z.string().default("15 * * * *"), // hourly at :15
+
   // Email delivery of the weekly report + WhatsApp brief. Sent as the final
   // step of the weekly-reports scheduler task, so "fixed repetitive time" =
   // SCHEDULER_REPORT_CRON. Any SMTP works (Gmail/Workspace app password, or a
@@ -165,6 +173,8 @@ export const rankConfig = {
   schedulerGscCron: env.SCHEDULER_GSC_CRON,
   schedulerSerpCron: env.SCHEDULER_SERP_CRON,
   schedulerReportCron: env.SCHEDULER_REPORT_CRON,
+  schedulerCatchupEnabled: env.SCHEDULER_CATCHUP_ENABLED,
+  schedulerCatchupCron: env.SCHEDULER_CATCHUP_CRON,
   emailEnabled: env.EMAIL_ENABLED,
   smtpHost: env.SMTP_HOST,
   smtpPort: env.SMTP_PORT,

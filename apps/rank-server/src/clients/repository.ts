@@ -47,6 +47,7 @@ function toRecord(row: ClientRow): ClientRecord {
     primaryDomain: row.primaryDomain,
     gscProperty: row.gscProperty,
     gscPropertyType: row.gscPropertyType,
+    marketLocation: row.marketLocation,
     // Stored as a JSON string; a malformed value must not take down the list
     // page, so fall back to empty rather than throwing.
     brandTerms: safeParseStringArray(row.brandTerms),
@@ -103,6 +104,7 @@ export class ClientRepository {
         primaryDomain: input.primaryDomain,
         gscProperty: input.gscProperty ?? null,
         gscPropertyType: detectPropertyType(input.gscProperty),
+        marketLocation: input.marketLocation ?? null,
         brandTerms: JSON.stringify(input.brandTerms),
         notes: input.notes,
         clientPath,
@@ -228,6 +230,7 @@ export class ClientRepository {
     if (input.name !== undefined) patch.name = input.name;
     if (input.primaryDomain !== undefined) patch.primaryDomain = input.primaryDomain;
     if (input.notes !== undefined) patch.notes = input.notes;
+    if (input.marketLocation !== undefined) patch.marketLocation = input.marketLocation ?? null;
     if (input.brandTerms !== undefined) patch.brandTerms = JSON.stringify(input.brandTerms);
     if (input.gscProperty !== undefined) {
       patch.gscProperty = input.gscProperty ?? null;

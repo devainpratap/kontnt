@@ -192,15 +192,22 @@ export function SettingsPage() {
                     <span className="font-mono text-[12px] text-ink-500">{task.nextNote}</span>
                   </div>
                   <span className="text-[12px] text-ink-500">
-                    {last ? `Last run ${formatRelativeTime(last.at)}: ${last.summary}` : "Not run yet this session"}
+                    {last
+                      ? `Last run ${formatRelativeTime(last.at)}${
+                          last.trigger === "boot" || last.trigger === "heartbeat" ? " (recovered)" : ""
+                        }: ${last.summary}`
+                      : "Not run yet"}
                   </span>
                 </div>
               );
             })}
             <p className="text-[12px] leading-5 text-ink-400">
-              The scheduler runs inside this local server, so it only fires while your machine is awake and the server
-              is up. Missed Search Console days are backfilled automatically on the next start; missed live rank checks
-              are not recoverable, so a keyword simply shows its true last-checked age.
+              The scheduler runs inside this local server, so it only fires while your machine is awake. If it is asleep
+              or off at a scheduled time, RankOS recovers the missed run on the next start and hourly after - including
+              re-sending a missed weekly report, once. For on-time delivery, wake the Mac before the morning jobs
+              (<span className="font-mono">sudo pmset repeat wakeorpoweron MTWRFSU 05:10:00</span>) or run on an
+              always-on host. Missed live rank checks for a past day cannot be reconstructed, so a keyword shows its true
+              last-checked age.
             </p>
           </div>
         ) : null}

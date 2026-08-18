@@ -131,13 +131,22 @@ export function buildSearchUrl(query: SerpQuery, startAt = 0): string {
 export const RESULTS_PER_PAGE = 10;
 
 /**
- * Google's uule location encoding: a length-prefixed, base64 canonical name.
- * Approximate but widely used; an unrecognised value is ignored by Google
- * rather than erroring, so a bad location degrades to a national result.
+ * Google's uule encoding for a canonical location name: the fixed prefix
+ * `w+CAIQICI`, a single character encoding the length of the *name* against the
+ * base64 alphabet, then the base64-encoded name.
+ *
+ * The previous version used a 26-letter alphabet indexed by `length % 26`, which
+ * produced an invalid length character for almost every location. Google then
+ * ignored the uule and silently fell back to the request IP's location - the
+ * bug behind rank readings that matched a proxy's vantage instead of the target
+ * city. An unrecognised (but well-formed) value still degrades to a national
+ * result rather than erroring.
  */
+const UULE_LENGTH_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
 export function encodeCanonicalLocation(location: string): string {
   const encoded = Buffer.from(location, "utf8").toString("base64");
-  const lengthChar = "abcdefghijklmnopqrstuvwxyz"[location.length % 26] ?? "a";
+  const lengthChar = UULE_LENGTH_ALPHABET[location.length] ?? "A";
   return `w+CAIQICI${lengthChar}${encoded}`;
 }
 

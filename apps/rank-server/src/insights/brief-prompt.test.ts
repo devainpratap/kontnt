@@ -8,7 +8,7 @@ import { buildInsightStats } from "./stats";
 
 const client: ClientRecord = {
   id: "c1", name: "AdClear", slug: "adclear", primaryDomain: "adclear.in",
-  gscProperty: "https://adclear.in/", gscPropertyType: "url-prefix",
+  gscProperty: "https://adclear.in/", gscPropertyType: "url-prefix", marketLocation: null,
   brandTerms: ["adclear"], notes: "", clientPath: "/tmp/x",
   createdAt: "2026-07-01T00:00:00Z", updatedAt: "2026-07-01T00:00:00Z", archivedAt: null
 };

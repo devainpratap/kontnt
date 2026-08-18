@@ -37,6 +37,7 @@ function snapshot(overrides: Partial<OperatorSnapshot> = {}): OperatorSnapshot {
     db: { sizeBytes: 60_000_000, gscDailyRows: 90_000, oldestGscDate: "2025-03-22" },
     stuckSyncRuns: 0,
     stuckInsights: 0,
+    recoveredRuns7d: 0,
     clients: [client()],
     ...overrides
   };
@@ -155,6 +156,19 @@ describe("evaluateRules — per client", () => {
   it("suggests linking a property for a client without one", () => {
     const findings = evaluateRules(snapshot({ clients: [client({ gscProperty: null })] }));
     assert.ok(findings.some((f) => f.kind === "client-no-property"));
+  });
+
+  it("suggests auto-wake when scheduled runs are frequently recovered late", () => {
+    const findings = evaluateRules(snapshot({ recoveredRuns7d: 4 }));
+    const f = findings.find((x) => x.kind === "runs-recovered-late");
+    assert.ok(f);
+    assert.equal(f.disposition, "suggestion");
+    assert.equal(f.severity, "info");
+    assert.match(f.recommendedAction ?? "", /wake|always-on/i);
+  });
+
+  it("does not flag late recovery below the threshold", () => {
+    assert.ok(!kinds(snapshot({ recoveredRuns7d: 2 })).includes("runs-recovered-late"));
   });
 });
 

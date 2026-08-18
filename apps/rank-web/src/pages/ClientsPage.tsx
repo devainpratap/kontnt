@@ -15,6 +15,7 @@ const emptyForm = {
   name: "",
   primaryDomain: "",
   gscProperty: "",
+  marketLocation: "",
   brandTerms: "",
   notes: ""
 };
@@ -54,6 +55,7 @@ function NewClientForm({ onDone }: { onDone: () => void }) {
             name: form.name.trim(),
             primaryDomain: form.primaryDomain.trim(),
             gscProperty: form.gscProperty.trim() || null,
+            marketLocation: form.marketLocation.trim() || null,
             brandTerms: parseTermList(form.brandTerms),
             notes: form.notes.trim()
           });
@@ -83,6 +85,14 @@ function NewClientForm({ onDone }: { onDone: () => void }) {
           hint="Optional for now — you can pick this from a list once Google is connected."
           value={form.gscProperty}
           onChange={update("gscProperty")}
+        />
+
+        <TextField
+          label="Primary market"
+          placeholder="Noida,Uttar Pradesh,India"
+          hint="The client's main market. Rank checks run from here — Google localizes by city, so this is what makes tracked positions match reality. Leave blank for a country-level check."
+          value={form.marketLocation}
+          onChange={update("marketLocation")}
         />
 
         <TextAreaField

@@ -101,6 +101,25 @@ The LLM reasoning pass writes language only and is never in the action path.
 Consequential issues escalate to the operator by email. This mirrors the whole
 system's rule: code owns consequential decisions, the model owns words.
 
+## Scheduler + missed-run recovery
+
+The scheduler (`scheduler/scheduler.ts`) runs inside the local process via
+node-cron, so it only fires while the machine is awake and the server is up. To
+stop that silently dropping runs (most visibly the Monday report), every run is
+persisted to `scheduler_runs`, and **missed-run recovery** (`scheduler/catch-up.ts`)
+runs on boot and hourly: for each task it finds the last scheduled fire
+(`scheduler/cron-window.ts`, computed in the fixed Asia/Kolkata offset) and, if
+nothing has run since, runs it now. Recovery is idempotent - the weekly report is
+guarded to at most one per scheduled cycle, keyed on the report artifact since
+the last report fire (`InsightService.hasCompletedReportSince`), so a due Monday
+report is never suppressed by an unrelated manual run yet is never re-sent by a
+restart; syncs upsert; SERP fetches only cadence-due keywords - so it is safe to
+run often. Recovery is a safety net, not a substitute for uptime: for on-time
+delivery, wake the Mac before the morning jobs
+(`sudo pmset repeat wakeorpoweron MTWRFSU 05:10:00`) or run on an always-on host.
+When runs are frequently recovered late, the Operator surfaces this as a
+`runs-recovered-late` suggestion.
+
 ## Build Rules
 
 - Keep the UI operational and plain. This is a work tool.

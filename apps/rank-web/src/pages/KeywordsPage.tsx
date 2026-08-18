@@ -479,6 +479,10 @@ function KeywordTable({ clientId }: { clientId: string }) {
                   </td>
                   <td className="py-2 pr-3 text-[13px] text-ink-500">
                     {keyword.country.toUpperCase()} · {keyword.device}
+                    {keyword.location ? (
+                      // Short label (the city, or "India"); full canonical name on hover.
+                      <span title={keyword.location}> · {keyword.location.split(",")[0]}</span>
+                    ) : null}
                   </td>
                   <td className="tabular py-2 pr-3 text-right text-ink-700">
                     {formatPosition(keyword.gscPosition)}

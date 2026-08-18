@@ -64,6 +64,81 @@ export function mapSerpApiFeatures(payload: SerpApiResponse): SerpFeature[] {
   return features;
 }
 
+/**
+ * Google's country-specific domain, matched to the search country.
+ *
+ * SerpApi defaults `google_domain` to google.com; pairing it with the `gl`
+ * country (google.co.in for gl=in) makes the SERP reflect what a searcher in
+ * that country actually sees, instead of a google.com view biased only by gl.
+ * Unknown countries fall back to google.com, which is Google's own default.
+ */
+const GOOGLE_DOMAINS: Record<string, string> = {
+  in: "google.co.in",
+  us: "google.com",
+  gb: "google.co.uk",
+  uk: "google.co.uk",
+  ca: "google.ca",
+  au: "google.com.au",
+  nz: "google.co.nz",
+  ie: "google.ie",
+  ae: "google.ae",
+  sa: "google.com.sa",
+  sg: "google.com.sg",
+  my: "google.com.my",
+  ph: "google.com.ph",
+  id: "google.co.id",
+  pk: "google.com.pk",
+  bd: "google.com.bd",
+  lk: "google.lk",
+  za: "google.co.za",
+  ng: "google.com.ng",
+  ke: "google.co.ke",
+  de: "google.de",
+  fr: "google.fr",
+  es: "google.es",
+  it: "google.it",
+  nl: "google.nl",
+  br: "google.com.br",
+  mx: "google.com.mx",
+  jp: "google.co.jp"
+};
+
+export function googleDomainForCountry(country: string): string {
+  return GOOGLE_DOMAINS[country.toLowerCase()] ?? "google.com";
+}
+
+/**
+ * Build the SerpApi request parameters for one page of a query.
+ *
+ * Extracted as a pure function so the exact parameters sent to Google - the
+ * thing that decides whether a ranking is correct - are unit-tested rather than
+ * buried in the fetch loop.
+ */
+export function buildSerpApiParams(query: SerpQuery, pageIndex: number, apiKey: string): URLSearchParams {
+  const params = new URLSearchParams({
+    engine: "google",
+    q: query.keyword,
+    // Match the Google ccTLD to the country so the SERP is localized the way a
+    // real searcher in that country sees it, not a plain google.com view.
+    google_domain: googleDomainForCountry(query.country),
+    gl: query.country,
+    hl: "en",
+    device: query.device,
+    // Always fetch a fresh SERP. A cached result would defeat rank tracking, and
+    // at the weekly cadence these checks run they never fall inside SerpApi's
+    // ~1h cache window anyway, so this costs nothing in practice (a cached hit
+    // would not have been served regardless).
+    no_cache: "true",
+    // Google deprecated `num` in 2025, so depth comes from `start` pagination.
+    start: String(pageIndex * 10),
+    api_key: apiKey
+  });
+  if (query.location) {
+    params.set("location", query.location);
+  }
+  return params;
+}
+
 export const serpApiProvider: SerpProvider = {
   name: "serpapi",
 
@@ -97,18 +172,7 @@ export const serpApiProvider: SerpProvider = {
           break;
         }
 
-        const params = new URLSearchParams({
-          engine: "google",
-          q: query.keyword,
-          gl: query.country,
-          hl: "en",
-          device: query.device,
-          start: String(pageIndex * 10),
-          api_key: rankConfig.serpApiKey
-        });
-        if (query.location) {
-          params.set("location", query.location);
-        }
+        const params = buildSerpApiParams(query, pageIndex, rankConfig.serpApiKey);
 
         const response = await fetch(`${ENDPOINT}?${params.toString()}`, { signal });
         lastStatus = response.status;

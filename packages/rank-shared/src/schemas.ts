@@ -9,6 +9,8 @@ import {
   insightStatuses,
   rankCheckSources,
   rankCheckStatuses,
+  schedulerRunStatuses,
+  schedulerTriggers,
   serpFeatures,
   syncRunKinds,
   syncRunStatuses
@@ -25,6 +27,8 @@ export const alertKindSchema = z.enum(alertKinds);
 export const insightKindSchema = z.enum(insightKinds);
 export const insightStatusSchema = z.enum(insightStatuses);
 export const checkCadenceSchema = z.enum(checkCadences);
+export const schedulerTriggerSchema = z.enum(schedulerTriggers);
+export const schedulerRunStatusSchema = z.enum(schedulerRunStatuses);
 
 export type GscPropertyType = z.infer<typeof gscPropertyTypeSchema>;
 export type Device = z.infer<typeof deviceSchema>;
@@ -37,6 +41,8 @@ export type AlertKind = z.infer<typeof alertKindSchema>;
 export type InsightKind = z.infer<typeof insightKindSchema>;
 export type InsightStatus = z.infer<typeof insightStatusSchema>;
 export type CheckCadence = z.infer<typeof checkCadenceSchema>;
+export type SchedulerTrigger = z.infer<typeof schedulerTriggerSchema>;
+export type SchedulerRunStatus = z.infer<typeof schedulerRunStatusSchema>;
 
 /** `YYYY-MM-DD` in GSC's timezone. Enforced as a string, never a Date. */
 export const isoDateSchema = z
@@ -81,6 +87,8 @@ export const createClientSchema = z.object({
   name: z.string().trim().min(1, "Client name is required.").max(120),
   primaryDomain: domainSchema,
   gscProperty: gscPropertySchema.optional().nullable(),
+  /** Primary market as a canonical location, the default vantage for rank checks. */
+  marketLocation: z.string().trim().max(120).optional().nullable(),
   /**
    * Branded queries, excluded from opportunity analysis so the reports surface
    * non-brand growth rather than restating that the client ranks for its own name.

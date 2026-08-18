@@ -44,7 +44,9 @@ export const RULE_THRESHOLDS = {
   /** Prune when gsc_daily holds more than this many rows (≈ retention pressure). */
   dbRowsHigh: 250_000,
   /** Surface a client with at least this many striking-distance keywords. */
-  strikingDistanceCluster: 10
+  strikingDistanceCluster: 10,
+  /** Late-recovered scheduled runs in 7 days above which to suggest auto-wake. */
+  frequentRecovery: 3
 } as const;
 
 function health(findings: Finding[]): "ok" | "warn" | "critical" {
@@ -142,6 +144,23 @@ export function evaluateRules(snapshot: OperatorSnapshot): Finding[] {
       disposition: "auto",
       clientId: null,
       summary: `gsc_daily holds ${snapshot.db.gscDailyRows.toLocaleString()} rows (${Math.round(snapshot.db.sizeBytes / 1_048_576)} MB); daily detail past ${rankConfig.gscRetentionDays} days can be pruned.`
+    });
+  }
+
+  // Runs completing late: the machine is asleep/off at cron time and the
+  // catch-up is picking them up on wake. Nothing is lost, so this is a
+  // suggestion, not a fault - but on-time delivery needs an auto-wake or an
+  // always-on host, which is worth telling the operator.
+  if (snapshot.recoveredRuns7d >= RULE_THRESHOLDS.frequentRecovery) {
+    findings.push({
+      kind: "runs-recovered-late",
+      severity: "info",
+      category: "improvement",
+      disposition: "suggestion",
+      clientId: null,
+      summary: `${snapshot.recoveredRuns7d} scheduled run(s) in the last 7 days ran late because the machine was asleep or off at their scheduled time (they were recovered on the next wake).`,
+      recommendedAction:
+        "Runs still complete, just late. To get them on-time, set a daily auto-wake (macOS: `sudo pmset repeat wakeorpoweron MTWRFSU 05:10:00`) or run RankOS on an always-on host."
     });
   }
 

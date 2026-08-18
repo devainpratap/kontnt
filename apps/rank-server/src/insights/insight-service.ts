@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 
 import type { InsightKind, InsightRecord } from "@rankos/shared";
 
@@ -92,6 +92,33 @@ export class InsightService {
       .run();
 
     return interrupted.length;
+  }
+
+  /**
+   * True if a completed report of `kind` for this client was produced at or
+   * after `since`. The scheduler passes this cycle's most recent scheduled fire,
+   * so it answers "has THIS cycle's report already gone out?" - which keeps
+   * weekly reports idempotent (a restart or the hourly catch-up never re-sends,
+   * and on first deploy a report that pre-dates run history is still respected)
+   * WITHOUT suppressing a legitimately due report just because an unrelated
+   * manual one was generated earlier in the cycle. Keyed on the report artifact,
+   * so it is independent of how the report was triggered.
+   */
+  hasCompletedReportSince(clientId: string, kind: InsightKind, since: Date): boolean {
+    const row = db
+      .select({ id: insightsTable.id })
+      .from(insightsTable)
+      .where(
+        and(
+          eq(insightsTable.clientId, clientId),
+          eq(insightsTable.kind, kind),
+          eq(insightsTable.status, "completed"),
+          gte(insightsTable.createdAt, since.toISOString())
+        )
+      )
+      .limit(1)
+      .get();
+    return Boolean(row);
   }
 
   listInsights(clientId: string): InsightRecord[] {

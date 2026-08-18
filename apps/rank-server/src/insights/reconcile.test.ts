@@ -73,3 +73,45 @@ describe("reconcileInterruptedInsights", () => {
     assert.equal(new InsightService().reconcileInterruptedInsights(), 0);
   });
 });
+
+describe("hasCompletedReportSince — per-cycle report idempotency", () => {
+  const FIRE = new Date("2026-07-27T02:30:00Z"); // this cycle's Monday 08:00 Kolkata
+
+  function insertReport(client: string, createdAt: string, status = "completed") {
+    db.insert(insightsTable)
+      .values({
+        id: randomUUID(),
+        clientId: client,
+        kind: "weekly-report",
+        status: status as never,
+        periodStart: "2026-07-20",
+        periodEnd: "2026-07-26",
+        promptPath: null,
+        outputPath: null,
+        briefPath: null,
+        errorMessage: null,
+        createdAt,
+        completedAt: createdAt
+      })
+      .run();
+  }
+
+  it("is false when no report exists for the cycle (report is due)", () => {
+    assert.equal(new InsightService().hasCompletedReportSince("g-none", "weekly-report", FIRE), false);
+  });
+
+  it("does not count a report produced BEFORE the fire, so a due report still generates", () => {
+    insertReport("g-before", "2026-07-24T06:00:00Z"); // a manual report earlier in the cycle
+    assert.equal(new InsightService().hasCompletedReportSince("g-before", "weekly-report", FIRE), false);
+  });
+
+  it("counts a completed report AT/AFTER the fire, so this cycle is not re-sent", () => {
+    insertReport("g-after", "2026-07-27T02:30:05Z");
+    assert.equal(new InsightService().hasCompletedReportSince("g-after", "weekly-report", FIRE), true);
+  });
+
+  it("ignores a non-completed report at/after the fire", () => {
+    insertReport("g-failed", "2026-07-27T02:31:00Z", "failed");
+    assert.equal(new InsightService().hasCompletedReportSince("g-failed", "weekly-report", FIRE), false);
+  });
+});

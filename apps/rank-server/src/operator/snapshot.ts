@@ -12,6 +12,7 @@ import { addDays, todayInGscZone } from "../gsc/date-utils";
 import { getCoverage, getDateBounds } from "../gsc/queries";
 import { GoogleAccountRepository } from "../google/account-repository";
 import { emailStatus } from "../notify/email";
+import { countRecoveredRunsSince } from "../scheduler/scheduler-runs";
 import { getCheckHealth } from "../serp/queries";
 import { describeBudget } from "../serp/usage-ledger";
 
@@ -57,6 +58,13 @@ export type OperatorSnapshot = {
   /** Rows left "running" - a crash/restart artifact the Operator can reconcile. */
   stuckSyncRuns: number;
   stuckInsights: number;
+  /**
+   * Scheduled runs recovered late (boot/heartbeat catch-up) in the last 7 days.
+   * A high count means the machine is regularly asleep at cron time - runs still
+   * complete, but late - which the Operator turns into an "enable auto-wake"
+   * suggestion rather than a failure.
+   */
+  recoveredRuns7d: number;
   clients: ClientSnapshot[];
 };
 
@@ -192,6 +200,7 @@ export function gatherSnapshot(now: Date = new Date()): OperatorSnapshot {
     },
     stuckSyncRuns: countRunning(syncRunsTable),
     stuckInsights: countRunning(insightsTable),
+    recoveredRuns7d: countRecoveredRunsSince(new Date(now.getTime() - 7 * 86_400_000)),
     clients: clientSnapshots
   };
 }
